@@ -1,0 +1,34 @@
+{
+  "schema": "2.0",
+  "config": {
+    "update_multi": true
+  },
+  "header": {
+    "title": {
+      "tag": "plain_text",
+      "content": "测试卡片"
+    }
+  },
+  "body": {
+    "elements": [
+      {
+        "tag": "markdown",
+        "content": "# 测试卡片\n这是一条可验证的事实。"
+      },
+      {
+        "tag": "button",
+        "text": {
+          "tag": "plain_text",
+          "content": "查看详情"
+        },
+        "type": "primary",
+        "behaviors": [
+          {
+            "type": "open_url",
+            "default_url": "https://open.feishu.cn/document/cardkit-v1/card/create"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,285 @@
+{
+  "schema": "doubao-feishu-visual-skill-packs/1",
+  "version": "2026-09-01",
+  "purpose": "默认先调用或读取 Guizang Social Card Skill 与 baoyu-skills 的可用方法，再把内容分型、版式、风格和质量门转译成本地路由规则；不把第三方渲染器或生图 provider 作为运行时依赖。",
+  "upstream_method_pass": {
+    "order": ["Guizang Social Card Skill", "baoyu-skills"],
+    "execution": "attempt_if_available",
+    "fallback": "local_mirrored_method_mapping",
+    "record_path": "prompt-routing.json",
+    "do_not_claim_without_observable_call": true,
+    "sources": [
+      {
+        "name": "Guizang Social Card Skill",
+        "repository": "https://github.com/op7418/guizang-social-card-skill",
+        "purpose": "内容表达、社交卡片视觉系统、信息密度和参考图质量门"
+      },
+      {
+        "name": "baoyu-skills",
+        "repository": "https://github.com/JimLiu/baoyu-skills",
+        "purpose": "信息图内容分型、关系版式、系列一致性和视觉角色选择"
+      }
+    ]
+  },
+  "runtime": {
+    "provider": "doubao.image_gen",
+    "generation_tool": "doubao.image_gen",
+    "generation_family": "seedream-class",
+    "generation_model": "seedream-5.0-pro",
+    "generation_model_label": "Seedream 5.0 Pro",
+    "model_id_source": "configured_profile_not_runtime_observation",
+    "generation_mode": "seedream_5_pro_direct_full_card",
+    "supported_generation_modes": [
+      "seedream_5_pro_direct_full_card",
+      "seedream_5_pro_banner_plus_native_card"
+    ],
+    "post_processing": "none",
+    "external_skill_execution": "attempt_if_available",
+    "source_locked": true,
+    "image_cta_policy": "native_only_no_image_button",
+    "forbidden_image_content": [
+      "button-shaped controls",
+      "CTA pills",
+      "chevron-plus-action controls",
+      "action labels presented as clickable",
+      "fake link controls"
+    ],
+    "forbidden_runtime_backends": [
+      "HTML/CSS/SVG/Canvas/Pillow 文字排版",
+      "底图加叠字或图片拼接",
+      "第二个图片生成模型",
+      "baoyu-image-gen 的 alternate provider"
+    ]
+  },
+  "policy": {
+    "auto_select": true,
+    "explicit_style_wins": true,
+    "max_selected_packs": 2,
+    "max_style_profiles": 1,
+    "tie_behavior": "选择第一条可解释规则，并在 visual_skill_routing 中记录原因",
+    "style_is_not_layout": true,
+    "legacy_aliases_are_not_runtime_packs": true,
+    "image_roles": ["cover", "information_carrier", "text_companion"],
+    "image_cta_policy": "buttons_are_native_card_only"
+  },
+  "style_profile_map": {
+    "blueprint-timeline": {
+      "prompt_profile_id": "blueprint-style",
+      "pack_ids": ["guizang-social-swiss", "baoyu-infographic"]
+    },
+    "clean-editorial": {
+      "prompt_profile_id": "clean-editorial-style",
+      "pack_ids": ["guizang-social-editorial", "baoyu-infographic"]
+    },
+    "handdrawn-edu": {
+      "prompt_profile_id": "handdrawn-education-style",
+      "pack_ids": ["baoyu-infographic", "baoyu-article-illustrator"]
+    },
+    "ink-research-note": {
+      "prompt_profile_id": "ink-editorial-style",
+      "pack_ids": ["guizang-social-editorial", "baoyu-article-illustrator"]
+    },
+    "xhs-editorial-magazine": {
+      "prompt_profile_id": "magazine-style",
+      "pack_ids": ["baoyu-xhs-images", "guizang-social-editorial"]
+    },
+    "enterprise-tech-blue": {
+      "prompt_profile_id": "clean-editorial-style",
+      "pack_ids": ["guizang-social-swiss", "baoyu-infographic"]
+    }
+  },
+  "selection_rules": [
+    {
+      "id": "timeline-training-path",
+      "when_content_any": ["timeline", "training"],
+      "when_media_not": ["gallery"],
+      "pack_ids": ["baoyu-infographic", "guizang-social-swiss"],
+      "style_id": "blueprint-timeline",
+      "prompt_profile_id": "blueprint-style",
+      "visual_layout": "linear-progression",
+      "selection_reason": "日期、阶段和培训动作是顺序关系；Baoyu 负责信息图结构，Guizang Swiss 负责网格、单条主路径和密度控制。"
+    },
+    {
+      "id": "case-metrics-evidence",
+      "when_content_any": ["case-study", "metrics-dashboard"],
+      "when_media_not": ["gallery"],
+      "pack_ids": ["baoyu-infographic", "guizang-social-swiss"],
+      "style_id": "clean-editorial",
+      "prompt_profile_id": "clean-editorial-style",
+      "visual_layout": "dashboard-or-structural-breakdown",
+      "selection_reason": "案例和指标需要问题—做法—结果或输入—分析—结果关系；优先证据和对齐，不用氛围图替代数据。"
+    },
+    {
+      "id": "quote-editorial-anchor",
+      "when_content_any": ["quote-anchor"],
+      "when_media_not": ["gallery"],
+      "pack_ids": ["guizang-social-editorial", "baoyu-article-illustrator"],
+      "style_id": "ink-research-note",
+      "prompt_profile_id": "ink-editorial-style",
+      "visual_layout": "quote-anchor-with-path",
+      "selection_reason": "短寄语适合用编辑式视觉锚点和一条轻路径表达，完整原文仍保留在 Card。"
+    },
+    {
+      "id": "static-series-gallery",
+      "when_media_any": ["gallery"],
+      "pack_ids": ["baoyu-xhs-images", "guizang-social-editorial"],
+      "style_id": "xhs-editorial-magazine",
+      "prompt_profile_id": "magazine-style",
+      "visual_layout": "consistent-static-image-grid",
+      "selection_reason": "多图/系列需要统一母版、一个主视觉锚点和每张图独立的信息任务；不会把静态图集伪装成原生轮播。"
+    },
+    {
+      "id": "training-learning-path",
+      "when_content_any": ["training"],
+      "when_media_not": ["gallery"],
+      "pack_ids": ["baoyu-infographic", "baoyu-article-illustrator"],
+      "style_id": "handdrawn-edu",
+      "prompt_profile_id": "handdrawn-education-style",
+      "visual_layout": "training-modules-with-schedule",
+      "selection_reason": "课程目标、学习模块和参与动作适合教学型信息图；手绘对象受控为关系提示，不能覆盖功能文字。"
+    },
+    {
+      "id": "general-enterprise-information",
+      "when_content_any": [],
+      "pack_ids": ["guizang-social-editorial", "baoyu-infographic"],
+      "style_id": "clean-editorial",
+      "prompt_profile_id": "clean-editorial-style",
+      "visual_layout": "single-information-anchor",
+      "selection_reason": "没有更强的结构信号时使用可读性优先的企业编辑式图卡，并只保留一个来源锁定的信息焦点。"
+    }
+  ],
+  "packs": [
+    {
+      "id": "guizang-social-editorial",
+      "label": "Guizang Editorial 社交卡片",
+      "source": {
+        "name": "Guizang Social Card Skill",
+        "repository": "https://github.com/op7418/guizang-social-card-skill",
+        "references": [
+          "https://github.com/op7418/guizang-social-card-skill/blob/main/README.md",
+          "https://github.com/op7418/guizang-social-card-skill/blob/main/SKILL.md"
+        ]
+      },
+      "role": "visual-system",
+      "capabilities": [
+        "expression-first intake",
+        "one-glance message",
+        "evidence-versus-copy separation",
+        "editorial visual hierarchy",
+        "reference candidate review",
+        "density review"
+      ],
+      "supported_content_profiles": ["general-information", "case-study", "quote-anchor"],
+      "preferred_styles": ["clean-editorial", "ink-research-note", "xhs-editorial-magazine"],
+      "preferred_layouts": ["single-information-anchor", "quote-anchor-with-path", "case-context-method-result"],
+      "prompt": "editorial social-card language translated into a neutral Feishu information card: one-glance message, one evidence-led visual anchor, quiet typography, intentional whitespace, and a clear relationship between image, native copy, and action",
+      "negative": "copied creator branding, watermarks, random decorative blobs, generic nested card grids, a mood-only background, long paragraphs rendered as tiny poster text",
+      "runtime": "prompt_only"
+    },
+    {
+      "id": "guizang-social-swiss",
+      "label": "Guizang Swiss 信息图",
+      "source": {
+        "name": "Guizang Social Card Skill Swiss system",
+        "repository": "https://github.com/op7418/guizang-social-card-skill",
+        "references": [
+          "https://github.com/op7418/guizang-social-card-skill/blob/main/README.md",
+          "https://github.com/op7418/guizang-social-card-skill/blob/main/SKILL.md"
+        ]
+      },
+      "role": "visual-system",
+      "capabilities": [
+        "grid discipline",
+        "one accent color",
+        "hairline rules",
+        "numbered statements",
+        "single progression rail",
+        "overflow correction ladder"
+      ],
+      "supported_content_profiles": ["timeline", "training", "metrics-dashboard", "case-study"],
+      "preferred_styles": ["blueprint-timeline", "clean-editorial", "enterprise-tech-blue"],
+      "preferred_layouts": ["linear-progression", "sequence-timeline-rounded-rect-node", "dashboard-or-structural-breakdown"],
+      "prompt": "Swiss information-card discipline: strict grid, one main rail, aligned stage panels, hairline separators, one restrained accent family, numbered facts, and generous text-safe zones; every visible label must be source-locked",
+      "negative": "multiple competing rails, decorative geometry crossing text, equal-weight everything, dense mini-panels, unlabeled arrows, invented milestones",
+      "runtime": "prompt_only"
+    },
+    {
+      "id": "baoyu-infographic",
+      "label": "Baoyu 信息图结构包",
+      "source": {
+        "name": "baoyu-infographic",
+        "repository": "https://github.com/JimLiu/baoyu-skills",
+        "skill": "https://github.com/JimLiu/baoyu-skills/blob/main/skills/baoyu-infographic/SKILL.md"
+      },
+      "role": "information-architecture",
+      "capabilities": [
+        "content-type routing",
+        "layout-style-palette separation",
+        "linear progression",
+        "comparison and matrix",
+        "hierarchical and hub-spoke relations",
+        "aspect-ratio routing"
+      ],
+      "supported_content_profiles": ["timeline", "training", "case-study", "metrics-dashboard", "general-information"],
+      "preferred_styles": ["blueprint-timeline", "clean-editorial", "handdrawn-edu", "corporate-memphis"],
+      "preferred_layouts": ["linear-progression", "binary-comparison", "comparison-matrix", "hierarchical-layers", "hub-spoke", "structural-breakdown", "bento-grid", "dashboard"],
+      "prompt": "information-graphic architecture selected from the source relation: use a linear progression for dates/processes, structural breakdown for mechanisms, comparison for before-after, dashboard grouping for metrics, and bento only when the source has independent modules",
+      "negative": "choosing a layout by decoration alone, mixing incompatible relations, invented chart values, tiny labels, a bento grid for a single sequence, a timeline without ordered source dates",
+      "runtime": "prompt_only"
+    },
+    {
+      "id": "baoyu-xhs-images",
+      "label": "Baoyu XHS 系列图包",
+      "source": {
+        "name": "baoyu-xhs-images",
+        "repository": "https://github.com/JimLiu/baoyu-skills",
+        "skill": "https://github.com/JimLiu/baoyu-skills/blob/main/skills/baoyu-xhs-images/SKILL.md"
+      },
+      "role": "series-consistency",
+      "capabilities": [
+        "series consistency",
+        "one-anchor-first planning",
+        "style and palette consistency",
+        "batch prompt sidecars",
+        "independent card readability"
+      ],
+      "supported_content_profiles": ["general-information", "case-study"],
+      "preferred_styles": ["xhs-editorial-magazine", "clean-editorial", "morandi-journal"],
+      "preferred_layouts": ["consistent-static-image-grid", "linear-progression", "structural-breakdown"],
+      "prompt": "coherent social-card series direction: choose one visual anchor for the set, keep palette and typography consistent, give each image one information job, and make the first image independently understandable on a mobile screen",
+      "negative": "clickbait cover hooks, repeated decorative covers, inconsistent palettes, essential facts split across unreadable slides, native carousel claims",
+      "runtime": "prompt_only",
+      "legacy_aliases": ["baoyu-image-cards"]
+    },
+    {
+      "id": "baoyu-article-illustrator",
+      "label": "Baoyu 文章插图关系包",
+      "source": {
+        "name": "baoyu-article-illustrator",
+        "repository": "https://github.com/JimLiu/baoyu-skills",
+        "skill": "https://github.com/JimLiu/baoyu-skills/blob/main/skills/baoyu-article-illustrator/SKILL.md"
+      },
+      "role": "visual-role-selection",
+      "capabilities": [
+        "infographic role",
+        "scene role",
+        "flowchart role",
+        "comparison role",
+        "framework role",
+        "source-material alignment"
+      ],
+      "supported_content_profiles": ["training", "case-study", "quote-anchor", "general-information"],
+      "preferred_styles": ["handdrawn-edu", "ink-research-note", "clean-editorial"],
+      "preferred_layouts": ["training-modules-with-schedule", "case-context-method-result", "quote-anchor-with-path", "structural-breakdown"],
+      "prompt": "select the image role before styling: use an infographic for relationships, a flowchart for ordered actions, a comparison for differences, a framework for grouped principles, or a restrained scene only when the source needs a human-scale metaphor",
+      "negative": "scene illustration replacing an information relation, generic stock scene, unsupported metaphor, invented labels, decorative characters competing with the source facts",
+      "runtime": "prompt_only"
+    }
+  ],
+  "legacy_aliases": {
+    "baoyu-image-cards": {
+      "redirect_to": "baoyu-xhs-images",
+      "reason": "当前 baoyu-skills 将旧的 baoyu-image-cards 能力并入 baoyu-xhs-images；本地不再创建旧运行时包。"
+    }
+  }
+}

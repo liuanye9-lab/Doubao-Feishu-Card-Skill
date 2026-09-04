@@ -1,0 +1,199 @@
+{
+  "schema": "doubao-feishu-prompt-router/1",
+  "default_profile": "general-information",
+  "policy": {
+    "source_text_is_canonical": true,
+    "max_content_profiles": 2,
+    "max_anchor_profiles": 1,
+    "max_media_profiles": 1,
+    "max_style_profiles": 1,
+    "negative_triggers_are_ignored": true,
+    "image_generation_mode": "seedream_5_pro_direct_full_card",
+    "supported_image_generation_modes": [
+      "seedream_5_pro_direct_full_card",
+      "seedream_5_pro_banner_plus_native_card"
+    ],
+    "text_policy": "seedream_5_pro_direct_selected_text_and_layout",
+    "image_source_types": ["real_image", "ai_generated"],
+    "ai_generation_family": "seedream-class",
+    "generation_tool": "doubao.image_gen",
+    "generation_model": "seedream-5.0-pro",
+    "generation_model_label": "Seedream 5.0 Pro",
+    "model_id_source": "configured_profile_not_runtime_observation",
+    "image_roles": ["cover", "information_carrier", "text_companion"],
+    "image_cta_policy": "buttons_are_native_card_only",
+    "default_upstream_method_pass": ["Guizang Social Card Skill", "baoyu-skills"],
+    "default_image_layout": "seedream_5_pro_direct_full_card",
+    "supported_image_layouts": ["reference_card_banner", "timeline_infographic_inside_illustration"]
+  },
+  "profiles": [
+    {
+      "id": "general-information",
+      "kind": "content",
+      "label": "通用信息锚点",
+      "priority": 1,
+      "triggers": [],
+      "layout_id": "single-information-anchor",
+      "prompt": "one clear information anchor, semantic grouping, generous negative space, and a mobile-safe composition that can be understood in a few seconds",
+      "negative": "generic mood-only background, unrelated stock imagery, dense paragraphs, tiny details",
+      "auto_actions": ["保留一个主视觉焦点", "完整事实回到 Card 原生文字"]
+    },
+    {
+      "id": "timeline",
+      "kind": "content",
+      "label": "时间线流程",
+      "priority": 100,
+      "triggers": ["时间线", "时间轴", "日程", "流程", "阶段", "节点", "里程碑", "时间表", "timeline", "schedule", "roadmap", "milestone"],
+      "layout_id": "sequence-timeline-rounded-rect-node",
+      "prompt": "a compact three-to-four-stage milestone information graphic inside one complete light enterprise card, one clear connecting rail, exact dates above readable selected action labels, directional flow, aligned stage panels, and enough space for Seedream 5.0 Pro to render the allocated stage text sharply while long source details remain native",
+      "negative": "random icon collage, disconnected nodes, invented dates, decorative arrows without a source-backed action",
+      "auto_actions": ["把日期和阶段动作排进图片内时间轴", "原生 Card 同步保留完整时间事实"]
+    },
+    {
+      "id": "training",
+      "kind": "content",
+      "label": "培训课程",
+      "priority": 88,
+      "triggers": ["培训", "课程", "学习", "开营", "训练", "课堂", "讲师", "作业", "workshop", "training", "course", "lesson", "bootcamp"],
+      "layout_id": "training-modules-with-schedule",
+      "prompt": "a friendly enterprise learning pathway expressed as a light horizontal banner: one calendar or learning object, a clear progression cue, generous title-safe space, and an optimistic but restrained teaching atmosphere",
+      "negative": "generic classroom stock photo, childish stickers everywhere, unrelated certificates, invented course names or times",
+      "auto_actions": ["优先展示课程目标、时间和参与动作", "把课程系列按模块分组而不是堆成一段长文"]
+    },
+    {
+      "id": "case-study",
+      "kind": "content",
+      "label": "案例复盘",
+      "priority": 86,
+      "triggers": ["案例", "客户背景", "迁移", "复盘", "问题", "做法", "结果", "成果", "前后对比", "case study", "before", "after", "review"],
+      "layout_id": "case-context-method-result",
+      "prompt": "an information-bearing case-study relationship from context or problem to method and measurable result, using a before-after or three-part visual structure only when supported by the source",
+      "negative": "unverified success claims, invented metrics, generic business handshake, a decorative hero with no problem-method-result relationship",
+      "auto_actions": ["按背景/问题—做法—结果组织模块", "指标只使用原文提供的数值"]
+    },
+    {
+      "id": "metrics-dashboard",
+      "kind": "content",
+      "label": "数据看板",
+      "priority": 92,
+      "triggers": ["数据", "指标", "看板", "增长", "转化", "活跃率", "渗透率", "同比", "环比", "统计", "dashboard", "metrics", "kpi", "analytics"],
+      "layout_id": "metric-dashboard-input-analysis-result",
+      "prompt": "a clean dashboard-like information visual with two to four clearly grouped metric areas and an input-to-analysis-to-result relationship; charts may be abstract shapes but must not invent values",
+      "negative": "fake numbers, unreadable micro charts, random dashboard widgets, misleading trends, invented KPI labels",
+      "auto_actions": ["优先展示短标签和真实数值", "长解释保留在 Card 原生文本，不压进图片"]
+    },
+    {
+      "id": "screenshot-explainer",
+      "kind": "content",
+      "label": "界面解释图",
+      "priority": 76,
+      "triggers": ["截图", "界面", "功能演示", "操作界面", "看板截图", "UI", "界面图", "screenshot", "interface", "demo"],
+      "layout_id": "text-and-screenshot-pair",
+      "prompt": "a clean text-and-interface relationship: reserve a calm, legible area for the supplied screenshot or UI evidence, pair it with a short source-backed explanation, and keep the interface as evidence rather than decoration",
+      "negative": "hallucinated UI text, fake product controls, distorted screenshots, unrelated app chrome, tiny unreadable labels",
+      "auto_actions": ["截图与解释文字相邻", "不让 AI 重绘需要准确阅读的界面文字"]
+    },
+    {
+      "id": "quote-anchor",
+      "kind": "anchor",
+      "label": "理念寄语",
+      "priority": 72,
+      "triggers": ["CEO", "赵总", "理念", "寄语", "金句", "愿景", "领导说", "quote", "principle", "vision"],
+      "layout_id": "quote-anchor-with-path",
+      "prompt": "a calm leadership-principle anchor with one visual path or light signal, generous quote-safe space, and a dignified editorial composition; Seedream 5.0 Pro must render the exact selected short source quote directly in the complete card while long wording remains native",
+      "negative": "extra motivational slogans, fake quotation marks containing invented text, exaggerated award-stage spectacle, repeated emojis",
+      "auto_actions": ["原文寄语进入显著 quote 区", "不自动补写励志金句"]
+    },
+    {
+      "id": "gallery",
+      "kind": "media",
+      "label": "静态图集",
+      "priority": 82,
+      "mode": "gallery",
+      "triggers": ["多图", "组图", "图集", "系列作品", "作品集", "画廊", "图片对比", "gallery", "portfolio", "contact sheet"],
+      "layout_id": "consistent-static-image-grid",
+      "prompt": "a consistent two-to-six tile static image set with the same crop logic, clear semantic difference between tiles, restrained spacing, and each image carrying a distinct information role",
+      "negative": "duplicated decorative images, inconsistent crops, random collage, third-party logos, tiles with no alt or information role",
+      "auto_actions": ["编译为 img_combination", "每张图都要求真实 img_key 和 alt"]
+    },
+    {
+      "id": "gif-motion",
+      "kind": "media",
+      "label": "GIF 动效",
+      "priority": 84,
+      "mode": "gif",
+      "triggers": ["动图", "GIF", "动画", "动态底图", "动态效果", "animated", "motion"],
+      "layout_id": "seedance-direct-gif-motion-explainer",
+      "prompt": "a directly generated looping GIF that explains source-backed progression, state change, or operation rhythm; the first frame remains readable and essential facts stay in native Card components",
+      "negative": "essential text only inside animation, flickering microtype, fast flashing, unreadable first frame, animated watermark",
+      "auto_actions": ["调用 Seedance 2.5 直出 GIF", "登记提示词与 GIF 哈希并检查至少两帧", "关键事实同步写入原生 Card"]
+    },
+    {
+      "id": "image-switcher",
+      "kind": "media",
+      "label": "图片切换",
+      "priority": 95,
+      "mode": "switcher",
+      "triggers": ["轮播", "图片切换", "切换图片", "图集切换", "上一张", "下一张", "carousel", "image switch", "image-switcher"],
+      "layout_id": "stable-selected-view-with-tabs",
+      "prompt": "two-to-four clearly distinct visual views with a stable selected-image area and compact labeled tabs; keep the first view independently readable because the interaction is implemented by an application-bot callback, not a generic client-side carousel",
+      "negative": "promise of native carousel, hidden initial state, unlabeled tabs, arbitrary image-key replacement from the client, essential facts only in a switched image",
+      "auto_actions": ["编译为 media_switcher", "使用 card.action.trigger + card.update", "没有 application Bot 时退回首图或静态图集"]
+    },
+    {
+      "id": "blueprint-style",
+      "kind": "style",
+      "label": "蓝图流程风格",
+      "priority": 60,
+      "triggers": ["蓝图", "工程线", "科技蓝", "流程图风格", "blueprint", "technical schematic"],
+      "layout_id": "style-blueprint",
+      "prompt": "restrained deep blue and warm paper, fine engineering grid, rounded milestone nodes, amber signal points, crisp alignment, and a calm technical schematic language",
+      "negative": "overloaded grid lines, neon cyberpunk, labels crossing the rail, excessive technical annotations",
+      "auto_actions": ["只改变 Seedream 5.0 Pro 整图视觉语言", "不改变 source-locked 文字和 Card 原生结构"]
+    },
+    {
+      "id": "clean-editorial-style",
+      "kind": "style",
+      "label": "极简编辑风格",
+      "priority": 58,
+      "triggers": ["极简", "企业感", "产品卡片", "干净", "编辑感", "clean editorial", "minimal"],
+      "layout_id": "style-clean-editorial",
+      "prompt": "off-white editorial canvas, strict alignment, one restrained accent color, subtle border and shadow, modern sans-serif hierarchy, and generous but purposeful whitespace",
+      "negative": "empty decorative space, oversized abstract blob, too many accent colors, poster-like text wall",
+      "auto_actions": ["适合企业公告和课程概览", "保留至少一组功能性关系标签"]
+    },
+    {
+      "id": "handdrawn-education-style",
+      "kind": "style",
+      "label": "手绘教育风格",
+      "priority": 56,
+      "triggers": ["手绘", "亲和", "社群感", "教育风", "板书", "hand drawn", "educational"],
+      "layout_id": "style-handdrawn-education",
+      "prompt": "warm cream paper, restrained macaron color blocks, simple hand-drawn connectors and learning objects, friendly educational tone, and a clean single path",
+      "negative": "sticker overload, childish clutter, emoji wall, wobbly unreadable dates, unrelated classroom props",
+      "auto_actions": ["适合开营、社群和新人培训", "装饰数量受控，选定的功能文字由同一次 Seedream 5.0 Pro 生成，长文留在 Card"]
+    },
+    {
+      "id": "ink-editorial-style",
+      "kind": "style",
+      "label": "墨色研究札记",
+      "priority": 54,
+      "triggers": ["墨色", "水墨", "东方", "研究札记", "纸张", "ink note", "oriental"],
+      "layout_id": "style-ink-research-note",
+      "prompt": "warm off-white paper, monochrome ink linework, thin rules, restrained hatching, one muted vermilion or gold accent, and dignified research-note spacing",
+      "negative": "low-contrast gray body text, ink splashes over facts, ornamental calligraphy replacing readable labels, excessive traditional motifs",
+      "auto_actions": ["适合案例复盘和理念寄语", "维持手机端高对比阅读"]
+    },
+    {
+      "id": "magazine-style",
+      "kind": "style",
+      "label": "科技杂志风格",
+      "priority": 52,
+      "triggers": ["小红书", "科技杂志", "杂志感", "传播感", "editorial magazine", "magazine"],
+      "layout_id": "style-editorial-magazine",
+      "prompt": "black, white, and gray editorial technology magazine language with one bright signal color, one focal crop, high contrast, and short label-safe areas",
+      "negative": "social-media clickbait title, long-notice compression, decorative cover replacing facts, copied creator branding",
+      "auto_actions": ["只适合短标签和单一认知焦点", "不把社媒封面逻辑套到长通知"]
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "schema": "doubao-feishu-card-studio-registry/1",
+  "source": "lark-card-studio-full.zip",
+  "source_use": "public-safe-reference",
+  "card_schema": {
+    "version": "2.0",
+    "raw_root": ["schema", "config", "header", "body", "card_link", "fallback_card"],
+    "cardkit_wrapper": ["name", "dsl", "variables"],
+    "default_config": {
+      "update_multi": true,
+      "summary_required_for_delivery": true
+    }
+  },
+  "component_routes": {
+    "content": [
+      {"tag": "div", "purpose": "短事实和普通文本"},
+      {"tag": "markdown", "purpose": "富文本、列表、链接和引用"},
+      {"tag": "lark_md", "purpose": "轻量 Markdown 文本"},
+      {"tag": "img", "purpose": "单张真实图片 key"},
+      {"tag": "img_combination", "purpose": "静态多图组合"},
+      {"tag": "person", "purpose": "单个真实成员"},
+      {"tag": "person_list", "purpose": "多个真实成员"},
+      {"tag": "chart", "purpose": "真实趋势、对比或占比"},
+      {"tag": "table", "purpose": "真实结构化数据，仅 body 顶层"},
+      {"tag": "audio", "purpose": "可播放音频"},
+      {"tag": "video", "purpose": "兼容视频媒体"},
+      {"tag": "avatar", "purpose": "兼容头像"},
+      {"tag": "fallback_text", "purpose": "能力降级文字"},
+      {"tag": "hr", "purpose": "分割线"},
+      {"tag": "collapse_divider", "purpose": "折叠分隔线"}
+    ],
+    "interactive": [
+      {"tag": "button", "purpose": "真实 URL、callback 或表单动作", "requires_real_behavior": true},
+      {"tag": "overflow", "purpose": "收纳多个次要动作", "requires_real_behavior": true},
+      {"tag": "checker", "purpose": "可切换状态", "requires_real_behavior": true},
+      {"tag": "input", "purpose": "文本输入"},
+      {"tag": "select_static", "purpose": "固定单选"},
+      {"tag": "multi_select_static", "purpose": "固定多选"},
+      {"tag": "select_person", "purpose": "人员单选"},
+      {"tag": "multi_select_person", "purpose": "人员多选"},
+      {"tag": "picker_date", "purpose": "日期选择"},
+      {"tag": "picker_time", "purpose": "时间选择"},
+      {"tag": "picker_datetime", "purpose": "日期时间选择"},
+      {"tag": "date_picker", "purpose": "兼容日期选择"},
+      {"tag": "select_img", "purpose": "图片选择"}
+    ],
+    "containers": [
+      {"tag": "column_set", "purpose": "响应式等宽分栏"},
+      {"tag": "column", "purpose": "分栏子项", "weight_policy": "1:1 for content columns"},
+      {"tag": "form", "purpose": "字段和真实提交/重置动作"},
+      {"tag": "interactive_container", "purpose": "真实整块入口或非交互 surface"},
+      {"tag": "collapsible_panel", "purpose": "长内容渐进披露", "arrow_required": true}
+    ],
+    "layout_primitives": [
+      {
+        "id": "highlight",
+        "maps_to": ["column_set", "column"],
+        "purpose": "来源明确的重点、结论、价值、风险和下一步的可编辑色面",
+        "background_styles": ["grey-50", "grey-100", "blue-50", "green-50", "yellow-50", "red-50"],
+        "max_visible_per_card": 3,
+        "html_css": false
+      }
+    ]
+  },
+  "behaviors": {
+    "supported": ["open_url", "callback", "event", "client_message"],
+    "native_button_max_behaviors": 1,
+    "custom_bot": ["open_url"],
+    "application_bot": ["open_url", "callback", "event", "client_message", "form"],
+    "callback_value_forbidden_keys": ["user_id", "open_id", "union_id", "tenant_key", "access_token", "refresh_token", "secret", "webhook"]
+  },
+  "deprecated": {
+    "tags": ["note", "action"],
+    "replacement": {"note": "div or markdown", "action": "button or overflow"}
+  },
+  "image_policy": {
+    "sources": ["real_image", "ai_generated"],
+    "roles": ["cover", "information_carrier", "text_companion"],
+    "static_generation": "seedream_one_pass_selected_mode",
+    "generation_tool": "doubao.image_gen",
+    "generation_model": "seedream-5.0-pro",
+    "generation_model_label": "Seedream 5.0 Pro",
+    "supported_generation_modes": [
+      "seedream_5_pro_direct_full_card",
+      "seedream_5_pro_banner_plus_native_card"
+    ],
+    "default_generation_mode": "seedream_5_pro_direct_full_card",
+    "post_processing": "none",
+    "functional_controls_in_image": "forbidden",
+    "motion_generation": "seedance_direct_gif_when_auto_selected",
+    "motion_model": "seedance-2.5",
+    "motion_tool": "doubao.video_gen",
+    "motion_output": "gif"
+  },
+  "theme_policy": {
+    "explicit_theme_only": ["dashboard", "modern-minimal", "custom-visual"],
+    "explicit_style_wins": true,
+    "style_is_not_layout": true
+  }
+}

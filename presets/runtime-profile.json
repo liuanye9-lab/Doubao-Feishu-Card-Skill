@@ -1,0 +1,83 @@
+{
+  "schema": "doubao-feishu-card-runtime/2",
+  "profile_name": "doubao-work-multimodal-card",
+  "profile_source": "user_confirmed_doubao_work_builtin_adapter",
+  "image": {
+    "provider": "doubao-work.builtin-image",
+    "generation_tool": "doubao.image_gen",
+    "generation_family": "seedream-class",
+    "generation_model": "seedream-5.0-pro",
+    "generation_model_label": "Seedream 5.0 Pro",
+    "model_id_source": "requested_model_label_pending_runtime_observation",
+    "model_id_fallback": "platform-managed",
+    "reference_image_tool": null,
+    "reference_image_policy": "no_separate_reference_model_by_default",
+    "default_mode": "seedream_5_pro_direct_full_card",
+    "post_processing": "none",
+    "source_locked": true,
+    "image_cta_policy": "native_only_no_image_button"
+  },
+  "image_modes": {
+    "seedream_5_pro_direct_full_card": {
+      "label": "Seedream 5.0 Pro 竖版信息图",
+      "text_policy": "seedream_5_pro_direct_selected_text_and_layout",
+      "aspect_ratio": "2:3",
+      "roles": ["cover", "information_carrier", "text_companion"],
+    "native_pairing": "Seedream 5.0 Pro 一次性生成完整信息图；原生 Card 保留精简摘要、关键事实、图表和真实按钮"
+    },
+    "seedream_5_pro_banner_plus_native_card": {
+      "label": "Seedream 5.0 Pro 横幅首图 + 原生 Card",
+      "text_policy": "seedream_5_pro_banner_selected_text_and_layout",
+      "aspect_ratio": "3:1",
+      "roles": ["banner", "information_carrier", "text_companion"],
+      "native_pairing": "Seedream 5.0 Pro 一次性生成横幅首图；原生 Card 紧随其后承载精简摘要、关键事实和真实按钮"
+    }
+  },
+  "motion": {
+    "provider": "doubao-work.builtin-video",
+    "generation_tool": "doubao.video_gen",
+    "generation_family": "seedance-class",
+    "generation_model": "seedance-2.5",
+    "generation_model_label": "Seedance 2.5",
+    "model_id_source": "requested_model_label_pending_runtime_observation",
+    "model_id_fallback": "platform-managed",
+    "default_mode": "seedance_2_5_direct_gif",
+    "output_format": "gif",
+    "auto_select": true,
+    "post_processing": "none",
+    "source_locked": true,
+    "gif_cardkit_supported": true,
+    "require_observed_tool_and_asset": true
+  },
+  "motion_modes": {
+    "seedance_2_5_direct_gif": {
+      "label": "Seedance 2.5 直出 GIF",
+      "text_policy": "native_card_keeps_essential_facts",
+      "aspect_ratio": "2:3",
+      "duration_seconds": [4, 8],
+      "loop": true,
+      "roles": ["cover", "information_carrier", "motion_explainer"],
+      "native_pairing": "GIF 表达阶段、变化或操作节奏；原生 Card 保留全部关键事实、图表和真实按钮"
+    }
+  },
+  "motion_routing": {
+    "policy": "auto_when_motion_materially_improves_understanding",
+    "positive_signals": ["timeline", "multi_step_process", "before_after", "operation_demo", "state_transition"],
+    "negative_signals": ["single_status", "static_metrics_only", "compliance_copy", "explicit_no_motion"],
+    "direct_gif_preferred": true,
+    "no_local_video_to_gif_conversion": true
+  },
+  "method_pass": {
+    "order": ["Guizang Social Card Skill", "baoyu-skills"],
+    "execution": "attempt_if_available",
+    "fallback": "local_mirrored_method_mapping",
+    "do_not_claim_without_observable_call": true
+  },
+  "delivery": {
+    "remote_writes": "disabled_by_default",
+    "bot_surface": "application_bot",
+    "cardkit_surface": "logged_in_browser_or_web_backed_cli",
+    "real_img_key_required": true,
+    "gif_uses_img_key": true
+  }
+}

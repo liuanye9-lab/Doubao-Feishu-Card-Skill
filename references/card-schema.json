@@ -1,0 +1,4028 @@
+{
+ "$schema": "https://json-schema.org/draft/2019-09/schema#",
+ "$id": "urn:doubao-feishu-card:card-schema-2.0",
+ "title": "Card",
+ "type": "object",
+ "description": " card 结构是入口",
+ "properties": {
+  "body": {
+   "$ref": "#/$def/CardBody"
+  },
+  "card_link": {
+   "$ref": "#/$def/URL"
+  },
+  "config": {
+   "$ref": "#/$def/Config"
+  },
+  "fallback_card": {
+   "type": "object"
+  },
+  "header": {
+   "$ref": "#/$def/Header"
+  },
+  "schema": {
+   "enum": [
+    "1.0",
+    "2.0"
+   ]
+  }
+ },
+ "additionalProperties": false,
+ "required": [
+  "schema"
+ ],
+ "$def": {
+  "Card": {
+   "title": "Card",
+   "type": "object",
+   "description": " card 结构是入口",
+   "properties": {
+    "body": {
+     "$ref": "#/$def/CardBody"
+    },
+    "card_link": {
+     "$ref": "#/$def/URL"
+    },
+    "config": {
+     "$ref": "#/$def/Config"
+    },
+    "fallback_card": {
+     "type": "object"
+    },
+    "header": {
+     "$ref": "#/$def/Header"
+    },
+    "schema": {
+     "enum": [
+      "1.0",
+      "2.0"
+     ]
+    }
+   },
+   "additionalProperties": false
+  },
+  "ActionToast": {
+   "title": "ActionToast",
+   "type": "object",
+   "properties": {
+    "content": {
+     "type": "string"
+    },
+    "i18n": {
+     "$ref": "#/$def/I18nPlainText"
+    },
+    "type": {
+     "enum": [
+      "info",
+      "success",
+      "error",
+      "warning"
+     ]
+    }
+   },
+   "additionalProperties": false
+  },
+  "Audio": {
+   "title": "Audio",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "audio"
+    },
+    "audio_id": {
+     "type": "string"
+    },
+    "background_style": {
+     "type": "string"
+    },
+    "border": {
+     "$ref": "#/$def/AudioBorder"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "file_key": {
+     "type": "string"
+    },
+    "fill_color": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "padding": {
+     "type": "string"
+    },
+    "show_progress_bar": {
+     "type": "boolean"
+    },
+    "show_time": {
+     "type": "boolean"
+    },
+    "style": {
+     "type": "string"
+    },
+    "time_display": {
+     "type": "string"
+    },
+    "time_position": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "file_key"
+   ]
+  },
+  "AudioBorder": {
+   "title": "AudioBorder",
+   "type": "object",
+   "properties": {
+    "color": {
+     "type": "string"
+    },
+    "corner_radius": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "Avatar": {
+   "title": "Avatar",
+   "type": "object",
+   "description": " todo：avatar是不是可以删了？",
+   "properties": {
+    "tag": {
+     "const": "avatar"
+    },
+    "custom_size": {
+     "type": "number"
+    },
+    "custom_size2": {
+     "type": "number"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "size": {
+     "enum": [
+      "small",
+      "huge",
+      "large",
+      "medium",
+      "tiny",
+      "custom"
+     ]
+    },
+    "user_id": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "custom_size",
+    "custom_size2",
+    "size",
+    "user_id"
+   ]
+  },
+  "BaseBehavior": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/BehaviorCallback"
+    },
+    {
+     "$ref": "#/$def/BehaviorClientMessage"
+    },
+    {
+     "$ref": "#/$def/BehaviorEvent"
+    },
+    {
+     "$ref": "#/$def/BehaviorOpenUrl"
+    },
+    {
+     "$ref": "#/$def/BehaviorTemplateOpenUrl"
+    }
+   ]
+  },
+  "BaseCollapsiblePanelElement": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/Audio"
+    },
+    {
+     "$ref": "#/$def/Avatar"
+    },
+    {
+     "$ref": "#/$def/DatePicker"
+    },
+    {
+     "$ref": "#/$def/PickerDate"
+    },
+    {
+     "$ref": "#/$def/PickerDatetime"
+    },
+    {
+     "$ref": "#/$def/PickerTime"
+    },
+    {
+     "$ref": "#/$def/MultiSelectPerson"
+    },
+    {
+     "$ref": "#/$def/MultiSelectStatic"
+    },
+    {
+     "$ref": "#/$def/SelectPerson"
+    },
+    {
+     "$ref": "#/$def/SelectStatic"
+    },
+    {
+     "$ref": "#/$def/Button"
+    },
+    {
+     "$ref": "#/$def/Chart"
+    },
+    {
+     "$ref": "#/$def/Checker"
+    },
+    {
+     "$ref": "#/$def/CollapseDivider"
+    },
+    {
+     "$ref": "#/$def/CollapsiblePanel"
+    },
+    {
+     "$ref": "#/$def/ColumnSet"
+    },
+    {
+     "$ref": "#/$def/Div"
+    },
+    {
+     "$ref": "#/$def/FallbackText"
+    },
+    {
+     "$ref": "#/$def/Hr"
+    },
+    {
+     "$ref": "#/$def/Img"
+    },
+    {
+     "$ref": "#/$def/ImgCombination"
+    },
+    {
+     "$ref": "#/$def/Input"
+    },
+    {
+     "$ref": "#/$def/InteractiveContainer"
+    },
+    {
+     "$ref": "#/$def/Markdown"
+    },
+    {
+     "$ref": "#/$def/Overflow"
+    },
+    {
+     "$ref": "#/$def/Person"
+    },
+    {
+     "$ref": "#/$def/PersonList"
+    },
+    {
+     "$ref": "#/$def/SelectImg"
+    },
+    {
+     "$ref": "#/$def/Video"
+    }
+   ]
+  },
+  "BaseColumnElement": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/Audio"
+    },
+    {
+     "$ref": "#/$def/Avatar"
+    },
+    {
+     "$ref": "#/$def/DatePicker"
+    },
+    {
+     "$ref": "#/$def/PickerDate"
+    },
+    {
+     "$ref": "#/$def/PickerDatetime"
+    },
+    {
+     "$ref": "#/$def/PickerTime"
+    },
+    {
+     "$ref": "#/$def/MultiSelectPerson"
+    },
+    {
+     "$ref": "#/$def/MultiSelectStatic"
+    },
+    {
+     "$ref": "#/$def/SelectPerson"
+    },
+    {
+     "$ref": "#/$def/SelectStatic"
+    },
+    {
+     "$ref": "#/$def/Button"
+    },
+    {
+     "$ref": "#/$def/Chart"
+    },
+    {
+     "$ref": "#/$def/Checker"
+    },
+    {
+     "$ref": "#/$def/CollapsiblePanel"
+    },
+    {
+     "$ref": "#/$def/ColumnSet"
+    },
+    {
+     "$ref": "#/$def/Div"
+    },
+    {
+     "$ref": "#/$def/FallbackText"
+    },
+    {
+     "$ref": "#/$def/Hr"
+    },
+    {
+     "$ref": "#/$def/Img"
+    },
+    {
+     "$ref": "#/$def/ImgCombination"
+    },
+    {
+     "$ref": "#/$def/Input"
+    },
+    {
+     "$ref": "#/$def/InteractiveContainer"
+    },
+    {
+     "$ref": "#/$def/Markdown"
+    },
+    {
+     "$ref": "#/$def/Overflow"
+    },
+    {
+     "$ref": "#/$def/Person"
+    },
+    {
+     "$ref": "#/$def/PersonList"
+    },
+    {
+     "$ref": "#/$def/SelectImg"
+    },
+    {
+     "$ref": "#/$def/Video"
+    }
+   ]
+  },
+  "BaseDatePicker": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/DatePicker"
+    },
+    {
+     "$ref": "#/$def/PickerDate"
+    },
+    {
+     "$ref": "#/$def/PickerDatetime"
+    },
+    {
+     "$ref": "#/$def/PickerTime"
+    }
+   ]
+  },
+  "BaseFormElem": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/Audio"
+    },
+    {
+     "$ref": "#/$def/Avatar"
+    },
+    {
+     "$ref": "#/$def/DatePicker"
+    },
+    {
+     "$ref": "#/$def/PickerDate"
+    },
+    {
+     "$ref": "#/$def/PickerDatetime"
+    },
+    {
+     "$ref": "#/$def/PickerTime"
+    },
+    {
+     "$ref": "#/$def/MultiSelectPerson"
+    },
+    {
+     "$ref": "#/$def/MultiSelectStatic"
+    },
+    {
+     "$ref": "#/$def/SelectPerson"
+    },
+    {
+     "$ref": "#/$def/SelectStatic"
+    },
+    {
+     "$ref": "#/$def/Button"
+    },
+    {
+     "$ref": "#/$def/Checker"
+    },
+    {
+     "$ref": "#/$def/FallbackText"
+    },
+    {
+     "$ref": "#/$def/Input"
+    },
+    {
+     "$ref": "#/$def/Overflow"
+    },
+    {
+     "$ref": "#/$def/SelectImg"
+    },
+    {
+     "$ref": "#/$def/Chart"
+    },
+    {
+     "$ref": "#/$def/Checker"
+    },
+    {
+     "$ref": "#/$def/CollapsiblePanel"
+    },
+    {
+     "$ref": "#/$def/ColumnSet"
+    },
+    {
+     "$ref": "#/$def/Div"
+    },
+    {
+     "$ref": "#/$def/Hr"
+    },
+    {
+     "$ref": "#/$def/Img"
+    },
+    {
+     "$ref": "#/$def/ImgCombination"
+    },
+    {
+     "$ref": "#/$def/InteractiveContainer"
+    },
+    {
+     "$ref": "#/$def/Markdown"
+    },
+    {
+     "$ref": "#/$def/Person"
+    },
+    {
+     "$ref": "#/$def/PersonList"
+    },
+    {
+     "$ref": "#/$def/Video"
+    }
+   ]
+  },
+  "BaseInteractiveContainerElement": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/Audio"
+    },
+    {
+     "$ref": "#/$def/Avatar"
+    },
+    {
+     "$ref": "#/$def/DatePicker"
+    },
+    {
+     "$ref": "#/$def/PickerDate"
+    },
+    {
+     "$ref": "#/$def/PickerDatetime"
+    },
+    {
+     "$ref": "#/$def/PickerTime"
+    },
+    {
+     "$ref": "#/$def/MultiSelectPerson"
+    },
+    {
+     "$ref": "#/$def/MultiSelectStatic"
+    },
+    {
+     "$ref": "#/$def/SelectPerson"
+    },
+    {
+     "$ref": "#/$def/SelectStatic"
+    },
+    {
+     "$ref": "#/$def/Button"
+    },
+    {
+     "$ref": "#/$def/Chart"
+    },
+    {
+     "$ref": "#/$def/Checker"
+    },
+    {
+     "$ref": "#/$def/CollapsiblePanel"
+    },
+    {
+     "$ref": "#/$def/ColumnSet"
+    },
+    {
+     "$ref": "#/$def/Div"
+    },
+    {
+     "$ref": "#/$def/FallbackText"
+    },
+    {
+     "$ref": "#/$def/Hr"
+    },
+    {
+     "$ref": "#/$def/Img"
+    },
+    {
+     "$ref": "#/$def/ImgCombination"
+    },
+    {
+     "$ref": "#/$def/Input"
+    },
+    {
+     "$ref": "#/$def/InteractiveContainer"
+    },
+    {
+     "$ref": "#/$def/Markdown"
+    },
+    {
+     "$ref": "#/$def/Overflow"
+    },
+    {
+     "$ref": "#/$def/Person"
+    },
+    {
+     "$ref": "#/$def/PersonList"
+    },
+    {
+     "$ref": "#/$def/SelectImg"
+    },
+    {
+     "$ref": "#/$def/Video"
+    }
+   ]
+  },
+  "BaseModule": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/Audio"
+    },
+    {
+     "$ref": "#/$def/Avatar"
+    },
+    {
+     "$ref": "#/$def/DatePicker"
+    },
+    {
+     "$ref": "#/$def/PickerDate"
+    },
+    {
+     "$ref": "#/$def/PickerDatetime"
+    },
+    {
+     "$ref": "#/$def/PickerTime"
+    },
+    {
+     "$ref": "#/$def/MultiSelectPerson"
+    },
+    {
+     "$ref": "#/$def/MultiSelectStatic"
+    },
+    {
+     "$ref": "#/$def/SelectPerson"
+    },
+    {
+     "$ref": "#/$def/SelectStatic"
+    },
+    {
+     "$ref": "#/$def/Button"
+    },
+    {
+     "$ref": "#/$def/Chart"
+    },
+    {
+     "$ref": "#/$def/Checker"
+    },
+    {
+     "$ref": "#/$def/CollapsiblePanel"
+    },
+    {
+     "$ref": "#/$def/ColumnSet"
+    },
+    {
+     "$ref": "#/$def/Div"
+    },
+    {
+     "$ref": "#/$def/FallbackText"
+    },
+    {
+     "$ref": "#/$def/Form"
+    },
+    {
+     "$ref": "#/$def/Hr"
+    },
+    {
+     "$ref": "#/$def/Img"
+    },
+    {
+     "$ref": "#/$def/ImgCombination"
+    },
+    {
+     "$ref": "#/$def/Input"
+    },
+    {
+     "$ref": "#/$def/InteractiveContainer"
+    },
+    {
+     "$ref": "#/$def/Markdown"
+    },
+    {
+     "$ref": "#/$def/Overflow"
+    },
+    {
+     "$ref": "#/$def/Person"
+    },
+    {
+     "$ref": "#/$def/PersonList"
+    },
+    {
+     "$ref": "#/$def/SelectImg"
+    },
+    {
+     "$ref": "#/$def/Table"
+    },
+    {
+     "$ref": "#/$def/Video"
+    }
+   ]
+  },
+  "BaseMultiSelectMenu": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/MultiSelectPerson"
+    },
+    {
+     "$ref": "#/$def/MultiSelectStatic"
+    }
+   ]
+  },
+  "BaseSelectMenu": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/SelectPerson"
+    },
+    {
+     "$ref": "#/$def/SelectStatic"
+    }
+   ]
+  },
+  "BaseText": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/LarkMd"
+    },
+    {
+     "$ref": "#/$def/PlainText"
+    }
+   ]
+  },
+  "BehaviorCallback": {
+   "title": "BehaviorCallback",
+   "type": "object",
+   "properties": {
+    "type": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "type"
+   ]
+  },
+  "BehaviorClientMessage": {
+   "title": "BehaviorClientMessage",
+   "type": "object",
+   "properties": {
+    "client_channel": {
+     "type": "string"
+    },
+    "type": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "client_channel",
+    "type"
+   ]
+  },
+  "BehaviorEvent": {
+   "title": "BehaviorEvent",
+   "type": "object",
+   "properties": {
+    "instant_react_card": {
+     "$ref": "#/$def/CardJson"
+    },
+    "instant_react_toast": {
+     "$ref": "#/$def/ActionToast"
+    },
+    "type": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "type"
+   ]
+  },
+  "BehaviorOpenUrl": {
+   "title": "BehaviorOpenUrl",
+   "type": "object",
+   "properties": {
+    "android_url": {
+     "type": "string"
+    },
+    "default_url": {
+     "type": "string"
+    },
+    "harmony_url": {
+     "type": "string"
+    },
+    "ios_url": {
+     "type": "string"
+    },
+    "pc_url": {
+     "type": "string"
+    },
+    "type": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "type"
+   ]
+  },
+  "BehaviorTemplateOpenUrl": {
+   "title": "BehaviorTemplateOpenUrl",
+   "type": "object",
+   "description": " 为了在搭建工具支持URL作为整体变量",
+   "properties": {
+    "multi_url": {
+     "type": "string"
+    },
+    "type": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "type"
+   ]
+  },
+  "Button": {
+   "title": "Button",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "button"
+    },
+    "action_type": {
+     "enum": [
+      "link",
+      "request",
+      "multi",
+      "form_submit",
+      "form_reset"
+     ]
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "form_action_type": {
+     "enum": [
+      "submit",
+      "reset"
+     ]
+    },
+    "form_name": {
+     "type": "string"
+    },
+    "hover_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "icon": {
+     "$ref": "#/$def/Icon"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "multi_url": {
+     "$ref": "#/$def/URL"
+    },
+    "name": {
+     "type": "string"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "size": {
+     "enum": [
+      "small",
+      "medium",
+      "large",
+      "tiny"
+     ]
+    },
+    "text": {
+     "$ref": "#/$def/BaseText"
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "type": {
+     "enum": [
+      "default",
+      "primary",
+      "danger",
+      "link",
+      "laser",
+      "primary_filled",
+      "danger_filled",
+      "primary_text",
+      "danger_text",
+      "text"
+     ]
+    },
+    "url": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "CardBody": {
+   "title": "CardBody",
+   "type": "object",
+   "properties": {
+    "direction": {
+     "enum": [
+      "vertical",
+      "horizontal"
+     ]
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "elements": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseModule"
+     }
+    },
+    "horizontal_align": {
+     "enum": [
+      "left",
+      "center",
+      "right"
+     ]
+    },
+    "horizontal_spacing": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "padding": {
+     "type": "string"
+    },
+    "vertical_align": {
+     "enum": [
+      "top",
+      "center",
+      "bottom"
+     ]
+    },
+    "vertical_spacing": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "CardJson": {
+   "title": "CardJson",
+   "type": "object",
+   "properties": {
+    "data": {
+     "$ref": "#/$def/CardJsonData"
+    },
+    "type": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "data",
+    "type"
+   ]
+  },
+  "CardJsonData": {
+   "title": "CardJsonData",
+   "type": "object",
+   "properties": {
+    "card_id": {
+     "type": "string"
+    },
+    "template_id": {
+     "type": "string"
+    },
+    "template_variable": {
+     "type": "object"
+    },
+    "template_version_name": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "CardStyle": {
+   "title": "CardStyle",
+   "type": "object",
+   "properties": {
+    "color": {
+     "$ref": "#/$def/CardStyleColor"
+    },
+    "text_size": {
+     "$ref": "#/$def/CardStyleTextSize"
+    }
+   },
+   "additionalProperties": false
+  },
+  "CardStyleColor": {
+   "title": "CardStyleColor",
+   "type": "object",
+   "additionalProperties": {
+    "$ref": "#/$def/CardStyleColorToken"
+   }
+  },
+  "CardStyleColorToken": {
+   "title": "CardStyleColorToken",
+   "type": "object",
+   "properties": {
+    "light_mode": {
+     "type": "string"
+    },
+    "dark_mode": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "light_mode",
+    "dark_mode"
+   ]
+  },
+  "CardStyleTextSize": {
+   "title": "CardStyleTextSize",
+   "type": "object",
+   "additionalProperties": {
+    "$ref": "#/$def/CardStyleTextSizeToken"
+   }
+  },
+  "CardStyleTextSizeToken": {
+   "title": "CardStyleTextSizeToken",
+   "type": "object",
+   "properties": {
+    "default": {
+     "$ref": "#/$def/CardStyleTextSizeValue"
+    },
+    "pc": {
+     "$ref": "#/$def/CardStyleTextSizeValue"
+    },
+    "mobile": {
+     "$ref": "#/$def/CardStyleTextSizeValue"
+    }
+   },
+   "additionalProperties": false
+  },
+  "CardStyleTextSizeValue": {
+   "title": "CardStyleTextSizeValue",
+   "enum": [
+    "heading-0",
+    "heading-1",
+    "heading-2",
+    "heading-3",
+    "heading-4",
+    "heading",
+    "normal",
+    "notation",
+    "xxxx-large",
+    "xxx-large",
+    "xx-large",
+    "x-large",
+    "large",
+    "medium",
+    "small",
+    "x-small"
+   ]
+  },
+  "Chart": {
+   "title": "Chart",
+   "type": "object",
+   "description": "图表组件",
+   "properties": {
+    "tag": {
+     "const": "chart"
+    },
+    "aspect_ratio": {
+     "enum": [
+      "16:9",
+      "4:3",
+      "2:1",
+      "1:1"
+     ]
+    },
+    "chart_spec": {
+     "type": "object"
+    },
+    "color_theme": {
+     "enum": [
+      "brand",
+      "rainbow",
+      "complementary",
+      "converse",
+      "primary"
+     ]
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "height": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "preview": {
+     "type": "boolean"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "chart_spec"
+   ]
+  },
+  "Checker": {
+   "title": "Checker",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "checker"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "button_area": {
+     "$ref": "#/$def/CheckerButtonArea"
+    },
+    "checked": {
+     "type": "boolean"
+    },
+    "checked_style": {
+     "$ref": "#/$def/CheckerCheckedStyle"
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "hover_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "overall_checkable": {
+     "type": "boolean"
+    },
+    "padding": {
+     "type": "string"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "text": {
+     "$ref": "#/$def/BaseText"
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "CheckerButtonArea": {
+   "title": "CheckerButtonArea",
+   "type": "object",
+   "properties": {
+    "buttons": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/Button"
+     }
+    },
+    "pc_display_rule": {
+     "enum": [
+      "on_hover",
+      "always"
+     ]
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "buttons"
+   ]
+  },
+  "CheckerCheckedStyle": {
+   "title": "CheckerCheckedStyle",
+   "type": "object",
+   "properties": {
+    "opacity": {
+     "type": "number"
+    },
+    "show_strikethrough": {
+     "type": "boolean"
+    }
+   },
+   "additionalProperties": false
+  },
+  "ClientChannelConfig": {
+   "title": "ClientChannelConfig",
+   "type": "object",
+   "properties": {
+    "client_channel": {
+     "type": "string"
+    },
+    "platform_config": {
+     "$ref": "#/$def/PlatformConfig"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "client_channel",
+    "platform_config"
+   ]
+  },
+  "CollapseDivider": {
+   "title": "CollapseDivider",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "collapse_divider"
+    },
+    "element_id": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "CollapsiblePanel": {
+   "title": "CollapsiblePanel",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "collapsible_panel"
+    },
+    "background_color": {
+     "type": "string"
+    },
+    "border": {
+     "$ref": "#/$def/CollapsiblePanelBorder"
+    },
+    "direction": {
+     "enum": [
+      "vertical",
+      "horizontal"
+     ]
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "elements": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseCollapsiblePanelElement"
+     }
+    },
+    "expanded": {
+     "type": "boolean"
+    },
+    "header": {
+     "$ref": "#/$def/CollapsiblePanelHeader"
+    },
+    "horizontal_align": {
+     "enum": [
+      "left",
+      "center",
+      "right"
+     ]
+    },
+    "horizontal_spacing": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "padding": {
+     "type": "string"
+    },
+    "vertical_align": {
+     "enum": [
+      "top",
+      "center",
+      "bottom"
+     ]
+    },
+    "vertical_spacing": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "header"
+   ]
+  },
+  "CollapsiblePanelBorder": {
+   "title": "CollapsiblePanelBorder",
+   "type": "object",
+   "properties": {
+    "color": {
+     "type": "string"
+    },
+    "corner_radius": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "CollapsiblePanelHeader": {
+   "title": "CollapsiblePanelHeader",
+   "type": "object",
+   "properties": {
+    "background_color": {
+     "type": "string"
+    },
+    "expanded_title": {
+     "$ref": "#/$def/CollapsiblePanelHeaderTitle"
+    },
+    "icon": {
+     "$ref": "#/$def/Icon"
+    },
+    "icon_expanded_angle": {
+     "enum": [
+      180,
+      -180,
+      90,
+      -90
+     ]
+    },
+    "icon_position": {
+     "enum": [
+      "right",
+      "left",
+      "follow_text"
+     ]
+    },
+    "padding": {
+     "type": "string"
+    },
+    "position": {
+     "enum": [
+      "top",
+      "bottom"
+     ]
+    },
+    "title": {
+     "$ref": "#/$def/CollapsiblePanelHeaderTitle"
+    },
+    "vertical_align": {
+     "enum": [
+      "center",
+      "top",
+      "bottom"
+     ]
+    },
+    "width": {
+     "enum": [
+      "fill",
+      "auto",
+      "auto_when_fold"
+     ]
+    }
+   },
+   "additionalProperties": false
+  },
+  "CollapsiblePanelHeaderTitle": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/LarkMd"
+    },
+    {
+     "$ref": "#/$def/Markdown"
+    },
+    {
+     "$ref": "#/$def/PlainText"
+    }
+   ]
+  },
+  "Column": {
+   "title": "Column",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "column"
+    },
+    "action": {
+     "$ref": "#/$def/ColumnAction"
+    },
+    "background_style": {
+     "type": "string"
+    },
+    "direction": {
+     "enum": [
+      "vertical",
+      "horizontal"
+     ]
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "elements": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseColumnElement"
+     }
+    },
+    "horizontal_align": {
+     "enum": [
+      "left",
+      "center",
+      "right"
+     ]
+    },
+    "horizontal_spacing": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "padding": {
+     "type": "string"
+    },
+    "vertical_align": {
+     "enum": [
+      "top",
+      "center",
+      "bottom"
+     ]
+    },
+    "vertical_spacing": {
+     "type": "string"
+    },
+    "weight": {
+     "enum": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "width": {
+        "const": "weighted"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "weight"
+      ]
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "width": {
+        "const": "auto"
+       }
+      }
+     },
+     "then": {
+      "not": {
+       "required": [
+        "weight"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "ColumnAction": {
+   "title": "ColumnAction",
+   "type": "object",
+   "properties": {
+    "multi_url": {
+     "$ref": "#/$def/URL"
+    }
+   },
+   "additionalProperties": false
+  },
+  "ColumnSet": {
+   "title": "ColumnSet",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "column_set"
+    },
+    "action": {
+     "$ref": "#/$def/ColumnSetAction"
+    },
+    "background_style": {
+     "type": "string"
+    },
+    "columns": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/Column"
+     }
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "flex_mode": {
+     "enum": [
+      "none",
+      "flow",
+      "stretch",
+      "bisect",
+      "trisect"
+     ]
+    },
+    "horizontal_align": {
+     "enum": [
+      "left",
+      "center",
+      "right"
+     ]
+    },
+    "horizontal_spacing": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "vertical_align": {
+     "enum": [
+      "top",
+      "center",
+      "bottom"
+     ]
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "columns"
+   ]
+  },
+  "ColumnSetAction": {
+   "title": "ColumnSetAction",
+   "type": "object",
+   "properties": {
+    "multi_url": {
+     "$ref": "#/$def/URL"
+    }
+   },
+   "additionalProperties": false
+  },
+  "Config": {
+   "title": "Config",
+   "type": "object",
+   "properties": {
+    "analytics_tag": {
+     "type": "string"
+    },
+    "client_channel_configs": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/ClientChannelConfig"
+     }
+    },
+    "compact_width": {
+     "type": "boolean"
+    },
+    "custom_param": {
+     "type": "string"
+    },
+    "disable_adaptive": {
+     "type": "boolean"
+    },
+    "enable_forward": {
+     "type": "boolean"
+    },
+    "enable_forward_interaction": {
+     "type": "boolean"
+    },
+    "enable_markdown_autolink": {
+     "type": "boolean"
+    },
+    "enable_translate": {
+     "type": "boolean"
+    },
+    "enhanced_interactive": {
+     "type": "boolean"
+    },
+    "locales": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "max_id": {
+     "type": "number"
+    },
+    "min_version": {
+     "$ref": "#/$def/VersionForm"
+    },
+    "streaming_config": {
+     "$ref": "#/$def/StreamingConfig"
+    },
+    "streaming_mode": {
+     "type": "boolean"
+    },
+    "style": {
+     "$ref": "#/$def/CardStyle"
+    },
+    "summary": {
+     "$ref": "#/$def/Summary"
+    },
+    "update_multi": {
+     "type": "boolean"
+    },
+    "use_custom_translation": {
+     "type": "boolean"
+    },
+    "wide_screen_mode": {
+     "type": "boolean"
+    },
+    "width_mode": {
+     "enum": [
+      "default",
+      "fill",
+      "compact",
+      "spacious"
+     ]
+    }
+   },
+   "additionalProperties": false
+  },
+  "Confirm": {
+   "title": "Confirm",
+   "type": "object",
+   "properties": {
+    "text": {
+     "$ref": "#/$def/PlainText"
+    },
+    "title": {
+     "$ref": "#/$def/PlainText"
+    }
+   },
+   "additionalProperties": false
+  },
+  "Cover": {
+   "title": "Cover",
+   "type": "object",
+   "description": " 视频组件",
+   "properties": {
+    "img_key": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "img_key"
+   ]
+  },
+  "CustomIcon": {
+   "title": "CustomIcon",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "custom_icon"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "horizontal_padding": {
+     "type": "number"
+    },
+    "img_id": {
+     "type": "string"
+    },
+    "img_key": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "size": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "DatePicker": {
+   "title": "DatePicker",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "date_picker"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "initial_date": {
+     "type": "string"
+    },
+    "initial_datetime": {
+     "type": "string"
+    },
+    "initial_time": {
+     "type": "string"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "placeholder": {
+     "$ref": "#/$def/PlainText"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "Div": {
+   "title": "Div",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "div"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "extra": {
+     "$ref": "#/$def/DivExtra"
+    },
+    "fields": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/Field"
+     }
+    },
+    "icon": {
+     "$ref": "#/$def/Icon"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "text": {
+     "$ref": "#/$def/BaseText"
+    },
+    "text_size": {
+     "enum": [
+      "normal",
+      "heading",
+      "notation"
+     ]
+    },
+    "ud_icon": {
+     "$ref": "#/$def/UDIcon"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "DivExtra": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/DatePicker"
+    },
+    {
+     "$ref": "#/$def/PickerDate"
+    },
+    {
+     "$ref": "#/$def/PickerDatetime"
+    },
+    {
+     "$ref": "#/$def/PickerTime"
+    },
+    {
+     "$ref": "#/$def/MultiSelectPerson"
+    },
+    {
+     "$ref": "#/$def/MultiSelectStatic"
+    },
+    {
+     "$ref": "#/$def/SelectPerson"
+    },
+    {
+     "$ref": "#/$def/SelectStatic"
+    },
+    {
+     "$ref": "#/$def/Button"
+    },
+    {
+     "$ref": "#/$def/Checker"
+    },
+    {
+     "$ref": "#/$def/FallbackText"
+    },
+    {
+     "$ref": "#/$def/Input"
+    },
+    {
+     "$ref": "#/$def/Overflow"
+    },
+    {
+     "$ref": "#/$def/SelectImg"
+    },
+    {
+     "$ref": "#/$def/Button"
+    },
+    {
+     "$ref": "#/$def/FallbackText"
+    },
+    {
+     "$ref": "#/$def/Img"
+    }
+   ]
+  },
+  "FallbackText": {
+   "title": "FallbackText",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "fallback_text"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "text": {
+     "$ref": "#/$def/BaseText"
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "text"
+   ]
+  },
+  "FallbackToast": {
+   "title": "FallbackToast",
+   "type": "object",
+   "properties": {
+    "content": {
+     "type": "string"
+    },
+    "i18n": {
+     "$ref": "#/$def/I18nPlainText"
+    }
+   },
+   "additionalProperties": false
+  },
+  "Field": {
+   "title": "Field",
+   "type": "object",
+   "properties": {
+    "is_short": {
+     "type": "boolean"
+    },
+    "text": {
+     "$ref": "#/$def/BaseText"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "is_short",
+    "text"
+   ]
+  },
+  "Form": {
+   "title": "Form",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "form"
+    },
+    "direction": {
+     "enum": [
+      "vertical",
+      "horizontal"
+     ]
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "elements": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseFormElem"
+     }
+    },
+    "horizontal_align": {
+     "enum": [
+      "left",
+      "center",
+      "right"
+     ]
+    },
+    "horizontal_spacing": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "padding": {
+     "type": "string"
+    },
+    "vertical_align": {
+     "enum": [
+      "top",
+      "center",
+      "bottom"
+     ]
+    },
+    "vertical_spacing": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "name",
+    "elements"
+   ]
+  },
+  "GlobalFallback": {
+   "title": "GlobalFallback",
+   "type": "object",
+   "properties": {
+    "trigger_conditions": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/GlobalFallbackTriggerConditions"
+     }
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "trigger_conditions"
+   ]
+  },
+  "GlobalFallbackTriggerConditions": {
+   "title": "GlobalFallbackTriggerConditions",
+   "type": "object",
+   "properties": {
+    "type": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "type",
+    "value"
+   ]
+  },
+  "Header": {
+   "title": "Header",
+   "type": "object",
+   "properties": {
+    "direction": {
+     "enum": [
+      "vertical",
+      "horizontal"
+     ]
+    },
+    "horizontal_align": {
+     "enum": [
+      "left",
+      "center",
+      "right"
+     ]
+    },
+    "horizontal_spacing": {
+     "type": "string"
+    },
+    "icon": {
+     "$ref": "#/$def/Icon"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "padding": {
+     "type": "string"
+    },
+    "subtitle": {
+     "$ref": "#/$def/BaseText"
+    },
+    "template": {
+     "type": "string"
+    },
+    "text_tag_list": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/TextTag"
+     }
+    },
+    "title": {
+     "$ref": "#/$def/BaseText"
+    },
+    "vertical_align": {
+     "enum": [
+      "top",
+      "center",
+      "bottom"
+     ]
+    },
+    "vertical_spacing": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "title"
+   ]
+  },
+  "HeaderStyle": {
+   "title": "HeaderStyle",
+   "type": "object",
+   "properties": {
+    "background_style": {
+     "type": "string"
+    },
+    "bold": {
+     "type": "boolean"
+    },
+    "lines": {
+     "type": "number"
+    },
+    "text_align": {
+     "enum": [
+      "left",
+      "center",
+      "right"
+     ]
+    },
+    "text_color": {
+     "type": "string"
+    },
+    "text_size": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "Hr": {
+   "title": "Hr",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "hr"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "I18nPlainText": {
+   "title": "I18nPlainText",
+   "type": "object",
+   "properties": {
+    "de_de": {
+     "type": "string"
+    },
+    "en_us": {
+     "type": "string"
+    },
+    "es_es": {
+     "type": "string"
+    },
+    "fr_fr": {
+     "type": "string"
+    },
+    "hi_in": {
+     "type": "string"
+    },
+    "id_id": {
+     "type": "string"
+    },
+    "it_it": {
+     "type": "string"
+    },
+    "ja_jp": {
+     "type": "string"
+    },
+    "ko_kr": {
+     "type": "string"
+    },
+    "ms_my": {
+     "type": "string"
+    },
+    "pt_br": {
+     "type": "string"
+    },
+    "ru_ru": {
+     "type": "string"
+    },
+    "th_th": {
+     "type": "string"
+    },
+    "vi_vn": {
+     "type": "string"
+    },
+    "zh_cn": {
+     "type": "string"
+    },
+    "zh_hk": {
+     "type": "string"
+    },
+    "zh_tw": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "Icon": {
+   "oneOf": [
+    {
+     "$ref": "#/$def/CustomIcon"
+    },
+    {
+     "$ref": "#/$def/StandardIcon"
+    }
+   ]
+  },
+  "Img": {
+   "title": "Img",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "img"
+    },
+    "alt": {
+     "$ref": "#/$def/PlainText"
+    },
+    "compact_width": {
+     "type": "boolean"
+    },
+    "corner_radius": {
+     "type": "string"
+    },
+    "custom_width": {
+     "type": "number"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "fallback_img_key": {
+     "type": "string"
+    },
+    "img_id": {
+     "type": "string"
+    },
+    "img_key": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "mode": {
+     "enum": [
+      "fit_horizontal",
+      "crop_center",
+      "large",
+      "medium",
+      "small",
+      "tiny",
+      "stretch",
+      "big"
+     ]
+    },
+    "preview": {
+     "type": "boolean"
+    },
+    "scale_type": {
+     "enum": [
+      "fit_horizontal",
+      "crop_center",
+      "crop_top"
+     ]
+    },
+    "size": {
+     "type": "string"
+    },
+    "title": {
+     "$ref": "#/$def/BaseText"
+    },
+    "transparent": {
+     "type": "boolean"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "alt",
+    "img_key"
+   ]
+  },
+  "ImgCombination": {
+   "title": "ImgCombination",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "img_combination"
+    },
+    "combination_mode": {
+     "enum": [
+      "double",
+      "triple",
+      "bisect",
+      "trisect"
+     ]
+    },
+    "combination_transparent": {
+     "type": "boolean"
+    },
+    "corner_radius": {
+     "type": "string"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "img_list": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/ImgCombinationItem"
+     }
+    },
+    "img_list_length": {
+     "type": "number"
+    },
+    "margin": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "combination_mode",
+    "img_list"
+   ]
+  },
+  "ImgCombinationItem": {
+   "title": "ImgCombinationItem",
+   "type": "object",
+   "properties": {
+    "img_id": {
+     "type": "string"
+    },
+    "img_key": {
+     "type": "string"
+    },
+    "transparent": {
+     "type": "boolean"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "img_key"
+   ]
+  },
+  "Input": {
+   "title": "Input",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "input"
+    },
+    "auto_resize": {
+     "type": "boolean"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "default_value": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "input_type": {
+     "enum": [
+      "text",
+      "multiline_text",
+      "password"
+     ]
+    },
+    "label": {
+     "$ref": "#/$def/BaseText"
+    },
+    "label_position": {
+     "enum": [
+      "top",
+      "left"
+     ]
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "max_length": {
+     "type": "number"
+    },
+    "max_rows": {
+     "type": "number"
+    },
+    "name": {
+     "type": "string"
+    },
+    "placeholder": {
+     "$ref": "#/$def/PlainText"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "rows": {
+     "type": "number"
+    },
+    "show_icon": {
+     "type": "boolean"
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "InteractiveContainer": {
+   "title": "InteractiveContainer",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "interactive_container"
+    },
+    "action": {
+     "$ref": "#/$def/InteractiveContainerAction"
+    },
+    "background_style": {
+     "type": "string"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "border_color": {
+     "type": "string"
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "corner_radius": {
+     "type": "string"
+    },
+    "direction": {
+     "enum": [
+      "vertical",
+      "horizontal"
+     ]
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "elements": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseInteractiveContainerElement"
+     }
+    },
+    "has_border": {
+     "type": "boolean"
+    },
+    "height": {
+     "type": "string"
+    },
+    "horizontal_align": {
+     "enum": [
+      "left",
+      "center",
+      "right"
+     ]
+    },
+    "horizontal_spacing": {
+     "type": "string"
+    },
+    "hover_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "padding": {
+     "type": "string"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "vertical_align": {
+     "enum": [
+      "top",
+      "center",
+      "bottom"
+     ]
+    },
+    "vertical_spacing": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "elements"
+   ]
+  },
+  "InteractiveContainerAction": {
+   "title": "InteractiveContainerAction",
+   "type": "object",
+   "properties": {
+    "custom_action_id": {
+     "type": "string"
+    },
+    "multi_url": {
+     "$ref": "#/$def/URL"
+    },
+    "name": {
+     "type": "string"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "url": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    }
+   },
+   "additionalProperties": false
+  },
+  "LarkMd": {
+   "title": "LarkMd",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "lark_md"
+    },
+    "content": {
+     "type": "string"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "enable_streaming": {
+     "type": "boolean"
+    },
+    "href": {
+     "enum": [
+      null
+     ]
+    },
+    "i18n": {
+     "$ref": "#/$def/I18nPlainText"
+    },
+    "lines": {
+     "type": "number"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "text_align": {
+     "enum": [
+      "left",
+      "right",
+      "center"
+     ]
+    },
+    "text_color": {
+     "type": "string"
+    },
+    "text_lines": {
+     "type": "number"
+    },
+    "text_size": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "text_align"
+   ]
+  },
+  "Markdown": {
+   "title": "Markdown",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "markdown"
+    },
+    "content": {
+     "type": "string"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "enable_streaming": {
+     "type": "boolean"
+    },
+    "icon": {
+     "$ref": "#/$def/Icon"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "text_align": {
+     "enum": [
+      "left",
+      "right",
+      "center"
+     ]
+    },
+    "text_lines": {
+     "type": "number"
+    },
+    "text_size": {
+     "type": "string"
+    },
+    "ud_icon": {
+     "$ref": "#/$def/UDIcon"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "content"
+   ]
+  },
+  "MultiSelectPerson": {
+   "title": "MultiSelectPerson",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "multi_select_person"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "options": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/Option"
+     }
+    },
+    "placeholder": {
+     "$ref": "#/$def/PlainText"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "selected_values": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "type": {
+     "enum": [
+      "default",
+      "text"
+     ]
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "MultiSelectStatic": {
+   "title": "MultiSelectStatic",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "multi_select_static"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "options": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/Option"
+     }
+    },
+    "placeholder": {
+     "$ref": "#/$def/PlainText"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "selected_values": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "type": {
+     "enum": [
+      "default",
+      "text"
+     ]
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "NumberFormat": {
+   "title": "NumberFormat",
+   "type": "object",
+   "properties": {
+    "precision": {
+     "type": "number"
+    },
+    "separator": {
+     "type": "boolean"
+    },
+    "symbol": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "Option": {
+   "title": "Option",
+   "type": "object",
+   "properties": {
+    "action_type": {
+     "enum": [
+      "link",
+      "request",
+      "multi"
+     ]
+    },
+    "icon": {
+     "$ref": "#/$def/Icon"
+    },
+    "multi_url": {
+     "$ref": "#/$def/URL"
+    },
+    "text": {
+     "$ref": "#/$def/PlainText"
+    },
+    "url": {
+     "type": "string"
+    },
+    "value": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "Overflow": {
+   "title": "Overflow",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "overflow"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "options": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/Option"
+     }
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "text": {
+     "$ref": "#/$def/PlainText"
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    },
+    "variable": {
+     "type": "string"
+    },
+    "webhook": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "options",
+    "variable"
+   ]
+  },
+  "Person": {
+   "title": "Person",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "person"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "notation": {
+     "$ref": "#/$def/PlainText"
+    },
+    "show_avatar": {
+     "type": "boolean"
+    },
+    "show_name": {
+     "type": "boolean"
+    },
+    "size": {
+     "enum": [
+      "medium",
+      "small",
+      "extra_small",
+      "large"
+     ]
+    },
+    "style": {
+     "enum": [
+      "normal",
+      "capsule"
+     ]
+    },
+    "user_id": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "user_id"
+   ]
+  },
+  "PersonInfo": {
+   "title": "PersonInfo",
+   "type": "object",
+   "properties": {
+    "id": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "id"
+   ]
+  },
+  "PersonList": {
+   "title": "PersonList",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "person_list"
+    },
+    "count": {
+     "type": "number"
+    },
+    "drop_invalid_user_id": {
+     "type": "boolean"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "icon": {
+     "$ref": "#/$def/Icon"
+    },
+    "lines": {
+     "type": "number"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "mode": {
+     "enum": [
+      "name",
+      "avatar",
+      "nameAvatar"
+     ]
+    },
+    "persons": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/PersonInfo"
+     }
+    },
+    "show_avatar": {
+     "type": "boolean"
+    },
+    "show_name": {
+     "type": "boolean"
+    },
+    "size": {
+     "enum": [
+      "medium",
+      "extra_small",
+      "small",
+      "large",
+      "extra_large"
+     ]
+    },
+    "style": {
+     "enum": [
+      "normal",
+      "notation"
+     ]
+    },
+    "ud_icon": {
+     "$ref": "#/$def/UDIcon"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "persons"
+   ]
+  },
+  "PickerDate": {
+   "title": "PickerDate",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "picker_date"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "initial_date": {
+     "type": "string"
+    },
+    "initial_datetime": {
+     "type": "string"
+    },
+    "initial_time": {
+     "type": "string"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "placeholder": {
+     "$ref": "#/$def/PlainText"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "behaviors"
+   ]
+  },
+  "PickerDatetime": {
+   "title": "PickerDatetime",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "picker_datetime"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "initial_date": {
+     "type": "string"
+    },
+    "initial_datetime": {
+     "type": "string"
+    },
+    "initial_time": {
+     "type": "string"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "placeholder": {
+     "$ref": "#/$def/PlainText"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "PickerTime": {
+   "title": "PickerTime",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "picker_time"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "initial_date": {
+     "type": "string"
+    },
+    "initial_datetime": {
+     "type": "string"
+    },
+    "initial_time": {
+     "type": "string"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "placeholder": {
+     "$ref": "#/$def/PlainText"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "PlainText": {
+   "title": "PlainText",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "plain_text"
+    },
+    "content": {
+     "type": "string"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "enable_streaming": {
+     "type": "boolean"
+    },
+    "i18n": {
+     "$ref": "#/$def/I18nPlainText"
+    },
+    "lines": {
+     "type": "number"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "text_align": {
+     "enum": [
+      "left",
+      "right",
+      "center"
+     ]
+    },
+    "text_color": {
+     "type": "string"
+    },
+    "text_lines": {
+     "type": "number"
+    },
+    "text_size": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "content"
+   ]
+  },
+  "PlatformConfig": {
+   "title": "PlatformConfig",
+   "type": "object",
+   "properties": {
+    "android": {
+     "$ref": "#/$def/PlatformConfigType"
+    },
+    "default": {
+     "$ref": "#/$def/PlatformConfigType"
+    },
+    "harmony": {
+     "$ref": "#/$def/PlatformConfigType"
+    },
+    "ios": {
+     "$ref": "#/$def/PlatformConfigType"
+    },
+    "ipad": {
+     "$ref": "#/$def/PlatformConfigType"
+    },
+    "pc": {
+     "$ref": "#/$def/PlatformConfigType"
+    }
+   },
+   "additionalProperties": false
+  },
+  "PlatformConfigType": {
+   "title": "PlatformConfigType",
+   "type": "object",
+   "properties": {
+    "fallback_toast": {
+     "$ref": "#/$def/FallbackToast"
+    },
+    "min_version": {
+     "type": "string"
+    },
+    "support": {
+     "type": "boolean"
+    }
+   },
+   "additionalProperties": false
+  },
+  "PrintFrequencyConfig": {
+   "title": "PrintFrequencyConfig",
+   "type": "object",
+   "properties": {
+    "android": {
+     "type": "number"
+    },
+    "default": {
+     "type": "number"
+    },
+    "harmony": {
+     "type": "number"
+    },
+    "ios": {
+     "type": "number"
+    },
+    "pc": {
+     "type": "number"
+    }
+   },
+   "additionalProperties": false
+  },
+  "PrintStepConfig": {
+   "title": "PrintStepConfig",
+   "type": "object",
+   "properties": {
+    "android": {
+     "type": "number"
+    },
+    "default": {
+     "type": "number"
+    },
+    "harmony": {
+     "type": "number"
+    },
+    "ios": {
+     "type": "number"
+    },
+    "pc": {
+     "type": "number"
+    }
+   },
+   "additionalProperties": false
+  },
+  "SelectImg": {
+   "title": "SelectImg",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "select_img"
+    },
+    "aspect_ratio": {
+     "enum": [
+      "16:9",
+      "1:1",
+      "4:3"
+     ]
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "can_preview": {
+     "type": "boolean"
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "layout": {
+     "enum": [
+      "stretch",
+      "bisect",
+      "trisect"
+     ]
+    },
+    "margin": {
+     "type": "string"
+    },
+    "multi_select": {
+     "type": "boolean"
+    },
+    "name": {
+     "type": "string"
+    },
+    "options": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/SelectImgOption"
+     }
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "selected_values": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "style": {
+     "enum": [
+      "default",
+      "laser"
+     ]
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "options",
+    "style"
+   ]
+  },
+  "SelectImgOption": {
+   "title": "SelectImgOption",
+   "type": "object",
+   "properties": {
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "hover_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "img_id": {
+     "type": "string"
+    },
+    "img_key": {
+     "type": "string"
+    },
+    "transparent": {
+     "type": "boolean"
+    },
+    "value": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "img_key",
+    "value"
+   ]
+  },
+  "SelectPerson": {
+   "title": "SelectPerson",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "select_person"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "initial_option": {
+     "type": "string"
+    },
+    "initial_user": {
+     "type": "string"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "options": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/Option"
+     }
+    },
+    "placeholder": {
+     "$ref": "#/$def/PlainText"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "type": {
+     "enum": [
+      "default",
+      "text"
+     ]
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "behaviors"
+   ]
+  },
+  "SelectStatic": {
+   "title": "SelectStatic",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "select_static"
+    },
+    "behaviors": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/BaseBehavior"
+     }
+    },
+    "confirm": {
+     "$ref": "#/$def/Confirm"
+    },
+    "custom_action_id": {
+     "type": "string"
+    },
+    "disabled": {
+     "type": "boolean"
+    },
+    "disabled_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "initial_index": {
+     "type": "number"
+    },
+    "initial_option": {
+     "type": "string"
+    },
+    "lambda": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "options": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/Option"
+     }
+    },
+    "placeholder": {
+     "$ref": "#/$def/PlainText"
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "tmp_action_id": {
+     "type": "string"
+    },
+    "type": {
+     "enum": [
+      "default",
+      "text"
+     ]
+    },
+    "value": {
+     "type": "object"
+    },
+    "webhook": {
+     "type": "string"
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "behaviors"
+   ]
+  },
+  "StandardIcon": {
+   "title": "StandardIcon",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "standard_icon"
+    },
+    "color": {
+     "type": "string"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "horizontal_padding": {
+     "type": "number"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "size": {
+     "type": "string"
+    },
+    "token": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "StreamingConfig": {
+   "title": "StreamingConfig",
+   "type": "object",
+   "properties": {
+    "print_frequency_ms": {
+     "$ref": "#/$def/PrintFrequencyConfig"
+    },
+    "print_step": {
+     "$ref": "#/$def/PrintStepConfig"
+    },
+    "print_strategy": {
+     "enum": [
+      "fast",
+      "delay"
+     ]
+    }
+   },
+   "additionalProperties": false
+  },
+  "Summary": {
+   "title": "Summary",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "plain_text"
+    },
+    "content": {
+     "type": "string"
+    },
+    "i18n_content": {
+     "$ref": "#/$def/I18nPlainText"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "content"
+   ]
+  },
+  "Table": {
+   "title": "Table",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "table"
+    },
+    "columns": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$def/TableColumn"
+     }
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "freeze_first_column": {
+     "type": "boolean"
+    },
+    "header_style": {
+     "$ref": "#/$def/HeaderStyle"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "page_size": {
+     "type": "number"
+    },
+    "row_height": {
+     "type": "string"
+    },
+    "row_max_height": {
+     "type": "string"
+    },
+    "rows": {
+     "type": "array",
+     "items": {
+      "type": "object"
+     }
+    },
+    "table_key": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "columns",
+    "rows"
+   ]
+  },
+  "TableColumn": {
+   "title": "TableColumn",
+   "type": "object",
+   "properties": {
+    "data_type": {
+     "enum": [
+      "text",
+      "options",
+      "number",
+      "persons",
+      "date",
+      "lark_md",
+      "markdown"
+     ]
+    },
+    "date_format": {
+     "type": "string"
+    },
+    "display_name": {
+     "type": "string"
+    },
+    "format": {
+     "$ref": "#/$def/NumberFormat"
+    },
+    "horizontal_align": {
+     "enum": [
+      "left",
+      "center",
+      "right"
+     ]
+    },
+    "name": {
+     "type": "string"
+    },
+    "vertical_align": {
+     "enum": [
+      "top",
+      "center",
+      "bottom"
+     ]
+    },
+    "width": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "name",
+    "data_type"
+   ]
+  },
+  "TextTag": {
+   "title": "TextTag",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "text_tag"
+    },
+    "color": {
+     "type": "string"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "text": {
+     "$ref": "#/$def/PlainText"
+    }
+   },
+   "additionalProperties": false
+  },
+  "UDIcon": {
+   "title": "UDIcon",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "ud_icon"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "style": {
+     "$ref": "#/$def/UDStyle"
+    },
+    "token": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "UDStyle": {
+   "title": "UDStyle",
+   "type": "object",
+   "properties": {
+    "color": {
+     "type": "string"
+    },
+    "horizontal_padding": {
+     "type": "number"
+    },
+    "size": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "URL": {
+   "title": "URL",
+   "type": "object",
+   "properties": {
+    "android_url": {
+     "type": "string"
+    },
+    "harmony_url": {
+     "type": "string"
+    },
+    "ios_url": {
+     "type": "string"
+    },
+    "pc_url": {
+     "type": "string"
+    },
+    "url": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "VersionForm": {
+   "title": "VersionForm",
+   "type": "object",
+   "properties": {
+    "android_version": {
+     "type": "string"
+    },
+    "harmony_version": {
+     "type": "string"
+    },
+    "ios_version": {
+     "type": "string"
+    },
+    "pc_version": {
+     "type": "string"
+    },
+    "version": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "android_version",
+    "harmony_version",
+    "ios_version",
+    "pc_version",
+    "version"
+   ]
+  },
+  "Video": {
+   "title": "Video",
+   "type": "object",
+   "properties": {
+    "tag": {
+     "const": "video"
+    },
+    "cover": {
+     "$ref": "#/$def/Cover"
+    },
+    "element_id": {
+     "type": "string"
+    },
+    "enable_download": {
+     "type": "boolean"
+    },
+    "file_key": {
+     "type": "string"
+    },
+    "hover_tips": {
+     "$ref": "#/$def/PlainText"
+    },
+    "margin": {
+     "type": "string"
+    },
+    "show_time": {
+     "type": "boolean"
+    }
+   },
+   "additionalProperties": false,
+   "required": [
+    "file_key"
+   ]
+  }
+ }
+}

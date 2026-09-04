@@ -1,0 +1,194 @@
+{
+  "version": "0.2",
+  "default": null,
+  "purpose": "Seedream 5.0 Pro 整图视觉模板注册表。它描述当前模式最终图片资产的视觉方向，不改变 Feishu Card preset、源事实或原生交互。",
+  "selection_policy": {
+    "auto_select": true,
+    "explicit_style_wins": true,
+    "ask_before_switching": true,
+    "style_is_not_layout": true,
+    "source_of_truth": "presets/visual-skill-packs.json",
+    "image_generation_mode": "seedream_5_pro_direct_full_card",
+    "supported_image_generation_modes": [
+      "seedream_5_pro_direct_full_card",
+      "seedream_5_pro_banner_plus_native_card"
+    ],
+    "text_policy": "seedream_5_pro_direct_selected_text_and_layout",
+    "generation_tool": "doubao.image_gen",
+    "generation_model": "seedream-5.0-pro",
+    "generation_model_label": "Seedream 5.0 Pro",
+    "current_default_behavior": "首次生成由主 Skill 按内容关系自动选择本地能力包、风格和视觉版式；用户显式风格要求优先。询问/确认只用于用户要求比较或切换，不改变源文案。"
+  },
+  "styles": [
+    {
+      "id": "blueprint-timeline",
+      "name": "蓝图流程",
+      "tier": "A",
+      "status": "candidate",
+      "source_cases": [
+        {"name": "AntV technical-schematic / sequence timeline", "url": "https://github.com/antvis/chart-visualization-skills"},
+        {"name": "Baoyu technical-schematic", "url": "https://github.com/jimliu/baoyu-skills"},
+        {"name": "AntV Infographic", "url": "https://github.com/antvis/Infographic"}
+      ],
+      "visual_traits": ["深蓝或米白蓝图底", "细网格与工程线", "圆角阶段节点", "琥珀色关键日期", "清晰箭头和连接轨道"],
+      "best_for": ["培训通知", "活动时间线", "SOP", "报名到提交的阶段路径", "工具使用步骤"],
+      "card_fit": "最高。日期、阶段、动作可以在固定关系区内保持高对比和清晰顺序。",
+      "image_prompt_tokens": "blueprint grid, clean engineering geometry, restrained deep blue and warm paper, amber milestone signals, generous text-safe panels, exact readable Chinese typography",
+      "recommended_layouts": ["sequence-timeline-rounded-rect-node", "sequence-roadmap-vertical-simple", "linear-progression"],
+      "risk": "网格和线条过多会抢文字；限制为一条主路径、最多四个节点。"
+    },
+    {
+      "id": "clean-editorial",
+      "name": "极简编辑",
+      "tier": "A",
+      "status": "candidate",
+      "source_cases": [
+        {"name": "Zhuang WebUI Clean Modern", "url": "https://github.com/billzhuang6569/zhuang-infochart-master"},
+        {"name": "infographic-builder Clean Minimalist", "url": "https://github.com/singh2/infographic-builder"},
+        {"name": "Aura Minimal", "url": "https://skillhub.cn/skills/aura-image-gen"}
+      ],
+      "visual_traits": ["白或浅灰底", "严格对齐", "单一品牌强调色", "轻边框与浅阴影", "大留白", "现代无衬线层级"],
+      "best_for": ["企业公告", "培训概览", "产品能力摘要", "数据摘要", "严肃寄语"],
+      "card_fit": "很高。最适合把图片内文字做成少量、明确的标题和阶段标签。",
+      "image_prompt_tokens": "clean editorial SaaS visual, off-white canvas, strict alignment, one restrained accent color, quiet geometric backdrop, crisp text-safe areas, exact readable Chinese typography",
+      "recommended_layouts": ["list-row-horizontal-icon-arrow", "sequence-timeline-simple", "bento-grid"],
+      "risk": "过度追求留白会让图片只剩装饰；必须保留至少一组源锁定关系标签。"
+    },
+    {
+      "id": "ink-research-note",
+      "name": "墨色研究札记",
+      "tier": "A",
+      "status": "candidate",
+      "source_cases": [
+        {"name": "Zhuang Ink Minimal", "url": "https://github.com/billzhuang6569/zhuang-infochart-master"},
+        {"name": "Baoyu Ink Minimal / Aged Academia", "url": "https://skillhub.cn/skills/baoyu-infographic"},
+        {"name": "Baoyu Image Cards study notes", "url": "https://skillhub.cn/skills/baoyu-image-cards"}
+      ],
+      "visual_traits": ["暖白纸张", "墨黑线稿", "极少量朱红或金色", "细边框与轻微网纹", "编辑式留白", "研究报告感"],
+      "best_for": ["案例复盘", "知识解释", "CEO 寄语", "规则与复盘", "严肃活动总结"],
+      "card_fit": "很高。中文短标签稳定，适合把 quote 与时间轴做成同一套纸面系统。",
+      "image_prompt_tokens": "warm off-white paper, monochrome ink linework, thin rules, editorial research note, one muted accent, restrained hatching, exact readable Chinese typography",
+      "recommended_layouts": ["linear-progression", "dense-modules", "list-grid-badge-card"],
+      "risk": "对比度不足会降低手机可读性；正文墨色和日期强调色不能变灰。"
+    },
+    {
+      "id": "enterprise-tech-blue",
+      "name": "企业科技蓝图",
+      "tier": "A-",
+      "status": "candidate",
+      "source_cases": [
+        {"name": "SkillHub community infographic-generator T1", "url": "https://skillhub.cn/skills/infographic-generator"},
+        {"name": "AntV chart-visualization-skills", "url": "https://github.com/antvis/chart-visualization-skills"},
+        {"name": "Tencent WorkRally image-generation Skill", "url": "https://github.com/Tencent/workrally"}
+      ],
+      "visual_traits": ["白底与浅蓝分区", "深蓝标题", "SaaS 圆角模块", "少量蓝紫信号", "轻量 3D 或对象插画", "企业方案感"],
+      "best_for": ["AI 能力介绍", "企业培训", "方案流程", "功能矩阵", "团队协作通知"],
+      "card_fit": "高。适合飞书企业语境，但要中和品牌元素，不能直接带腾讯云 Logo、企鹅或原品牌文案。",
+      "image_prompt_tokens": "neutral enterprise technology infographic, white and light blue SaaS panels, deep blue headings, subtle blue-violet accent, restrained depth, no third-party logos, exact readable Chinese typography",
+      "recommended_layouts": ["bento-grid", "dense-modules", "list-row-horizontal-icon-arrow"],
+      "risk": "容易变成高密度 PPT；卡片图片仍只保留少量功能文字，完整事实回到原生 Card。"
+    },
+    {
+      "id": "handdrawn-edu",
+      "name": "手绘教育",
+      "tier": "B+",
+      "status": "candidate",
+      "source_cases": [
+        {"name": "Baoyu hand-drawn-edu", "url": "https://skillhub.cn/skills/baoyu-infographic"},
+        {"name": "WorkBuddy XHS xiaohei illustration", "url": "https://github.com/jackbauerxu/workbuddy-xhs-skills"},
+        {"name": "Aura Notion / Minimal", "url": "https://skillhub.cn/skills/aura-image-gen"}
+      ],
+      "visual_traits": ["暖奶油纸张", "少量马卡龙色块", "线条轻微手绘抖动", "箭头和简单图标", "教学板书节奏", "留白分区"],
+      "best_for": ["开营通知", "新人培训", "学习路径", "社群分享", "轻量教程"],
+      "card_fit": "中高。亲和力强，但必须减少装饰并要求 Seedream 5.0 Pro 直接清晰生成日期和行动文字。",
+      "image_prompt_tokens": "friendly hand-drawn educational explainer, warm cream paper, restrained macaron blocks, simple line icons, clear single path, exact readable Chinese typography",
+      "recommended_layouts": ["sequence-timeline-simple", "hub-spoke", "list-grid-badge-card"],
+      "risk": "装饰容易超过信息；禁止每个节点贴纸、星星或 Emoji 化。"
+    },
+    {
+      "id": "xhs-editorial-magazine",
+      "name": "小红书科技杂志",
+      "tier": "B",
+      "status": "candidate",
+      "source_cases": [
+        {"name": "XHS Visual Director", "url": "https://github.com/ziguishian/xhs-visual-director-skill"},
+        {"name": "XHS cover skill", "url": "https://github.com/Vivixiao980/xhs-cover-skill"},
+        {"name": "WorkBuddy XHS visual router", "url": "https://github.com/jackbauerxu/workbuddy-xhs-skills"}
+      ],
+      "visual_traits": ["黑白灰主调", "荧光绿或单一亮色", "杂志式大标题", "强对比裁切", "一个视觉锚点", "短标签而非长段落"],
+      "best_for": ["AI 观点", "工具方法", "技术拆解", "社群活动主视觉", "一条核心结论"],
+      "card_fit": "中等。适合首图和短时间线，不适合把长通知全部放进图片。",
+      "image_prompt_tokens": "editorial technology magazine, black white gray with one acid green accent, strong focal crop, high contrast, short label-safe areas, exact readable Chinese typography",
+      "recommended_layouts": ["linear-progression", "structural-breakdown", "dense-modules"],
+      "risk": "过于像社交平台封面会削弱企业卡片的可读性；不使用标题钩子替代事实。"
+    },
+    {
+      "id": "morandi-journal",
+      "name": "莫兰迪手记",
+      "tier": "B",
+      "status": "candidate",
+      "source_cases": [
+        {"name": "Baoyu morandi-journal", "url": "https://skillhub.cn/skills/baoyu-infographic"},
+        {"name": "XHS material illustration", "url": "https://github.com/jackbauerxu/workbuddy-xhs-skills"},
+        {"name": "XHS images HTML typography boundary", "url": "https://github.com/iamzifei/xiaohongshu-images-skill"}
+      ],
+      "visual_traits": ["米灰与低饱和橄榄色", "暖陶色数字", "纸张与手帐线条", "圆角模块", "柔和连接箭头", "轻量生活方式气质"],
+      "best_for": ["团队故事", "作品复盘", "经验沉淀", "社群活动", "轻量知识卡"],
+      "card_fit": "中高。可视化统一，但需要减少胶带、贴纸、角落涂鸦等装饰。",
+      "image_prompt_tokens": "warm Morandi journal, muted sage and terracotta, paper texture, clean rounded modules, soft hand-drawn connectors, calm editorial spacing, exact readable Chinese typography",
+      "recommended_layouts": ["bento-grid", "linear-progression", "dense-modules"],
+      "risk": "手帐装饰不能取代日期、动作和按钮；颜色不能让文字变成低对比灰。"
+    },
+    {
+      "id": "corporate-memphis",
+      "name": "企业孟菲斯",
+      "tier": "B",
+      "status": "candidate",
+      "source_cases": [
+        {"name": "Baoyu corporate-memphis", "url": "https://skillhub.cn/skills/baoyu-infographic"},
+        {"name": "AntV theme system", "url": "https://github.com/antvis/Infographic"},
+        {"name": "SkillHub enterprise infographic templates", "url": "https://skillhub.tencent.com/"}
+      ],
+      "visual_traits": ["扁平几何人物或物件", "明亮但受控的紫橙青黄", "无厚描边", "轻松企业培训气质", "形状表达类别关系"],
+      "best_for": ["企业培训", "AI 工具介绍", "角色协作", "能力分组", "轻量市场活动"],
+      "card_fit": "中等。可作为 Seedream 5.0 Pro 的完整信息图风格，不建议让明亮人物压住图片文字。",
+      "image_prompt_tokens": "friendly corporate Memphis flat vector, controlled teal orange purple palette, simple geometric objects, clear central relationship, generous text-safe space, exact readable Chinese typography",
+      "recommended_layouts": ["hub-spoke", "bento-grid", "compare-binary-horizontal"],
+      "risk": "颜色过多会像模板海报；最多三种主色，功能文字仍用固定高对比系统。"
+    },
+    {
+      "id": "isometric-map",
+      "name": "等距全景地图",
+      "tier": "C",
+      "status": "exploratory",
+      "source_cases": [
+        {"name": "Zhuang Isometric Creative", "url": "https://github.com/billzhuang6569/zhuang-infochart-master"},
+        {"name": "Baoyu isometric-map", "url": "https://skillhub.cn/skills/baoyu-infographic"},
+        {"name": "SkillHub T9 isometric panorama", "url": "https://skillhub.cn/skills/infographic-generator"}
+      ],
+      "visual_traits": ["30 度等距视角", "平台高低表达层级", "小型场景与对象", "空间化路径", "深浅面关系"],
+      "best_for": ["系统全景", "架构关系", "组织能力地图", "空间化流程", "少量指标"],
+      "card_fit": "较低。只适合少量标签；复杂中文时间线不能依赖模型在 3D 场景内写字。",
+      "image_prompt_tokens": "restrained isometric information landscape, muted business colors, clear scale hierarchy, uncluttered objects, large quiet label zones, large high-contrast information labels",
+      "recommended_layouts": ["isometric-map", "structural-breakdown", "hierarchy-structure"],
+      "risk": "透视和细节很容易吃掉文字空间；不用于当前 AI 先锋大赛长通知默认方案。"
+    },
+    {
+      "id": "claymation-story",
+      "name": "黏土故事场景",
+      "tier": "C",
+      "status": "exploratory",
+      "source_cases": [
+        {"name": "infographic-builder Claymation Studio", "url": "https://github.com/singh2/infographic-builder"},
+        {"name": "Baoyu claymation", "url": "https://skillhub.cn/skills/baoyu-infographic"},
+        {"name": "Baoyu Image Cards cute / pop presets", "url": "https://skillhub.cn/skills/baoyu-image-cards"}
+      ],
+      "visual_traits": ["3D 黏土或纸偶对象", "一组连续动作", "柔和阴影", "小型场景叙事", "可爱的实体隐喻"],
+      "best_for": ["不超过六步的轻量流程", "社群活动氛围图", "儿童或亲和教育主题", "单一隐喻"],
+      "card_fit": "低。只适合短文案；信息密集时不要强行要求 Seedream 5.0 Pro 承载长中文。",
+      "image_prompt_tokens": "friendly claymation diorama, one simple linear story, soft studio light, restrained palette, small high-contrast information labels",
+      "recommended_layouts": ["linear-progression", "comic-strip", "winding-roadmap"],
+      "risk": "模型会把角色和道具做得过满；不用于事实密集通知或精确时间轴。"
+    }
+  ]
+}
