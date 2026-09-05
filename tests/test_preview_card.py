@@ -3,6 +3,7 @@ import hashlib
 import sys
 import tempfile
 import unittest
+from media_fixtures import write_test_png
 from pathlib import Path
 
 
@@ -30,7 +31,7 @@ class PreviewCardTests(unittest.TestCase):
             card_path = bundle / "demo.card"
             spec_path.write_text(json.dumps(spec, ensure_ascii=False), encoding="utf-8")
             image_path = bundle / "hero.png"
-            image_path.write_bytes(b"complete-seedream-card")
+            write_test_png(image_path)
             prompt_path = bundle / "demo.image-prompt.md"
             prompt_path.write_text("Seedream 5.0 Pro-class test prompt\n", encoding="utf-8")
             (bundle / "hero-generation.json").write_text(

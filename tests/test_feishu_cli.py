@@ -3,6 +3,7 @@ import hashlib
 import tempfile
 import sys
 import unittest
+from media_fixtures import write_test_png
 from pathlib import Path
 from unittest.mock import patch
 
@@ -44,7 +45,7 @@ class FeishuCliAdapterTests(unittest.TestCase):
     def test_upload_image_rejects_unregistered_hero(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "outputs") as temp_dir:
             image_path = Path(temp_dir) / "hero.png"
-            image_path.write_bytes(b"unregistered")
+            write_test_png(image_path)
             with patch.object(feishu_cli, "_run_cli") as run_cli:
                 result = feishu_cli.upload_image(str(image_path), identity="bot", dry_run=True)
 
@@ -56,7 +57,7 @@ class FeishuCliAdapterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=ROOT / "outputs") as temp_dir:
             temp_path = Path(temp_dir)
             image_path = temp_path / "hero.png"
-            image_path.write_bytes(b"complete-seedream-card")
+            write_test_png(image_path)
             prompt_path = temp_path / "prompt.md"
             prompt_path.write_text("Seedream 5.0 Pro direct full card prompt\n", encoding="utf-8")
             (temp_path / "hero-generation.json").write_text(
@@ -85,7 +86,7 @@ class FeishuCliAdapterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=ROOT / "outputs") as temp_dir:
             temp_path = Path(temp_dir)
             image_path = temp_path / "hero.png"
-            image_path.write_bytes(b"complete-image2-banner")
+            write_test_png(image_path)
             prompt_path = temp_path / "prompt.md"
             prompt_path.write_text("Seedream 5.0 Pro banner prompt\n", encoding="utf-8")
             (temp_path / "hero-generation.json").write_text(

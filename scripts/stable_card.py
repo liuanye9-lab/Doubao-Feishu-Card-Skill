@@ -26,6 +26,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         description="Stable-v1 natural-language-to-Feishu-Card workflow"
     )
     source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--resume", help="resume an existing editable .spec.json without rerouting")
     source.add_argument("--text", help="card copy")
     source.add_argument("--text-file", help="UTF-8 card copy file")
     parser.add_argument("--output-dir", default="outputs")
@@ -81,6 +82,11 @@ def _output_dir(value: str) -> Path:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
     try:
+        if args.resume:
+            from finalize_card import resume
+            report = resume(args.resume, args.hero_img_key)
+            print(json.dumps(_console_summary(report), ensure_ascii=False, indent=2))
+            return 2 if report["status"] == "blocked" else 0
         text = args.text if args.text is not None else Path(args.text_file).read_text(encoding="utf-8")
         brand_context = args.brand_context
         if args.brand_context_file:

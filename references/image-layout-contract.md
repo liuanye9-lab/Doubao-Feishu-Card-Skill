@@ -2,6 +2,14 @@
 
 这是 Seedream 5.0 Pro 一次性生成整张 `hero.png` 的信息契约。模型必须在同一次生成中完成被分配到图片的文字、排版、时间线和 quote；按钮、CTA、URL 和回调永远由原生 Card 承载。本仓库不提供底图、固定网格、叠字、拼接或后处理实现。
 
+## 当前版式入口
+
+当前默认使用 `presets/image-art-direction.json` 与 `scripts/image_art_direction.py`：
+瑞士编辑设计、精致现代黑体、克制标签、常规字重数字和留白。
+下面的网格/坐标是历史可选示例，不是默认强制的 2×2 盒子；不得同时套用多种视觉方案。
+图片可以透明；验收时必须放在实际目标背景上检查，而非一律拒绝 alpha。
+字体名和字号是模型的视觉指导，不是可编辑字体文件或嵌入承诺。
+
 ## 画布和坐标
 
 生成输入必须声明 `image_source`（`real_image` 或 `ai_generated`）和 `image_roles`。`ai_generated` 的完整图片必须对应 `hero-generation.json`；真实图片必须对应媒体来源/尺寸/哈希元数据。默认角色为 `cover`、`information_carrier`、`text_companion`；历史 `cta_companion` 仅兼容元数据，不得触发按钮绘制。

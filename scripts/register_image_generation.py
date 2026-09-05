@@ -19,6 +19,8 @@ from typing import Any, Dict, Optional, Sequence
 from runtime_profile import image_mode_config, image_runtime, supported_image_modes
 
 
+from asset_validation import inspect_asset
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -74,6 +76,7 @@ def register(
         raise ValueError(f"image file not found: {image_path}")
     if image_path.name != "hero.png":
         raise ValueError("the selected Seedream 5.0 Pro asset must be named hero.png")
+    inspection = inspect_asset(image_path, "PNG")
     prompt_path = _inside_root(prompt) if prompt else image_path.with_name(f"{image_path.parent.name}.image-prompt.md")
     if not prompt_path.is_file():
         raise ValueError(f"prompt file not found: {prompt_path}")
@@ -95,6 +98,7 @@ def register(
         "asset": str(image_path),
         "asset_name": image_path.name,
         "image_sha256": _sha256(image_path),
+        "inspection": inspection,
         "prompt_file": str(prompt_path),
         "prompt_sha256": _sha256(prompt_path),
         "registered_at": datetime.now(timezone.utc).isoformat(),

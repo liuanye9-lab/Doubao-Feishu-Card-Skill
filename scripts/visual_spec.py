@@ -16,9 +16,9 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 METRIC_LINE_RE = re.compile(
     r"^\s*(?:[-*•]\s*)?(?P<label>[^：:|\t]{1,24})\s*[：:]\s*(?P<display>[^\n]{1,48})\s*$"
 )
-NUMBER_RE = re.compile(r"(?P<number>[+-]?\d+(?:\.\d+)?)")
+NUMBER_RE = re.compile(r"(?P<number>[+-]?(?:\d{1,3}(?:[,，]\d{3})+|\d+)(?:\.\d+)?)")
 NON_METRIC_LABEL_RE = re.compile(
-    r"日期|时间|截止|地点|地址|链接|姓名|创建人|状态|编号|ID|URL",
+    r"日期|时间|截止|地点|地址|链接|姓名|创建人|状态|编号|主题|形式|对象|名称|介绍|版本|ID|URL",
     re.I,
 )
 FLOW_LABEL_RE = re.compile(
@@ -30,7 +30,7 @@ def _number(value: str) -> Optional[float]:
     match = NUMBER_RE.search(value)
     if not match:
         return None
-    number = float(match.group("number"))
+    number = float(match.group("number").replace(",", "").replace("，", ""))
     return int(number) if number.is_integer() else number
 
 
@@ -40,7 +40,7 @@ def _unit_family(value: str) -> Tuple[str, str]:
         return "percentage_point", "pct"
     if "%" in value or "百分比" in value:
         return "percent", "%"
-    for unit in ("分钟", "min", "小时", "h", "天", "人", "项", "次", "个", "家", "门店", "区域", "万", "亿", "倍"):
+    for unit in ("亿元", "万元", "元", "万小时", "万次", "万人", "分钟", "min", "小时", "h", "天", "人", "项", "次", "个", "家", "门店", "区域", "万", "亿", "倍"):
         if unit.lower() in lowered:
             return f"unit:{unit.lower()}", unit
     return "number", ""
@@ -59,7 +59,15 @@ def parse_metric_line(line: str, source_line: Optional[int] = None) -> Optional[
     if value is None:
         return None
     family, unit = _unit_family(display)
+    numeric_tokens = NUMBER_RE.findall(display)
+    bounded = bool(re.search(r"以上|以下|至少|至多|超过|不足|约|大于|小于|[<>≤≥～~]|\d\s*[-—至]\s*\d", display))
+    change = bool(re.search(r"提升|增长|增加|减少|下降|降低|缩短|节省|同比|环比", display + label))
+    qualified = bounded or change or len(numeric_tokens) != 1
+    if len(numeric_tokens) != 1:
+        value = None
     return {
+        "chart_eligible": not qualified,
+        "chart_exclusion": "限定值、区间或变化率保留原文指标，不作为绝对值比较" if qualified else None,
         "label": label,
         "display": display,
         "value": value,
@@ -88,7 +96,8 @@ def extract_metrics(source: str) -> List[Dict[str, Any]]:
 def _comparable_metrics(metrics: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
     groups: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     for metric in metrics:
-        groups[str(metric.get("unit_family") or "number")].append(metric)
+        if metric.get("chart_eligible", True) and metric.get("value") is not None:
+            groups[str(metric.get("unit_family") or "number")].append(metric)
     candidates = [group for group in groups.values() if len(group) >= 2]
     if not candidates:
         return []
@@ -99,7 +108,9 @@ def _comparable_metrics(metrics: Sequence[Dict[str, Any]]) -> List[Dict[str, Any
 def _chart_type(source: str, metrics: Sequence[Dict[str, Any]]) -> str:
     value = str(source or "")
     total = sum(float(item.get("value") or 0) for item in metrics)
-    if re.search(r"占比|构成|分布|份额", value) and 98 <= total <= 102:
+    if (re.search(r"占比|构成|分布|份额", value) and abs(total - 100) <= 0.01
+            and metrics[0].get("unit_family") == "percent"
+            and all(float(item["value"]) >= 0 for item in metrics)):
         return "pie"
     time_label_re = re.compile(r"(?:20\d{2}|第?[一二三四五六七八九十\d]+(?:周|月|季)|\d{1,2}月)")
     time_label_count = sum(
@@ -127,7 +138,7 @@ def build_chart_plan(source: str, metrics: Optional[Sequence[Dict[str, Any]]] = 
     chart_spec: Dict[str, Any] = {
         "type": chart_type,
         "data": [{"id": "source_metrics", "values": values}],
-        "title": {"visible": True, "text": "📊 关键指标"},
+        "title": {"visible": True, "text": "📊 关键指标" + (f"（{selected[0]['unit']}）" if selected[0].get("unit") else "")},
         "label": {"visible": True},
         "tooltip": {"visible": True},
     }
@@ -168,6 +179,13 @@ def _compact_clause(value: str, limit: int = 72) -> str:
 def extract_relationship_nodes(source: str) -> List[Dict[str, Any]]:
     nodes: List[Dict[str, Any]] = []
     for index, line in enumerate(str(source or "").splitlines(), start=1):
+        match = re.match(r"^\s*(?:第(?P<step>[一二三四五六七八九十\d]+)步|(?P<date>\d{1,2}月\d{1,2}日(?:[—-]\d{1,2}月\d{1,2}日)?))\s*[：:]\s*(?P<body>.+)$", line)
+        if match:
+            nodes.append({"label": f"第{match.group('step')}步" if match.group('step') else match.group('date'),
+                          "text": _compact_clause(match.group("body")), "source_text": line.strip(), "source_line": index})
+            if len(nodes) >= 5:
+                break
+            continue
         match = FLOW_LABEL_RE.match(line)
         if not match:
             continue

@@ -36,7 +36,7 @@ def build_stability_contract() -> Dict[str, Any]:
             "run_structural_and_source_gates",
             "auto_route_seedream_or_seedance_and_review_if_required",
             "upload_real_img_key_and_recompile_if_required",
-            "preview_bot_then_import_cardkit_only_after_explicit_delivery_authorization",
+            "import_cardkit_and_readback_after_explicit_authorization_bot_preview_is_optional",
         ],
         "route_precedence": [
             "explicit_scene",
@@ -53,7 +53,7 @@ def build_stability_contract() -> Dict[str, Any]:
         "action_contract": "native_card_only; real URL or implemented application-bot callback/form required",
         "image_contract": "Every card gets a visual by default: Seedream 5.0 Pro for static information or automatically selected Seedance 2.5 GIF for motion-worthy content; explicit no-image is the only fallback; no local conversion or post-processing",
         "fallback_contract": "preserve source and report the exact degraded field; never invent facts, URLs, img_keys, or remote evidence",
-        "remote_delivery_contract": "one preflight and one confirmation, then Bot preview followed immediately by CardKit import and readback",
+        "remote_delivery_contract": "one preflight and one confirmation for requested remote writes; import CardKit and read back evidence; Bot preview only if explicitly requested",
     }
 
 

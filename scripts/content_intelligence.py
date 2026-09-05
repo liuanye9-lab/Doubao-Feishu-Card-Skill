@@ -13,7 +13,7 @@ import hashlib
 import re
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
-from visual_spec import extract_metrics
+from visual_spec import extract_metrics, extract_relationship_nodes
 
 
 # These are explicit user-facing placeholders, not guessed prose.  They are
@@ -154,6 +154,10 @@ def has_emoji(text: str) -> bool:
 
 def semantic_emoji(text: str, default: str = "💬") -> str:
     value = str(text or "")
+    if re.match(r"^(?:一句话(?:介绍|价值)|核心价值|结论|摘要)", value):
+        return "💡"
+    if re.search(r"功能|模块|机制|方法", value[:16]):
+        return "🧩"
     for keywords, emoji in SEMANTIC_EMOJI:
         if any(keyword.lower() in value.lower() for keyword in keywords):
             return emoji
@@ -699,6 +703,18 @@ def build_information_allocation(
     pending_buttons = [item for item in suggestions if item.get("surface") == "needs_url_or_callback"]
     not_buttons = [item for item in suggestions if not item.get("selected")]
     image_items = build_image_text_items(blocks or [], resolved_title) if blocks is not None else _source_image_candidates(lines, resolved_title)
+    # Always merge source-backed metrics and steps, even when native blocks
+    # were compacted or a scene omitted their component type.
+    for metric in metric_records[:4]:
+        label = str(metric["source_text"])
+        if not any(item.get("text") == label for item in image_items):
+            image_items.append({"role": "metric", "text": label, "source_text": label,
+                                "source_lines": [label], "why": "来源指标保留原始口径"})
+    for node in extract_relationship_nodes(value):
+        label = str(node["label"]) + "：" + str(node["text"])
+        if not any(item.get("text") == label for item in image_items):
+            image_items.append({"role": "relationship", "text": label, "source_text": node["source_text"],
+                                "source_lines": [node["source_text"]], "why": "来源步骤或关系"})
     if not image_use:
         excluded_image = image_items
         image_items = []
@@ -726,7 +742,8 @@ def build_information_allocation(
                 )
             )
             quote_items = [item for item in eligible if item.get("role") == "quote"]
-            image_items = (title_items[:1] + fact_items[:2] + relationship_items[:3] + quote_items[:1])[:7]
+            metric_items = [item for item in eligible if item.get("role") == "metric"]
+            image_items = (title_items[:1] + relationship_items[:3] + quote_items[:1] + metric_items[:4] + fact_items[:2])[:7]
             selected_ids = {id(item) for item in image_items}
             excluded_image.extend(
                 {**item, "excluded_reason": "case-showcase 优先保留背景—做法—结果关系"}
@@ -916,7 +933,7 @@ def _visual_job(lines: Sequence[str], *, timeline: bool, metric_signal: bool, vi
         }
     if metric_signal:
         return {
-            "job": "compare the source-backed metrics and make the strongest differences immediately scannable",
+            "job": "show source-backed metrics with their exact units and qualifiers in separate labeled stat tiles; draw comparative charts only from the explicit validated chart plan",
             "composition": "a compact data dashboard paired with the native CardKit chart; never mix incompatible units",
             "role": "information_metrics",
         }

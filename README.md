@@ -18,7 +18,7 @@
 
 将发布页中的 `doubao-feishu-card.zip` 导入豆包工作，或把仓库目录作为 Skill 安装。入口文件是 [`SKILL.md`](./SKILL.md)。
 
-运行要求：Python 3.10+；媒体检验使用 Pillow；可选 `tsx` 用于结构 Schema 校验。仓库不包含任何飞书凭据或模型密钥。
+运行要求：Python 3.9+；媒体检验使用 Pillow；可选 `tsx` 用于结构 Schema 校验。仓库不包含任何飞书凭据或模型密钥。
 
 ## 最简调用
 
@@ -59,9 +59,7 @@ python3 scripts/register_motion_generation.py \
 
 ```bash
 python3 scripts/stable_card.py \
-  --text-file ./copy.txt \
-  --output-dir outputs \
-  --name my-card \
+  --resume outputs/my-card/my-card.spec.json \
   --hero-img-key '<real_img_key>'
 ```
 
@@ -69,7 +67,8 @@ python3 scripts/stable_card.py \
 
 - `needs_image`：继续调用 Seedream、登记 PNG、上传并重编译。
 - `needs_gif`：继续调用 Seedance、登记 GIF、上传并重编译。
-- `ready`：结构、媒体 provenance、真实 `img_key` 和安全门均通过。
+- `needs_visual_review`：查看媒体与原生卡片，记录实际检查结论。
+- `ready`：结构、媒体 provenance、真实 `img_key`、视觉验收和安全门均通过。
 - `blocked`：先按报告修复来源或结构问题。
 
 ## CardKit
@@ -96,7 +95,7 @@ python3 scripts/feishu_cli.py push-cardkit \
 ```bash
 python3 -m compileall -q scripts tests
 python3 -m unittest discover -s tests -p 'test_*.py'
-python3 /Users/bytedance/.codex/skills/.system/skill-creator/scripts/quick_validate.py .
+# 可选：使用当前宿主安装的 Skill 校验工具
 ```
 
 完整规则、媒体模型、交付证据和质量门见 [`SKILL.md`](./SKILL.md) 与 [`references/`](./references/)。
@@ -104,3 +103,11 @@ python3 /Users/bytedance/.codex/skills/.system/skill-creator/scripts/quick_valid
 ## 运行时边界
 
 `Seedream 5.0 Pro` 与 `Seedance 2.5` 是用户确认的豆包工作宿主能力标签。仓库负责路由、提示词、文件契约和 provenance 校验，但不能在 Codex 环境中代替豆包工作执行其内置模型。真实运行时必须记录宿主实际暴露的工具与模型 ID；未暴露时写 `platform-managed`，不得伪造。
+
+## 2026-09 可靠性更新
+
+已补齐指标进入案例信息图、限定值/千分位解析、媒体真实解码、仅 `.card` 导入、保留编辑的 `--resume` 与哈希绑定的视觉验收。正文目标约 200–350 字；900 字只是拒绝线。安装先执行 `python3 -m pip install -r requirements.txt`；完整执行规则见 [可靠性闭环](./references/reliability-workflow.md)。
+
+自动测试使用明确标注的合成媒体与 mock，不作为真实宿主/远程 CardKit 成功证据。
+
+默认生图提示词已统一为瑞士编辑设计：中等字重的现代黑体标题、等尺度的轻盈数字、克制标签和单一强调色；透明底允许使用，并在实际卡片底色上验收。版式按真实指标数量或流程结构适配，不为套模板补造数据。具体可调参数见 [`presets/image-art-direction.json`](./presets/image-art-direction.json)。

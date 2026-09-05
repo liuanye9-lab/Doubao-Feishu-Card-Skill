@@ -458,6 +458,9 @@ def local_visual_output_ready(spec: Dict[str, Any], output_path: Path) -> bool:
         return False
     image_path = output_path.parent / "hero.png"
     provenance_path = output_path.parent / "hero-generation.json"
+    from asset_validation import asset_error
+    if asset_error(image_path, "PNG"):
+        return False
     if not image_path.is_file() or not provenance_path.is_file():
         return False
     try:

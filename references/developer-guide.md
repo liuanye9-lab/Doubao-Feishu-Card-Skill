@@ -46,7 +46,8 @@ needs_image
   → Seedream 5.0 Pro 直出 hero.png
   → register_image_generation.py
   → upload-image 得到真实 img_key
-  → stable_card.py --hero-img-key ...
+  → stable_card.py --resume <spec> --hero-img-key ...
+  → needs_visual_review → 实际检查 → finalize_card.py --record-review
   → ready
 ```
 
@@ -95,12 +96,12 @@ needs_gif
 ```bash
 python3 -m compileall -q scripts tests
 python3 -m unittest discover -s tests -p 'test_*.py'
-python3 /Users/bytedance/.codex/skills/.system/skill-creator/scripts/quick_validate.py .
+# 可选：在装有 skill-creator 的环境调用其 quick_validate.py，勿依赖作者机器路径
 ```
 
 测试至少覆盖：
 
-- 静态文案进入 `needs_image`，Seedream provenance + 真实 key 后进入 `ready`；
+- 静态文案进入 `needs_image`，Seedream provenance + 真实 key + 实际视觉验收后进入 `ready`；
 - 多步骤流程进入 `needs_gif`，Seedance GIF provenance + 真实 key 后进入 `ready`；
 - 强制 `--motion off` 能回到静态；来源明确“不要动图”不会被覆盖；
 - 伪 GIF、单帧 GIF、哈希或提示词不匹配被拒绝；

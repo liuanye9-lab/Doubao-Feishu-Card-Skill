@@ -40,8 +40,10 @@ class MotionStrategyTests(unittest.TestCase):
         prompt = build_motion_prompt(spec)
 
         self.assertIn("Seedance 2.5", prompt)
-        self.assertIn("Return GIF directly", prompt)
-        self.assertIn("do not return MP4 for local conversion", prompt)
+        self.assertIn("Prefer a direct GIF output", prompt)
+        self.assertIn("motion_capability_unavailable", prompt)
+        self.assertIn("处理", prompt)
+        self.assertIn("关闭", prompt)
         self.assertIn("Do not draw buttons", prompt)
 
 

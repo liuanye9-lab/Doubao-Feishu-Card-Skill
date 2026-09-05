@@ -247,6 +247,9 @@ def _direct_seedream_visual_status(
     return result
 
 
+from asset_validation import asset_error
+
+
 def _ai_generation_gate(
     image_path: Path,
     manifest_path: Path,
@@ -281,6 +284,10 @@ def _ai_generation_gate(
         result["status"] = "provenance_manifest_invalid"
         result["error"] = "hero-generation.json must be an object"
         return result
+    media_error = asset_error(image_path, "PNG")
+    if media_error:
+        result.update(status="invalid_image", error=media_error)
+        return result
     image_sha256 = hashlib.sha256(image_path.read_bytes()).hexdigest()
     tool = str(manifest.get("tool") or "").strip()
     generation_family = str(manifest.get("generation_family") or "").strip().lower()
@@ -305,7 +312,7 @@ def _ai_generation_gate(
         result["status"] = "provenance_asset_mismatch"
         result["error"] = "hero-generation.json does not identify the selected final Seedream 5.0 Pro image mode"
         return result
-    prompt_hash_ok = True
+    prompt_hash_ok = False
     if manifest.get("prompt_sha256") and prompt_path.is_file():
         prompt_hash_ok = manifest.get("prompt_sha256") == hashlib.sha256(prompt_path.read_bytes()).hexdigest()
     result["prompt_hash_ok"] = prompt_hash_ok
@@ -363,9 +370,13 @@ def _motion_generation_gate(
     prompt_value = Path(str(manifest.get("prompt_file") or ""))
     prompt_path = prompt_value if prompt_value.is_absolute() else manifest_path.parent / prompt_value
     tool_ok = tool in {"doubao.video_gen", "video_gen", "motion_gen", "animation_gen"} or tool.endswith((".video_gen", ".motion_gen", ".animation_gen"))
+    media_error = asset_error(asset_path, "GIF")
+    if media_error:
+        result.update(status="invalid_gif", error=media_error)
+        return result
     family_ok = family.startswith("seedance") or family in {"video-generation", "motion-generation"}
     inspection = manifest.get("inspection") if isinstance(manifest.get("inspection"), Mapping) else {}
-    prompt_hash_ok = bool(prompt_path.is_file())
+    prompt_hash_ok = bool(prompt_path.is_file() and manifest.get("prompt_sha256"))
     if prompt_hash_ok and manifest.get("prompt_sha256"):
         prompt_hash_ok = manifest.get("prompt_sha256") == hashlib.sha256(prompt_path.read_bytes()).hexdigest()
     contract_ok = (
@@ -640,59 +651,8 @@ def _preset_color_line(preset_id: str) -> str:
 
 
 def _banner_image_prompt(spec: Dict[str, Any], *, brand_context: str = "") -> str:
-    """Build a one-pass horizontal banner prompt paired with native Card text."""
-    analysis = spec.get("analysis") if isinstance(spec.get("analysis"), dict) else {}
-    plan = analysis.get("design_plan") if isinstance(analysis, dict) else {}
-    plan = plan if isinstance(plan, dict) else {}
-    media = plan.get("media_policy") if isinstance(plan.get("media_policy"), dict) else {}
-    visual_contract = spec.get("visual_contract") if isinstance(spec.get("visual_contract"), dict) else {}
-    prompt_contract = spec.get("prompt_routing") if isinstance(spec.get("prompt_routing"), dict) else {}
-    allocation = spec.get("information_allocation") if isinstance(spec.get("information_allocation"), dict) else {}
-    image_allocation = allocation.get("image") if isinstance(allocation.get("image"), dict) else {}
-    image_items = image_allocation.get("include") if isinstance(image_allocation.get("include"), list) else []
-    image_text = "\n".join(
-        f"- visible text (metadata role={item.get('role', 'label')}): {item.get('text', '')}"
-        for item in image_items
-        if isinstance(item, dict) and str(item.get("text") or "").strip()
-    ) or "(no image text; generate only the visual concept)"
-    preset = str(spec.get("preset") or plan.get("recommended_preset") or "modern-oriental-signal")
-    scene = str(spec.get("scene") or "custom")
-    source = str(analysis.get("source_text") or "")
-    input_brief = spec.get("input_brief") if isinstance(spec.get("input_brief"), dict) else {}
-    purpose_context = input_brief.get("purpose") if isinstance(input_brief.get("purpose"), dict) else {}
-    recipient_context = input_brief.get("recipient") if isinstance(input_brief.get("recipient"), dict) else {}
-    visual_routing = prompt_contract.get("visual_skill_routing") if isinstance(prompt_contract.get("visual_skill_routing"), dict) else {}
-    selected_pack_labels = visual_routing.get("selected_pack_labels") if isinstance(visual_routing.get("selected_pack_labels"), list) else []
-    visual_negative = str(visual_routing.get("visual_negative_prompt") or "").strip()
-    runtime = _runtime_image_profile()
-    model_label = str(runtime.get("generation_model_label") or "Seedream 5.0 Pro")
-    model_id = str(runtime.get("generation_model") or "seedream-5.0-pro")
-    visual_job = str(media.get("visual_job") or visual_contract.get("job") or "give the topic one clear visual anchor")
-    return "\n".join([
-        "Use case: banner-header-image",
-        "Asset type: final horizontal Banner header image for a Feishu Card 2.0; it is not a full-card bitmap",
-        f"Generation model profile: {model_label} ({model_id}) via 豆包工作 built-in image_gen; record observable tool/model provenance in hero-generation.json and use platform-managed if the host does not expose the model id",
-        f"Scene: {scene}; visual preset: {preset}",
-        f"Auto-routed prompt recipe: {prompt_contract.get('primary_profile', 'general-information')}; reference template {prompt_contract.get('reference_template', 'training-notice')}; media mode {prompt_contract.get('media_mode', 'static')}",
-        f"Auto-selected visual skill packs: {', '.join(str(item) for item in selected_pack_labels) or 'local enterprise default'}; visual style {visual_routing.get('style_id', 'clean-editorial')}; use the local mapping as transparent fallback if upstream methods are unavailable.",
-        "Default method pass: first invoke or read available Guizang Social Card Skill and baoyu-skills guidance, then use the 豆包工作 Seedream 5.0 Pro image_gen step for this one-pass final banner. Do not use an upstream renderer, HTML/CSS/SVG, Playwright screenshot, alternate provider, or post-processing.",
-        f"Planning context only: purpose={purpose_context.get('value') or purpose_context.get('inferred_mode') or 'general-information'}; recipient={recipient_context.get('value') or 'not provided'}; these values cannot become a remote target.",
-        f"Primary request: generate an approximate 3:1 horizontal banner that conveys {visual_job}. The native Card below the banner carries a concise summary, key facts, source-backed charts, and real buttons; source.txt keeps the complete copy. Never generate a button, CTA pill, button-shaped rectangle, chevron-plus-action control, fake link, or any other pseudo-interactive element in the image.",
-        "Typography: render only the source-backed Seedream 5.0 Pro whitelist below, sharply and legibly, with a modern Chinese sans-serif hierarchy; do not invent or rewrite text. The metadata role marker is instruction-only and must not be visible.",
-        "Image text whitelist (verbatim; render only these source-backed items in the banner):",
-        "----- BEGIN IMAGE TEXT WHITELIST -----",
-        image_text,
-        "----- END IMAGE TEXT WHITELIST -----",
-        "Native Card carries the concise editable summary, key facts, source-backed charts, URLs, and real clickable buttons. Full long-form copy stays in source.txt or opens through a real source URL. Any real action belongs to a native Card 2.0 button with a real behavior.",
-        "Functional image rule: all visible image text and layout must come directly from this one Seedream 5.0 Pro generation and match the whitelist. No local drawing, overlay, compositing, second image model, empty text box, gibberish, button-shaped UI, or CTA label.",
-        _preset_color_line(preset),
-        f"Visual pack guardrails: {visual_negative}" if visual_negative else "Visual pack guardrails: one focal path, source-locked labels, clean enterprise readability.",
-        "Full source copy for fact checking only; do not put every line in the banner:",
-        "----- BEGIN SOURCE COPY -----",
-        source.strip(),
-        "----- END SOURCE COPY -----",
-        "Revision proofing: if any selected text is wrong or unreadable, regenerate the complete banner from scratch in one Seedream 5.0 Pro pass. Never repair the PNG with text or another model.",
-    ])
+    from image_art_direction import build_image_prompt
+    return build_image_prompt(spec, _runtime_image_profile(), banner=True, brand_context=brand_context)
 
 
 def _detect_urls(text: str) -> list[Dict[str, Any]]:
@@ -839,97 +799,11 @@ def _merge_detected_url_buttons(spec: Dict[str, Any], detected_urls: Sequence[Ma
 
 
 def _image_prompt(spec: Dict[str, Any], *, brand_context: str = "") -> str:
-    hero = spec.get("hero") if isinstance(spec.get("hero"), dict) else {}
-    generation_mode = str(
-        hero.get("image_generation_mode")
-        or spec.get("image_generation_mode")
-        or _default_image_mode()
-    ).strip()
-    if generation_mode == BANNER_SEEDREAM_MODE:
-        return _banner_image_prompt(spec, brand_context=brand_context)
-    analysis = spec.get("analysis") if isinstance(spec.get("analysis"), dict) else {}
-    plan = analysis.get("design_plan") if isinstance(analysis, dict) else {}
-    if not isinstance(plan, dict):
-        plan = {}
-    media = plan.get("media_policy") if isinstance(plan.get("media_policy"), dict) else {}
-    visual_contract = spec.get("visual_contract") if isinstance(spec.get("visual_contract"), dict) else {}
-    prompt_contract = spec.get("prompt_routing") if isinstance(spec.get("prompt_routing"), dict) else {}
-    allocation = spec.get("information_allocation") if isinstance(spec.get("information_allocation"), dict) else {}
-    image_allocation = allocation.get("image") if isinstance(allocation.get("image"), dict) else {}
-    native_allocation = allocation.get("native_card") if isinstance(allocation.get("native_card"), dict) else {}
-    image_items = image_allocation.get("include") if isinstance(image_allocation.get("include"), list) else []
-    image_text = "\n".join(
-        f"- visible text (metadata role={item.get('role', 'label')}): {item.get('text', '')}"
-        for item in image_items
-        if isinstance(item, dict) and str(item.get("text") or "").strip()
-    ) or "(no image text; do not invent any)"
-    native_prompt_allocation = {
-        key: value for key, value in native_allocation.items() if key != "buttons"
-    }
-    preset = str(spec.get("preset") or plan.get("recommended_preset") or "modern-oriental-signal")
-    scene = str(spec.get("scene") or "custom")
-    brief = str(media.get("prompt_brief") or "")
-    style = infer_style(str(analysis.get("source_text") or spec.get("title") or ""), brand_context, preset)
-    source = str(analysis.get("source_text") or "")
-    input_brief = spec.get("input_brief") if isinstance(spec.get("input_brief"), dict) else {}
-    purpose_context = input_brief.get("purpose") if isinstance(input_brief.get("purpose"), dict) else {}
-    recipient_context = input_brief.get("recipient") if isinstance(input_brief.get("recipient"), dict) else {}
-    if re.search(r"培训|时间线|阶段|提交|辅导|路演|开营", source):
-        default_concept = "a calm visual progression from learning and experimentation to submission, coaching, and a final presentation"
-    elif re.search(r"案例|问题|做法|结果|复盘", source):
-        default_concept = "an information-bearing relationship map from a real-world problem to action, result, and review"
-    elif re.search(r"提醒|截止|务必|报名|通知", source):
-        default_concept = "a focused visual signal for the notice's priority, timing, and next action"
-    else:
-        default_concept = "an abstract visual map of the card's topic, grouping, and next action"
-    routed_fragments = prompt_contract.get("prompt_fragments") if isinstance(prompt_contract.get("prompt_fragments"), list) else []
-    routed_concept = " ".join(str(item).strip() for item in routed_fragments if str(item).strip())
-    visual_routing = prompt_contract.get("visual_skill_routing") if isinstance(prompt_contract.get("visual_skill_routing"), dict) else {}
-    visual_fragments = visual_routing.get("visual_prompt_fragments") if isinstance(visual_routing.get("visual_prompt_fragments"), list) else []
-    visual_concept = " ".join(str(item).strip() for item in visual_fragments if str(item).strip())
-    concept = " ".join(part for part in (brief, routed_concept or default_concept, visual_concept) if part)
-    visual_job = str(media.get("visual_job") or visual_contract.get("job") or "give the topic one clear information anchor")
-    composition = str(media.get("composition") or visual_contract.get("composition") or "one clear object or relationship")
-    role = str(media.get("role") or visual_contract.get("role") or "information_anchor")
-    selected_pack_labels = visual_routing.get("selected_pack_labels") if isinstance(visual_routing.get("selected_pack_labels"), list) else []
-    visual_negative = str(visual_routing.get("visual_negative_prompt") or "").strip()
-    runtime = _runtime_image_profile()
-    model_label = str(runtime.get("generation_model_label") or "Seedream 5.0 Pro")
-    model_id = str(runtime.get("generation_model") or "seedream-5.0-pro")
-    direct_prompt_lines = [
-            "Use case: infographic-diagram",
-            "Asset type: final Feishu Card 2.0 bitmap, generated as one complete image",
-            f"Generation model profile: {model_label} ({model_id}) via 豆包工作 built-in image_gen; record observable tool/model provenance in hero-generation.json and use platform-managed if the host does not expose the model id",
-            f"Scene: {scene}; visual preset: {preset}",
-            f"Auto-routed prompt recipe: {prompt_contract.get('primary_profile', 'general-information')}; reference template {prompt_contract.get('reference_template', 'training-notice')}; media mode {prompt_contract.get('media_mode', 'static')}",
-            f"Auto-selected visual skill packs: {', '.join(str(item) for item in selected_pack_labels) or 'local enterprise default'}; visual style {visual_routing.get('style_id', 'clean-editorial')}; visual layout {visual_routing.get('visual_layout', 'single-information-anchor')}. These are the local record of the default Guizang Social Card Skill + baoyu-skills method pass; if those upstream skills are unavailable, use this mapping as the transparent fallback and do not claim external execution.",
-            "Default upstream method pass: first invoke or read the available Guizang Social Card Skill and baoyu-skills guidance for content type, information architecture, visual language, and quality gates; then use 豆包工作 Seedream 5.0 Pro for the final bitmap. Never use an upstream renderer or alternate image provider.",
-            f"Planning context only: purpose={purpose_context.get('value') or purpose_context.get('inferred_mode') or 'general-information'}; recipient={recipient_context.get('value') or 'not provided'}. These values may guide hierarchy and tone but must not change source facts or silently become a remote delivery target.",
-            "Primary request: Generate the final information-bearing Feishu card image in one Seedream 5.0 Pro pass. The model itself must perform the visual concept, information architecture, typography, Chinese text rendering, spacing, timeline/flow layout, and quote treatment. Never generate a button, CTA pill, button-shaped rectangle, chevron-plus-action control, or any other fake interactive element in the image. Do not create an intermediate image for another renderer.",
-            "Reference design language: absorb the five supplied Feishu card examples as a light enterprise information card: compact header, strong but calm title hierarchy, coherent visual metaphor, aligned information modules, clear stage progression, and restrained semantic icons. Do not copy their brand, logo, person, watermark, button, CTA, or text.",
-            f"Composition: portrait mobile-safe card, high-resolution, clean outer margin, light background, one coherent visual story for the allocated task: {visual_job}. Build only the relationship, status, evidence, or stage structure that the allocation names. Keep the native Card as a concise editable summary and keep the complete source in source.txt; do not turn every paragraph into image text.",
-            "Typography: render every character in the Seedream 5.0 Pro text whitelist below sharply and legibly. Use a modern Chinese sans-serif hierarchy, consistent baseline alignment, generous line spacing, and enough contrast for mobile reading. Do not invent or rewrite any whitelisted text. Text not in the whitelist belongs to the native Card and must not be squeezed into the bitmap.",
-            "Whitelist metadata such as role names, parentheses, brackets, and the phrase 'metadata role=' is instruction-only; never render those metadata markers as visible image text.",
-            "Image text whitelist (verbatim; render only these source-backed items):",
-            "----- BEGIN IMAGE TEXT WHITELIST -----",
-            image_text,
-            "----- END IMAGE TEXT WHITELIST -----",
-            "Native Card allocation (reference only; keep these facts in the editable Card, not automatically in the bitmap):",
-            json.dumps(native_prompt_allocation, ensure_ascii=False, indent=2),
-            "Native Card buttons are intentionally omitted from this image prompt. Any real action must be a separate native Card 2.0 button with a real URL or implemented application-bot contract.",
-            "Full source copy (verbatim reference for fact checking; do not put every line into the bitmap):",
-            "----- BEGIN SOURCE COPY -----",
-            source.strip(),
-            "----- END SOURCE COPY -----",
-            "Functional image rule: all visible image text and layout must come directly from this Seedream 5.0 Pro generation and must match the whitelist. Do not depend on HTML, CSS, SVG, Pillow, a deterministic overlay, another image model, or post-generation compositing. Do not leave placeholder text, pseudo-letters, gibberish, fake UI text, empty text boxes, buttons, CTA labels, or button-shaped controls.",
-            "Functional CTA rule: images are non-interactive. Never render a button, CTA pill, link-like control, action label presented as clickable, or chevron-plus-action control in the bitmap. The native Card layer alone may contain a button, and only when its URL/callback/form actually works.",
-            "Quality bar: final deliverable must look like a professionally designed Feishu information card, with a clear visual relationship and a small amount of useful image text. Re-read the whitelist and source after rendering; check every selected date, stage, metric, and quote for exactness while leaving native-only paragraphs and all real actions out of the bitmap.",
-            "Color/material: light blue, lilac, white, and one restrained accent family; subtle depth, crisp edges, soft rounded modules, no visual noise.",
-            f"Visual pack guardrails: {visual_negative}" if visual_negative else "Visual pack guardrails: preserve the selected information relationship, one focal path, and source-locked labels.",
-            "Avoid: blank white rectangles, unreadable microtype, dense illegible paragraphs, repeated emoji, random icons, generic gradients without structure, fake brand marks, watermarks, contradictory dates, missing lines, AI gibberish, button-shaped UI, CTA pills, link-like controls, and any post-processing step.",
-            "Revision proofing requirements: regenerate the complete image from scratch in one Seedream 5.0 Pro pass when the selected image text is wrong or unreadable. Preserve each whitelisted text item exactly, including dates, Chinese punctuation, literal bracket aliases, selected timeline actions, and selected quote text. Do not add native-only paragraphs, URLs, button labels, or any fake interaction; before finishing, proofread the bitmap against both the IMAGE TEXT WHITELIST and the full SOURCE COPY.",
-    ]
-    return "\n".join(direct_prompt_lines)
+    from image_art_direction import build_image_prompt
+    hero = spec.get("hero") or {}
+    mode = hero.get("image_generation_mode") or spec.get("image_generation_mode")
+    return build_image_prompt(spec, _runtime_image_profile(),
+                              banner=mode == BANNER_SEEDREAM_MODE, brand_context=brand_context)
 
 
 def _compile_once(
@@ -1794,6 +1668,12 @@ def run_pipeline(
     }
     _write_json(cardkit_manifest_path, cardkit_manifest)
     report["cardkit_editor_import"] = str(cardkit_manifest_path)
+    from finalize_card import attach_delivery_evidence
+    attach_delivery_evidence(report)
+    cardkit_manifest.update(status="ready_for_cardkit_import" if report["readiness"]["cardkit_editor_ready"] else "blocked",
+                            readiness=report["readiness"], visual_review=report["visual_review"],
+                            blockers=report["readiness"]["blockers"])
+    _write_json(cardkit_manifest_path, cardkit_manifest)
     _write_json(report_path, report)
     return report
 
@@ -1802,6 +1682,8 @@ def _console_summary(report: Mapping[str, Any]) -> Dict[str, Any]:
     readiness = report.get("readiness") if isinstance(report.get("readiness"), Mapping) else {}
     return {
         "status": report.get("status"),
+        "media_task": report.get("media_task"),
+        "next_steps": report.get("next_steps"),
         "card": report.get("card"),
         "editable_spec": report.get("editable_spec"),
         "image_prompt": report.get("image_prompt"),

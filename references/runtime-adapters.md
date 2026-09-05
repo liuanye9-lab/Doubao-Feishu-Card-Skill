@@ -33,3 +33,7 @@
 CardKit 中的图片节点引用飞书上传后返回的 `img_key`。动态模式上传 `hero.gif`，随后用同一个真实 key 重编译 Card；`card_image_contract.status=embedded_seedance_gif` 才表示动态卡已完成。GIF 文件存在但没有 provenance 或 `img_key` 时仍是 `needs_gif`。
 
 Bot 预览是可选交付面，不是生成、上传或 CardKit 模板导入的前置条件。
+
+## 能力探测是前置条件
+
+CardKit 支持 GIF 与模型工具支持 GIF 输出是两项独立能力。每次先发现宿主工具及输出格式；不得照抄 `doubao.video_gen` 假装宿主存在同名工具，不得发明 `output_format` 参数。可调用工具只支持 MP4 或不可用时返回 `motion_capability_unavailable`，保留草稿并向用户说明；不能改后缀、伪造动图或宣称成功。逻辑 adapter 与实际工具名/响应证据分别登记，未暴露模型 ID 写 platform-managed。

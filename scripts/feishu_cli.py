@@ -27,6 +27,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
+from asset_validation import asset_error
 from validate_card import validate  # noqa: E402
 from cardkit_format import derive_card_name, extract_dsl, normalize_dsl  # noqa: E402
 from runtime_profile import image_mode_config, supported_image_modes  # noqa: E402
@@ -166,7 +167,7 @@ def _image_readiness_gate(path: Path) -> Optional[Dict[str, Any]]:
     try:
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return None
+        return {"status": "report_invalid", "message": "卡片报告损坏，请重新编译再交付。"}
     doubao = report.get("doubao") if isinstance(report, dict) else None
     readiness = report.get("readiness") if isinstance(report, dict) else None
     if not isinstance(doubao, dict) or not isinstance(readiness, dict):
@@ -183,11 +184,30 @@ def _image_readiness_gate(path: Path) -> Optional[Dict[str, Any]]:
             "card": str(path),
             "report": str(report_path),
         }
+    fingerprints = report.get("artifact_fingerprints")
+    if isinstance(fingerprints, dict):
+        from finalize_card import digest, attach_delivery_evidence
+        try:
+            raw_path = Path(report["card"])
+            if digest(raw_path) != fingerprints.get("card_sha256"):
+                return {"status": "stale_artifact", "message": "卡片修改后未重新编译，请使用 --resume。"}
+            provider = report.get("doubao") or report.get("codex") or {}
+            asset = Path(provider.get("card_image_contract", {}).get("final_asset") or path.with_name("hero.png"))
+            if fingerprints.get("asset_sha256") and digest(asset) != fingerprints["asset_sha256"]:
+                return {"status": "stale_artifact", "message": "图片已改变，需要重新登记、上传与验收。"}
+            attach_delivery_evidence(report)
+            if not report["visual_review"]["passed"]:
+                return {"status": "visual_review_required", "message": "请先检查最终图片及原生卡片布局，记录视觉验收再导入。"}
+        except (OSError, ValueError, KeyError, TypeError):
+            return {"status": "report_invalid", "message": "交付文件与报告不一致，请重新编译。"}
     return None
 
 
 def _image_upload_gate(path: Path) -> Optional[Dict[str, Any]]:
     """Allow only a verified Seedream image or direct Seedance GIF."""
+    invalid = asset_error(path, "PNG" if path.name == "hero.png" else ("GIF" if path.name == "hero.gif" else None))
+    if invalid:
+        return {"ok": False, "status": "invalid_media", "message": invalid, "image": str(path)}
     if path.name == "hero.png":
         provenance_path = path.with_name("hero-generation.json")
         if provenance_path.is_file():
@@ -222,7 +242,7 @@ def _image_upload_gate(path: Path) -> Optional[Dict[str, Any]]:
                 tool = str(provenance.get("tool") or "").strip()
                 prompt_value = Path(str(provenance.get("prompt_file") or ""))
                 prompt_file = prompt_value if prompt_value.is_absolute() else path.parent / prompt_value
-                prompt_hash_ok = True
+                prompt_hash_ok = bool(provenance.get("prompt_sha256"))
                 if provenance.get("prompt_sha256") and prompt_file.is_file():
                     prompt_hash_ok = provenance.get("prompt_sha256") == hashlib.sha256(prompt_file.read_bytes()).hexdigest()
                 valid = (
@@ -270,7 +290,7 @@ def _image_upload_gate(path: Path) -> Optional[Dict[str, Any]]:
             }
         prompt_value = Path(str(provenance.get("prompt_file") or "")) if isinstance(provenance, dict) else Path()
         prompt_file = prompt_value if prompt_value.is_absolute() else path.parent / prompt_value
-        prompt_hash_ok = bool(prompt_file.is_file())
+        prompt_hash_ok = bool(prompt_file.is_file() and provenance.get("prompt_sha256"))
         if prompt_hash_ok and provenance.get("prompt_sha256"):
             prompt_hash_ok = provenance.get("prompt_sha256") == hashlib.sha256(prompt_file.read_bytes()).hexdigest()
         family = str(provenance.get("generation_family") or "").strip().lower() if isinstance(provenance, dict) else ""
@@ -519,6 +539,8 @@ def push_cardkit(
     explicit; the browser fallback consumes that wrapper instead.
     """
     path = _path_from_user(card_value)
+    if path.suffix != ".card":
+        return {"ok": False, "status": "unsupported_extension", "message": "CardKit 导入仅接受 .card 文件；请从 spec 重新编译。", "card": str(path)}
     if path.name.endswith(".cardkit.card") or path.name.endswith(".cardkit.json"):
         result = {
             "ok": False,
@@ -550,6 +572,10 @@ def push_cardkit(
         _record(record, result)
         return result
 
+    raw_document = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw_document, dict) or "dsl" in raw_document or raw_document != card:
+        return {"ok": False, "status": "recompile_required",
+                "message": "待导入文件不是已规范化的裸 Card；请重新编译，避免仅在内存清洗后仍上传旧文件。", "card": str(path)}
     import_args = [
         "feishu", "cardkit", "template", "import",
         "--file", _relative_for_cli(path),

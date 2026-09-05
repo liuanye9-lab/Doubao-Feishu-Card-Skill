@@ -1,0 +1,52 @@
+{
+  "schema": "feishu-image-art-direction/1",
+  "default_style": "swiss-editorial",
+  "version": "2026-09-05",
+  "palette": {
+    "background": "#F6F5F1",
+    "ink": "#15171A",
+    "accent": "#214DFA"
+  },
+  "intent": "瑞士编辑设计：中等字重标题、轻盈数字、非对称网格、克制用色，用信息本身形成视觉冲击",
+  "type_scale": {
+    "title": "52–64px at 1024px width, medium weight 500; two balanced lines",
+    "primary_metric": "96–116px, regular weight 400; same visual scale as supporting numbers",
+    "secondary_metric": "96–116px, regular weight 400",
+    "labels": "34–42px, regular weight 400; qualifiers at least 34px"
+  },
+  "layouts": {
+    "metrics": "one clean editorial row per supplied metric (never add rows to fill a template): labels left, values right on shared baselines; emphasize the first by blue ink, not a larger font; no hero number, no icons, no boxes",
+    "timeline": "a single strong vertical spine, large dates, alternating whitespace; stages stay in source order",
+    "relationship": "asymmetric editorial columns linked by one precise directional line",
+    "quote": "one large typographic quote, a small grounded attribution if supplied",
+    "banner": "wide editorial strip: left-aligned title, one source-backed focal fact on the right; native Card holds details"
+  },
+  "avoid": [
+    "beveled or extruded typography",
+    "3D clip-art icons",
+    "floating rounded-card grid",
+    "leaf ornaments",
+    "decorative trend lines",
+    "gold trim",
+    "pale low-contrast text",
+    "generic dashboard mockups",
+    "more than one visual style",
+    "ultra-bold black fonts",
+    "slanted or compressed glyphs",
+    "outline or beveled text"
+  ],
+  "mobile_qa": [
+    "headline readable at 360px",
+    "every qualifier and unit readable at 360px",
+    "no more than 7 text groups",
+    "no decorative asset competing with data",
+    "all numbers checked against source"
+  ],
+  "typography": {
+    "cjk": "modern humanist/grotesk CJK, Noto Sans SC or Source Han Sans-like",
+    "numerals": "Inter/Helvetica Neue-like regular numerals; clean open counters",
+    "weight_policy": "medium title / regular numerals / regular labels; never black or ultra-bold",
+    "line_height": "1.25–1.35 for Chinese headings, natural tracking",
+    "background_policy": "opaque or transparent is allowed; inspect contrast on intended Card surface"
+  }
+}

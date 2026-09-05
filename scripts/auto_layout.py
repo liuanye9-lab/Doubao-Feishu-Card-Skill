@@ -1284,7 +1284,8 @@ def compact_visible_blocks(
     """Keep a mobile card concise while preserving the full canonical source."""
     original = [block for block in blocks if isinstance(block, dict)]
     original_chars = _visible_block_text_chars(original)
-    needs_compaction = len(source_text.strip()) > 420 or len(original) > 8 or original_chars > 760
+    needs_compaction = (len(source_text.strip()) > 280 or len(original) > 6 or original_chars > 500
+                        or any(_visible_block_text_chars([b]) > 220 for b in original))
     if not needs_compaction:
         return list(original), {
             "applied": False,
@@ -1303,14 +1304,19 @@ def compact_visible_blocks(
         else:
             candidates.append(block)
 
-    quotas = {"text": 1, "div": 1, "highlight": 2, "section": 5, "quote": 1, "timeline": 1, "facts": 1, "metrics": 1, "chart": 1, "buttons": 1}
+    quotas = {"text": 1, "div": 1, "highlight": 2, "section": 3, "quote": 1, "timeline": 1, "facts": 1, "metrics": 1, "chart": 1, "buttons": 1}
     used = {key: 0 for key in quotas}
     compacted: List[Dict[str, Any]] = []
     omitted: List[Dict[str, Any]] = []
+    seen_copy: set[str] = set()
     for block in candidates:
         kind = str(block.get("type") or "text")
         bucket = "buttons" if kind in {"button", "buttons"} else kind
-        if bucket not in quotas or used[bucket] >= quotas[bucket]:
+        if bucket not in quotas:
+            # Compaction must not delete images, galleries, forms or other functional blocks.
+            compacted.append(dict(block))
+            continue
+        if used[bucket] >= quotas[bucket]:
             omitted.append(block)
             continue
         item = dict(block)
@@ -1318,7 +1324,7 @@ def compact_visible_blocks(
             field = "content" if "content" in item else "text"
             item[field] = _compact_display_text(item.get(field), max_chars=110, max_lines=1)
         elif kind == "section":
-            item["body"] = _compact_display_text(item.get("body", item.get("content", "")), max_chars=90, max_lines=2)
+            item["body"] = _compact_display_text(item.get("body", item.get("content", "")), max_chars=60, max_lines=2)
         elif kind == "quote":
             item["text"] = _compact_display_text(item.get("text", item.get("content", "")), max_chars=120, max_lines=1)
         elif kind in {"facts", "metrics"}:
@@ -1332,6 +1338,12 @@ def compact_visible_blocks(
                 compact_row["body"] = _compact_display_text(row.get("body", row.get("content", "")), max_chars=84, max_lines=2)
                 timeline_items.append(compact_row)
             item["items"] = timeline_items
+        if kind in {"text", "div", "highlight", "section"}:
+            copy_key = str(item.get("body") or item.get("content") or item.get("text") or "").strip()
+            if copy_key and copy_key in seen_copy:
+                omitted.append(block)
+                continue
+            seen_copy.add(copy_key)
         compacted.append(item)
         used[bucket] += 1
 

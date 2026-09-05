@@ -1,6 +1,7 @@
 import sys
 import tempfile
 import unittest
+from media_fixtures import write_test_png
 from pathlib import Path
 
 
@@ -17,7 +18,7 @@ class RegisterImageGenerationTests(unittest.TestCase):
             image_path = bundle / "hero.png"
             prompt_path = bundle / "demo.image-prompt.md"
             manifest_path = bundle / "hero-generation.json"
-            image_path.write_bytes(b"banner-seedream")
+            write_test_png(image_path)
             prompt_path.write_text("banner prompt\n", encoding="utf-8")
             manifest = register(
                 str(image_path),
@@ -38,7 +39,7 @@ class RegisterImageGenerationTests(unittest.TestCase):
             bundle = Path(temp_dir)
             image_path = bundle / "hero.png"
             prompt_path = bundle / "demo.image-prompt.md"
-            image_path.write_bytes(b"banner-seedream")
+            write_test_png(image_path)
             prompt_path.write_text("banner prompt\n", encoding="utf-8")
             with self.assertRaises(ValueError):
                 register(

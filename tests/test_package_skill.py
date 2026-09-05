@@ -24,7 +24,7 @@ class PackageSkillTests(unittest.TestCase):
         self.assertIn("doubao-feishu-card/scripts/motion_strategy.py", names)
         self.assertIn("doubao-feishu-card/scripts/register_motion_generation.py", names)
         self.assertTrue(all(name.startswith("doubao-feishu-card/") for name in names))
-        self.assertFalse(any("/.git/" in name or "/outputs/" in name or "__pycache__" in name for name in names))
+        self.assertFalse(any("/.git/" in name or ("/outputs/" in name and not name.endswith("/outputs/.gitkeep")) or "__pycache__" in name for name in names))
 
 
 if __name__ == "__main__":

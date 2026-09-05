@@ -3,6 +3,7 @@ import hashlib
 import sys
 import tempfile
 import unittest
+from media_fixtures import write_test_png
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,7 +93,7 @@ class DoubaoPipelineTests(unittest.TestCase):
         bundle = Path(temp_dir) / name
         bundle.mkdir(parents=True, exist_ok=True)
         image_path = bundle / "hero.png"
-        image_path.write_bytes(b"complete-seedream-card")
+        write_test_png(image_path)
         report = run_pipeline(text, Path(temp_dir), name=name, **kwargs)
         prompt_path = bundle / f"{name}.image-prompt.md"
         (bundle / "hero-generation.json").write_text(
@@ -110,7 +111,11 @@ class DoubaoPipelineTests(unittest.TestCase):
             }, ensure_ascii=False),
             encoding="utf-8",
         )
-        return run_pipeline(text, Path(temp_dir), name=name, **kwargs)
+        report = run_pipeline(text, Path(temp_dir), name=name, **kwargs)
+        if report["readiness"]["image_ready"]:
+            from finalize_card import record_review
+            report = record_review(report["editable_spec"], "Synthetic QA fixture; contract test only.")
+        return report
 
     def test_default_run_is_seedream_direct(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -201,7 +206,7 @@ class DoubaoPipelineTests(unittest.TestCase):
         self.assertLessEqual(stats["visible_text_chars"], 900)
         self.assertLessEqual(stats["max_text_block_chars"], 220)
         self.assertFalse(any(item.get("tag") == "collapsible_panel" for item in card["body"]["elements"]))
-        self.assertEqual(stats["charts"], 1)
+        self.assertEqual(stats["charts"], 0)
 
     def test_source_backed_metrics_create_editable_visual_spec_and_chart(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -211,10 +216,10 @@ class DoubaoPipelineTests(unittest.TestCase):
             card = json.loads((bundle / "metrics.card").read_text(encoding="utf-8"))
 
         self.assertEqual(visual_spec["schema"], "doubao-feishu-card-visual-spec/1")
-        self.assertEqual(visual_spec["visual_type"], "data_bar")
+        self.assertEqual(visual_spec["visual_type"], "thematic_information_visual")
         self.assertEqual([item["display"] for item in visual_spec["metrics"][:4]], ["95%以上", "缩短30%", "提升20pct", "减少70%"])
-        self.assertEqual([item["value"] for item in visual_spec["chart"]["items"]], [95.0, 30.0, 70.0])
-        self.assertTrue(any(item.get("tag") == "chart" for item in card["body"]["elements"]))
+        self.assertIsNone(visual_spec["chart"])
+        self.assertFalse(any(item.get("tag") == "chart" for item in card["body"]["elements"]))
         self.assertEqual(report["status"], "needs_image")
 
     def test_buttons_are_real_native_actions_and_capped_at_two(self) -> None:

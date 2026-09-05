@@ -78,6 +78,8 @@ class MotionPipelineTests(unittest.TestCase):
                 name="ready-motion",
                 hero_img_key="img_seedance_gif_test",
             )
+            from finalize_card import record_review
+            report = record_review(report["editable_spec"], "Synthetic GIF fixture, not a real Seedance run.")
             card = json.loads((bundle / "ready-motion.card").read_text(encoding="utf-8"))
 
         self.assertEqual(first["status"], "needs_gif")

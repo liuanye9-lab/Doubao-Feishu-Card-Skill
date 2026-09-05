@@ -1,6 +1,6 @@
 ---
 name: doubao-feishu-card
-description: "面向豆包工作平台，把文案、文档、表格或案例材料转成源锁定的飞书 Card 2.0。先逐问澄清到 95%，再自动压缩长文、加入节制的语义 Emoji、生成来源数据图表和真实按钮；静态视觉使用平台内置 Seedream 5.0 Pro，流程/时间线/状态变化等内容自动改用平台内置 Seedance 2.5 直出 GIF，并优先通过 img_key 嵌入 CardKit。输出可编辑 spec、visual/motion spec、raw .card 与 .cardkit.card，支持 CardKit 导入和可选 Bot 预览。用户提到豆包工作、飞书卡片、CardKit、图文卡、案例卡、数据卡、信息图卡或动态卡片时使用。"
+description: "面向豆包工作平台，把文案、文档、表格或案例材料转成源锁定的飞书 Card 2.0。先逐问澄清到 95%，再自动压缩长文、加入节制的语义 Emoji、生成来源数据图表和真实按钮；静态视觉使用平台内置 Seedream 5.0 Pro，流程/时间线/状态变化等内容自动优先选择平台内置 Seedance 2.5 并在宿主支持时直出 GIF，并优先通过 img_key 嵌入 CardKit。输出可编辑 spec、visual/motion spec、raw .card 与 .cardkit.card，支持 CardKit 导入和可选 Bot 预览。用户提到豆包工作、飞书卡片、CardKit、图文卡、案例卡、数据卡、信息图卡或动态卡片时使用。"
 metadata:
   short-description: "豆包原生生图/动图与可编辑飞书卡片"
 ---
@@ -9,7 +9,7 @@ metadata:
 
 把用户材料做成一张“先看懂、再行动”的飞书 Card 2.0。默认结果不是长文搬运，而是：1 句摘要、3–5 个关键点、3–6 个节制的语义 Emoji、来源数据图表（如有）、一张信息视觉，以及最多 1 个主按钮和 1 个次按钮。完整原文始终锁定在 `source.txt` 和 `analysis.source_text`。
 
-本 Skill 是独立的豆包工作适配版。静态图调用宿主内置 Seedream 5.0 Pro；动效调用宿主内置 Seedance 2.5，并要求直接生成 GIF，不在本地把视频转成 GIF。CardKit 可直接呈现上传后的 GIF `img_key`；关键事实、图表和按钮仍须保留在原生 Card 中，不能只存在于动画帧。
+本 Skill 是独立的豆包工作适配版。静态图调用宿主内置 Seedream 5.0 Pro；动效调用宿主内置 Seedance 2.5，优先请求直接生成 GIF，不在本地把视频转成 GIF。是否能直出须以本次宿主工具声明为准，不能从 CardKit 支持 GIF 推断模型必然直出 GIF。CardKit 可直接呈现上传后的 GIF `img_key`；关键事实、图表和按钮仍须保留在原生 Card 中，不能只存在于动画帧。
 
 ## 需求澄清门（最高优先级）
 
@@ -22,10 +22,27 @@ metadata:
 - 达到 95% 后，用一句话复述已理解的目标，然后直接执行。用户纠正时回到单问题追问。
 - 澄清门不扩大授权范围。上传图片、发送消息、导入 CardKit、创建或覆盖远程资源仍只在用户明确要求后执行。
 
+## 当前默认生图风格
+
+采用 [image-art-direction.json](./presets/image-art-direction.json) 的瑞士编辑设计：
+标题中等字重、数字常规字重、标签克制、网格对齐、少量强调色。
+数据不一律装进圆角框，不默认画浮雕图标或叶片。字体名是视觉参考，
+不能承诺模型真的使用或嵌入指定字体。透明底允许；结合实际 Card 背景检查可读性。
+用户明确指定风格/字体/背景时优先。历史风格目录和示例坐标仅供选用，
+不能覆盖当前 art-direction，不能把多个风格段落混入同一个提示词。
+
+## 必须读的可靠性闭环
+
+开始执行前读取 [reliability-workflow.md](./references/reliability-workflow.md)：
+`media_task` 指向下一项真实工具动作；修改已有卡片使用 `--resume`，
+检查图片和原生布局后记录 `visual-review.json`，不能把草稿或过期验收当成完成。
+生图/动图登记与最终验收是允许且必需的阶段命令；禁止自由拼装旧编译流程。
+已澄清并确认的同一任务直接续做，不重复询问已经回答的问题。
+
 ## 不可破坏的契约
 
 1. **源锁定**：不得编造标题、日期、数字、人名、URL、状态、效果或图片 key。所有安全改写写入 `analysis.transformations`。
-2. **短而可扫**：全卡可见文字默认不超过 900 字；单块不超过 220 字；不把全文塞入折叠区规避密度门。
+2. **短而可扫**：全卡可见文字目标约 200–350 字，900 字为硬拒绝线；单块不超过 220 字；不把全文塞入折叠区规避密度门。
 3. **信息视觉默认开启**：除非用户明确要求无图，否则必须生成真正承载关系、阶段、对比或指标的信息视觉，不接受纯装饰图。
 4. **Emoji 有节制**：默认 `semantic`，每个关键模块最多一个，每张卡约 3–6 个；用户要求无 Emoji 时关闭。
 5. **按钮必须真实**：图片里禁止按钮、CTA 胶囊、假链接和伪交互。原生按钮只能使用来源中的真实 URL，或已经实现的 application Bot callback/form。
@@ -56,7 +73,7 @@ Seedream 直接生成最终 PNG。禁止 HTML/CSS、SVG、Pillow 叠字、本地
 
 单一状态、纯指标看板、合规说明或用户明确“不要动图”时保持静态。可用 `--motion on|off|auto` 覆盖；显式“不要动图”始终优先。
 
-Seedance 必须直接输出 `hero.gif`，约 4–8 秒、可循环、移动端可读。禁止先生成 MP4 再本地转换，也禁止本地补帧、截帧或叠字。`register_motion_generation.py` 会拒绝伪 GIF、单帧 GIF、哈希不匹配或缺提示词 provenance 的资产。
+先发现宿主实际 Seedance 工具与支持的输出格式；仅在支持 GIF 时直接输出 `hero.gif`，约 4–8 秒、可循环、移动端可读。若工具缺失或仅输出视频，报告 `motion_capability_unavailable`，保留草稿；未获用户同意不偷换模型/静态模式、不伪造参数。禁止先生成 MP4 再本地转换，也禁止本地补帧、截帧或叠字。`register_motion_generation.py` 会拒绝伪 GIF、单帧 GIF、哈希不匹配或缺提示词 provenance 的资产。
 
 ## 稳定入口
 
@@ -89,7 +106,8 @@ python3 scripts/stable_card.py \
 
 - `needs_image`：静态卡结构已完成，必须继续调用 Seedream 5.0 Pro、登记并上传 `hero.png`。
 - `needs_gif`：动态卡结构已完成，必须继续调用 Seedance 2.5 直出、登记并上传 `hero.gif`。
-- `ready`：结构、provenance、真实 `img_key` 和发送门禁均通过。
+- `needs_visual_review`：媒体与 key 已就绪，继续检查最终媒体和原生卡片并记录验收。
+- `ready`：结构、provenance、真实 `img_key`、视觉验收和发送门禁均通过。
 - `blocked`：来源、结构、安全或兼容性门禁失败，先修复同源 spec 再重跑。
 
 `needs_image` 和 `needs_gif` 都是中间态，不能当成交付完成。
@@ -112,7 +130,7 @@ python3 scripts/register_motion_generation.py \
   --prompt outputs/my-card/my-card.motion-prompt.md
 ```
 
-随后用 `scripts/feishu_cli.py upload-image` 获取真实 `image_key`，再以 `--hero-img-key` 重跑稳定入口。Bot 预览不是生成或 CardKit 导入的必需步骤。
+随后用 `scripts/feishu_cli.py upload-image` 获取真实 `image_key`，再以 `--resume <已有 spec> --hero-img-key <真实 key>` 继续编译，保留已有编辑。Bot 预览不是生成或 CardKit 导入的必需步骤。
 
 ## 默认产物
 

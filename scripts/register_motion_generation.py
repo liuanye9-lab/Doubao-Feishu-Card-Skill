@@ -77,7 +77,8 @@ def register(
         raise ValueError(f"motion asset not found: {asset_path}")
     if asset_path.name != "hero.gif":
         raise ValueError("the selected Seedance asset must be named hero.gif")
-    inspection = _inspect_gif(asset_path)
+    from asset_validation import inspect_asset
+    inspection = inspect_asset(asset_path, "GIF")
     prompt_path = _inside_root(prompt) if prompt else asset_path.with_name(f"{asset_path.parent.name}.motion-prompt.md")
     if not prompt_path.is_file():
         raise ValueError(f"motion prompt file not found: {prompt_path}")
