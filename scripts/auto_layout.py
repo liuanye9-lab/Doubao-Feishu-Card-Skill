@@ -1347,10 +1347,8 @@ def compact_visible_blocks(
         compacted.append(item)
         used[bucket] += 1
 
-    # Preserve action placement at the bottom even if the source listed the URL
-    # earlier.  This changes layout only; URL and label remain source-backed.
-    actions = [item for item in compacted if item.get("type") in {"button", "buttons"}]
-    compacted = [item for item in compacted if item.get("type") not in {"button", "buttons"}] + actions
+    # Preserve supplied action positions; the source-backed coordination pass
+    # binds auto-generated actions to their exact module, leaving global CTAs last.
     visible_chars = _visible_block_text_chars(compacted)
     transformations.append({
         "kind": "visible_card_compaction",
@@ -1656,6 +1654,10 @@ def build_auto_spec(
         str(item.get("component")): bool(item.get("selected", True))
         for item in design.get("component_strategy", []) if isinstance(item, dict)
     }
+    action_styles = {str(item.get("url")): item.get("button_kind") for item in raw_button_suggestions if isinstance(item, dict) and item.get("button_kind")}
+    for link in all_links:
+        if link["url"] in action_styles:
+            link["style"] = action_styles[link["url"]]
     buttons_enabled = selected_components.get("buttons", True)
     effective_link_mode = link_mode
     links = all_links if link_mode == "button" and buttons_enabled else []

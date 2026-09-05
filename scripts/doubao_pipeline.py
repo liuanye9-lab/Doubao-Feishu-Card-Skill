@@ -930,6 +930,8 @@ def run_pipeline(
         emoji_mode=emoji_mode,
         link_mode=link_mode,
     )
+    from layout_coordination import choose_image_mode, coordinate_layout
+    choose_image_mode(spec, explicit_mode=explicit_media_mode, banner_mode=BANNER_SEEDREAM_MODE)
     detected_urls = _detect_urls(text)
     if link_mode == "button":
         _merge_detected_url_buttons(spec, detected_urls)
@@ -1097,6 +1099,7 @@ def run_pipeline(
                 break
     _promote_quote_block(spec)
     _refresh_functional_text_contract(spec)
+    coordinate_layout(spec, banner=image_generation_mode == BANNER_SEEDREAM_MODE and not motion_selected)
     visual_contract = spec.get("visual_contract") if isinstance(spec.get("visual_contract"), dict) else {}
     if isinstance(analysis.get("doubao_mode"), dict):
         analysis["doubao_mode"]["image_text_layout"] = visual_contract.get("image_text_layout") or image_generation_mode

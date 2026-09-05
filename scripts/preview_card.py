@@ -127,6 +127,7 @@ button { cursor:pointer; }
 .card-columns.bisect { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .card-columns.trisect { grid-template-columns:repeat(3,minmax(0,1fr)); }
 .card-columns.stretch, .card-columns.none { grid-template-columns:minmax(0,1fr); }
+.device.desktop .card-columns.stretch { grid-template-columns:repeat(var(--columns,1),minmax(0,1fr)); }
 .card-column { min-width:0; padding:9px; border-radius:8px; background:#f6f2e9; border:1px solid rgba(66,80,102,.08); display:flex; flex-direction:column; gap:4px; }
 .card-hr { border:0; border-top:1px solid #e6e2d9; width:100%; margin:2px 0; }
 .card-button { width:100%; border-radius:7px; padding:8px 10px; border:1px solid #cfcac0; background:#fff; color:#292824; font-weight:650; }
@@ -341,8 +342,8 @@ function renderElement(node) {
   if (tag==='img') { const src=node.local_preview_src; return src ? `<div class="image-preview-frame"><img src="${esc(src)}" alt="${esc(node.alt?.content||'功能性图片预览')}"></div>` : `<div class="image-placeholder">图片预览<br><small>${esc(node.img_key||'等待上传 img_key')}</small></div>`; }
   if (tag==='img_combination') return `<div class="image-combination ${esc(node.combination_mode||'double')}">${(node.img_list||[]).map(item=>`<div class="image-placeholder"><small>${esc(item?.img_key||'等待上传 img_key')}</small></div>`).join('')}</div>`;
   if (tag==='button') { const text=node.text?.content||''; return `<button class="card-button ${esc(node.type||'default')}">${esc(text)}</button>`; }
-  if (tag==='column_set') { const mode=node.flex_mode||'stretch'; const gap=cssLength(node.horizontal_spacing,'8px'); return `<div class="card-columns ${esc(mode)}" style="gap:${gap}">${(node.columns||[]).map(renderElement).join('')}</div>`; }
-  if (tag==='column') { const padding=cssLength(node.padding,'9px'); const gap=cssLength(node.vertical_spacing,'4px'); return `<div class="card-column" style="background:${surfaceColor(node.background_style)};padding:${padding};gap:${gap}">${(node.elements||[]).map(renderElement).join('')}</div>`; }
+  if (tag==='column_set') { const mode=node.flex_mode||'stretch'; const gap=cssLength(node.horizontal_spacing,'8px'); const margin=cssLength(node.margin,'0px'); return `<div class="card-columns ${esc(mode)}" style="gap:${gap};margin:${margin};--columns:${(node.columns||[]).length||1}">${(node.columns||[]).map(renderElement).join('')}</div>`; }
+  if (tag==='column') { const padding=cssLength(node.padding,'0px'); const gap=cssLength(node.vertical_spacing,'4px'); const surface=node.background_style?surfaceColor(node.background_style):'transparent'; return `<div class="card-column" style="background:${surface};border:0;padding:${padding};gap:${gap}">${(node.elements||[]).map(renderElement).join('')}</div>`; }
   if (tag==='collapsible_panel') { const title=node.header?.title?.content||'展开详情'; return `<details class="collapse-box"><summary>${esc(title)}</summary>${(node.elements||[]).map(renderElement).join('')}</details>`; }
   if (tag==='table') { const cols=node.columns||[]; const rows=node.rows||[]; return `<div class="table-box"><table class="preview-table"><thead><tr>${cols.map(c=>`<th>${esc(c.display_name||c.name||'')}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${cols.map(c=>`<td>${esc(renderValue(row?.[c.name]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`; }
   if (tag==='chart') { const type=node.chart_spec?.type||'chart'; return `<div class="chart-box"><strong>图表预览 · ${esc(type)}</strong><pre>${esc(JSON.stringify(node.chart_spec||{},null,2))}</pre></div>`; }

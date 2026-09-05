@@ -531,7 +531,7 @@ def image_block_element(block: Dict[str, Any], counter: List[int]) -> Optional[D
         "tag": "img",
         "img_key": img_key,
         "alt": plain(non_empty(block.get("alt")) or "飞书 AI 先锋卡片图片"),
-        "scale_type": block.get("scale_type", "crop_center"),
+        "scale_type": block.get("scale_type", "fit_horizontal"),
         "size": block.get("size", "stretch"),
         "corner_radius": block.get("corner_radius", "8px"),
         "preview": block.get("preview", True),
@@ -992,20 +992,33 @@ def block_elements(
                 if highlight:
                     elements.append(highlight)
             else:
-                elements.extend(
-                    section_elements(
-                        {"sections": [block]},
-                        counter,
-                        accent=accent,
-                        surface_style=surface_style,
-                        auto_emphasis=auto_emphasis,
-                    )
+                section_nodes = section_elements(
+                    {"sections": [block]}, counter, accent=accent,
+                    surface_style=surface_style, auto_emphasis=auto_emphasis,
                 )
+                action_nodes, action_contracts = button_elements({"buttons": block.get("actions", [])}, counter)
+                contracts.extend(action_contracts)
+                if block.get("coordinated") and section_nodes:
+                    elements.append({
+                        "tag": "column_set", "flex_mode": "none", "horizontal_spacing": "0px",
+                        "margin": block.get("module_margin", "8px 0px 0px 0px"),
+                        "element_id": block_element_id(block, "module", counter),
+                        "columns": [{"tag": "column", "width": "weighted", "weight": 1,
+                                     "padding": block.get("module_padding", "0px"),
+                                     "vertical_spacing": block.get("module_spacing", "4px"),
+                                     "elements": section_nodes + action_nodes}],
+                    })
+                else:
+                    elements.extend(section_nodes + action_nodes)
         elif kind in {"facts", "metrics"}:
             items = block.get("items", block.get("facts", block.get("metrics", [])))
             if kind == "metrics":
                 items = [{"label": item.get("metric", item.get("label", "")), "value": item.get("value", "")} if isinstance(item, dict) else item for item in (items or [])]
-            elements.extend(fact_elements({"facts": items}, counter, accent=accent, surface_style=surface_style))
+            if block.get("compact"):
+                copy = "\n".join(f"**{as_text(item.get('label', ''))}**　{as_text(item.get('value', ''))}" for item in (items or []) if isinstance(item, dict))
+                elements.append(markdown(copy, text_size="normal_v2", eid=block_element_id(block, "facts_compact", counter)))
+            else:
+                elements.extend(fact_elements({"facts": items}, counter, accent=accent, surface_style=surface_style))
         elif kind == "timeline":
             timeline_spec = {
                 "timeline": block.get("items", block.get("timeline", [])),
@@ -1077,6 +1090,7 @@ def block_elements(
                     counter,
                     accent=accent,
                     surface_style=surface_style,
+                    auto_emphasis=auto_emphasis,
                 )
                 contracts.extend(inner_contracts)
                 columns.append({
@@ -1084,14 +1098,17 @@ def block_elements(
                     "width": column.get("width", "weighted"),
                     "weight": column.get("weight", 1),
                     "vertical_align": column.get("vertical_align", "top"),
-                    "padding": column.get("padding", "8px"),
+                    "padding": column.get("padding", "0px"),
+                    "vertical_spacing": column.get("vertical_spacing", "4px"),
+                    **({"background_style": column["background_style"]} if column.get("background_style") else {}),
                     "elements": inner,
                 })
             if columns:
                 elements.append({
                     "tag": "column_set",
                     "flex_mode": block.get("flex_mode") or default_flex_mode(len(columns)),
-                    "horizontal_spacing": block.get("horizontal_spacing", "8px"),
+                    "horizontal_spacing": block.get("horizontal_spacing", "12px"),
+                    "margin": block.get("margin", "0px"),
                     "columns": columns,
                     "element_id": block_element_id(block, "columns", counter),
                 })
@@ -1559,9 +1576,9 @@ def build_card(
                 "tag": "img",
                 "img_key": non_empty(hero.get("img_key")),
                 "alt": plain(non_empty(hero.get("alt")) or "飞书 AI 先锋大赛视觉首图"),
-                "scale_type": "crop_center",
-                "size": "stretch",
-                "corner_radius": "8px",
+                "scale_type": hero.get("scale_type", "fit_horizontal"),
+                "size": hero.get("size", "stretch"),
+                "corner_radius": hero.get("corner_radius", "8px"),
                 "preview": True,
                 "margin": "0px",
                 "element_id": element_id("hero", counter[0]),
@@ -1821,6 +1838,10 @@ def _blocks_contain_type(blocks: Any, aliases: set[str]) -> bool:
         if not isinstance(block, dict):
             continue
         if str(block.get("type", block.get("kind", ""))).lower() in aliases:
+            return True
+        if aliases & {"button", "buttons"} and block.get("actions"):
+            return True
+        if any(_blocks_contain_type(col.get("blocks", col.get("elements", [])), aliases) for col in block.get("columns", []) if isinstance(col, dict)):
             return True
         children = block.get("blocks", block.get("elements", []))
         if _blocks_contain_type(children, aliases):

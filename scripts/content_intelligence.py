@@ -273,6 +273,9 @@ def high_confidence_duplicate(left: str, right: str) -> bool:
 
 
 def infer_action_label(context: str) -> str:
+    label = str(context or "").strip(" \t：:。.!！[]()（）")
+    if len(label) <= 18 and re.match(r"^(?:我也要|查看|打开|预约|订阅|下载)", label):
+        return label  # Preserve an explicit short action and its object, not just a keyword.
     value = context.lower()
     if any(word in value for word in ("报名", "注册", "参加", "join", "register")):
         return "立即报名"
@@ -298,7 +301,8 @@ def _button_priority(context: str) -> Tuple[int, List[str]]:
     reader what to do; otherwise the URL stays visible as an inline reference.
     """
     value = str(context or "").lower()
-    strong = [word for word in STRONG_ACTION_WORDS if word.lower() in value]
+    read_action = bool(re.match(r"^\s*(?:查看|打开|了解)", value))
+    strong = [] if read_action else [word for word in STRONG_ACTION_WORDS if word.lower() in value]
     ordinary = [word for word in ACTION_WORDS if word.lower() in value]
     passive = [word for word in PASSIVE_LINK_WORDS if word.lower() in value]
     explicit_cue = bool(re.search(r"(?:请|立即|点击|前往|进入|填写|领取|报名入口|提交入口|下载|预约|join|register|submit|apply)", value, re.I))

@@ -111,3 +111,5 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 自动测试使用明确标注的合成媒体与 mock，不作为真实宿主/远程 CardKit 成功证据。
 
 默认生图提示词已统一为瑞士编辑设计：中等字重的现代黑体标题、等尺度的轻盈数字、克制标签和单一强调色；透明底允许使用，并在实际卡片底色上验收。版式按真实指标数量或流程结构适配，不为套模板补造数据。具体可调参数见 [`presets/image-art-direction.json`](./presets/image-art-direction.json)。
+
+新增 [图文按钮协同排版](./references/layout-coordination.md)：轻量通知可自动选横幅，原生模块集中标题/说明/行动，按来源标题区间绑定按钮，保留显式短按钮文案；信息图完整展示而非居中裁切。已有 preset、字体和色板不变，已有 spec 续编译不自动重排。

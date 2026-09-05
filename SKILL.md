@@ -31,6 +31,13 @@ metadata:
 用户明确指定风格/字体/背景时优先。历史风格目录和示例坐标仅供选用，
 不能覆盖当前 art-direction，不能把多个风格段落混入同一个提示词。
 
+## 图文按钮协同排版
+
+制作或优化整卡前读取 [layout-coordination.md](./references/layout-coordination.md)。
+借鉴参考图的阅读顺序、模块分组与按钮邻近关系，不替换现有视觉风格。
+新生成阶段自动记录 layout_coordination；通知/培训优先轻量横幅，复杂指标/阶段保留信息图，显式图片模式优先。
+原生 section 的 coordinated/actions 与 columns 支持模块化布局；续编译不重排用户编辑。
+
 ## 必须读的可靠性闭环
 
 开始执行前读取 [reliability-workflow.md](./references/reliability-workflow.md)：
@@ -57,8 +64,8 @@ metadata:
 
 ### 静态视觉：Seedream 5.0 Pro
 
-- `seedream_5_pro_direct_full_card`：2:3 竖版信息图，默认选择。
-- `seedream_5_pro_banner_plus_native_card`：约 3:1 横幅首图 + 原生 Card，需显式选择。
+- `seedream_5_pro_direct_full_card`：2:3 竖版信息图，适合复杂指标/阶段/关系。
+- `seedream_5_pro_banner_plus_native_card`：约 3:1 横幅首图 + 原生 Card；轻量通知/培训可自动选择，显式图片模式优先。
 
 Seedream 直接生成最终 PNG。禁止 HTML/CSS、SVG、Pillow 叠字、本地拼接、二次模型补字或任何后处理。生成内容只取自 `information_allocation.image.include`，不把 URL、按钮或长段落画进图片。
 
