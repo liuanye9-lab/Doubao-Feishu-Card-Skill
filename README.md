@@ -7,7 +7,7 @@
 - 一次只问一个问题，澄清到 95% 后才制作；按钮需求单独确认。
 - 自动压缩长文，默认 1 句摘要、3–5 个关键点、3–6 个语义 Emoji。
 - 真实数据自动选择原生柱状图、扇形图或折线图；不编造数字。
-- 静态信息视觉使用豆包工作内置 Seedream 5.0 Pro。
+- 静态信息视觉默认使用豆包工作内置 Seedream 5.0 Pro；文字密集且结构化的信息图才自动切换到自包含 HTML → 本机 Chrome → PNG。
 - 时间线、多步骤流程、状态变化或前后对比自动使用 Seedance 2.5 直出 GIF。
 - GIF 通过真实 `img_key` 优先嵌入 CardKit；关键事实和按钮仍保留在原生 Card。
 - 只用 `.card` 文件导入 CardKit，避免 `.json` 方言报错。
@@ -47,6 +47,21 @@ python3 scripts/register_image_generation.py \
   --prompt outputs/my-card/my-card.image-prompt.md
 ```
 
+如果报告中的 `render_strategy` 为 `html_infographic_to_png`，流程会自动生成并渲染 `my-card.infographic.html`，再登记同一目录的 `hero-generation.json`：
+
+```bash
+python3 scripts/render_html_infographic.py \
+  --html outputs/my-card/my-card.infographic.html \
+  --output outputs/my-card/hero.png \
+  --width 1200 --height 1800 --scale 2
+python3 scripts/register_html_render.py \
+  --image outputs/my-card/hero.png \
+  --html outputs/my-card/my-card.infographic.html \
+  --prompt outputs/my-card/my-card.html-prompt.md
+```
+
+HTML 只是精确排版的可编辑源，不是 CardKit 导入文件；真实按钮仍在原生 Card，上传前必须通过 HTML 源、PNG 和提示词哈希门禁。
+
 动态生成完成后登记：
 
 ```bash
@@ -65,7 +80,7 @@ python3 scripts/stable_card.py \
 
 ## 状态
 
-- `needs_image`：继续调用 Seedream、登记 PNG、上传并重编译。
+- `needs_image`：按 `render_strategy` 继续调用 Seedream 或完成 HTML→PNG，登记 PNG、上传并重编译。
 - `needs_gif`：继续调用 Seedance、登记 GIF、上传并重编译。
 - `needs_visual_review`：查看媒体与原生卡片，记录实际检查结论。
 - `ready`：结构、媒体 provenance、真实 `img_key`、视觉验收和安全门均通过。
@@ -98,11 +113,11 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 # 可选：使用当前宿主安装的 Skill 校验工具
 ```
 
-完整规则、媒体模型、交付证据和质量门见 [`SKILL.md`](./SKILL.md) 与 [`references/`](./references/)。
+完整规则、媒体模型、交付证据和质量门见 [`SKILL.md`](./SKILL.md)、[`references/html-infographic-route.md`](./references/html-infographic-route.md) 与 [`references/`](./references/)。
 
 ## 运行时边界
 
-`Seedream 5.0 Pro` 与 `Seedance 2.5` 是用户确认的豆包工作宿主能力标签。仓库负责路由、提示词、文件契约和 provenance 校验，但不能在 Codex 环境中代替豆包工作执行其内置模型。真实运行时必须记录宿主实际暴露的工具与模型 ID；未暴露时写 `platform-managed`，不得伪造。
+`Seedream 5.0 Pro` 与 `Seedance 2.5` 是用户确认的豆包工作宿主能力标签。仓库负责路由、提示词、文件契约和 provenance 校验，但不能在 Codex 环境中代替豆包工作执行其内置模型。默认保持模型优先；只有文字密集结构化信息图才使用受控、自包含 HTML→PNG fallback。真实运行时必须记录宿主实际暴露的工具与模型 ID；未暴露时写 `platform-managed`，不得伪造。
 
 ## 2026-09 可靠性更新
 
@@ -112,4 +127,4 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 
 默认生图提示词已统一为瑞士编辑设计：中等字重的现代黑体标题、等尺度的轻盈数字、克制标签和单一强调色；透明底允许使用，并在实际卡片底色上验收。版式按真实指标数量或流程结构适配，不为套模板补造数据。具体可调参数见 [`presets/image-art-direction.json`](./presets/image-art-direction.json)。
 
-新增 [图文按钮协同排版](./references/layout-coordination.md)：轻量通知可自动选横幅，原生模块集中标题/说明/行动，按来源标题区间绑定按钮，保留显式短按钮文案；信息图完整展示而非居中裁切。已有 preset、字体和色板不变，已有 spec 续编译不自动重排。
+新增 [图文按钮协同排版](./references/layout-coordination.md)：轻量通知可自动选横幅，原生模块集中标题/说明/行动，按来源标题区间绑定按钮，保留显式短按钮文案；信息图完整展示而非居中裁切。新增模型优先 + HTML 信息图 fallback 路由，已有 preset、字体和色板不变，已有 spec 续编译不自动重排。

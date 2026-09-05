@@ -3,7 +3,8 @@
 ## 状态
 
 - `generated`：本地已生成 `.card`、`.spec.json` 和报告。
-- `seedream_output_ready`：Seedream 5.0 Pro 已一次性生成当前模式的 `hero.png`（默认竖版信息图或显式横幅），并通过 provenance 文件和人工视觉复核门。
+- `seedream_output_ready`：当前静态视觉路径的 `hero.png` 已生成；Seedream 路径需模型 provenance，HTML 路径需 HTML render provenance，并都通过人工视觉复核门。
+- `html_render_ready`：HTML fallback 的源文件、固定视口 PNG、提示词与 `hero-generation.json` 哈希一致。
 - `seedance_output_ready`：Seedance 2.5 已直接生成真实、至少两帧的 `hero.gif`，并通过 motion provenance 和人工视觉复核门。
 - `visual_output_ready`：本次自动选择的 Seedream PNG 或 Seedance GIF 已完成对应门禁。
 - `image_ready`：当前模式的 `hero.png` 或 `hero.gif` 已通过 `lark-cli im images create` 上传，回读到真实 `image_key`，且重新编译后的 `.card` 已包含 `<img>` 节点。只有本地有媒体或 provenance 都不算 `image_ready`。
@@ -65,7 +66,7 @@ bytedcli -j feishu cardkit template import \
 
 ## 写入门禁
 
-默认媒体资产链为：先完成信息分工与视觉方法路由 → 静态内容由 Seedream 5.0 Pro 直出 `hero.png`，流程/时间线/状态变化等内容由 Seedance 2.5 直出 `hero.gif` → 写入对应 provenance（工具、模型、资产哈希、提示词哈希和模式）→ 人工视觉复核 → 获取真实 `img_key` → 重新编译 `.card`。原生 Card 保留精简摘要、来源图表和真实按钮，完整事实留在 `source.txt`。CLI 会拒绝没有直出溯源的 `hero.png`/`hero.gif`，也不会接受本地路径、URL 或示例 key。
+默认媒体资产链为：先完成信息分工与视觉方法路由 → 静态内容默认由 Seedream 5.0 Pro 直出 `hero.png`，文字密集结构化内容才改由自包含 HTML → 本机 Chrome → `hero.png`，流程/时间线/状态变化等动态内容由 Seedance 2.5 直出 `hero.gif` → 写入对应 provenance（工具、模型/渲染器、资产哈希、提示词哈希和模式）→ 人工视觉复核 → 获取真实 `img_key` → 重新编译 `.card`。两条静态路径只渲染图片文字白名单中的关系、排版、时间线和 quote，绝不绘制按钮或 CTA；原生 Card 保留精简摘要、来源图表和真实按钮，完整事实留在 `source.txt`。CLI 会拒绝没有匹配溯源的 `hero.png`/`hero.gif`，也不会接受本地路径、URL 或示例 key。
 
 先 dry-run：
 

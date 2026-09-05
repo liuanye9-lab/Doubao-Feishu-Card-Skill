@@ -174,11 +174,14 @@ def _image_readiness_gate(path: Path) -> Optional[Dict[str, Any]]:
         return None
     if bool(doubao.get("image_required")) and not bool(readiness.get("image_ready")):
         dynamic = bool(doubao.get("seedance_required"))
+        html_route = str(doubao.get("render_strategy") or doubao.get("card_image_contract", {}).get("render_strategy") or "") == "html_infographic_to_png"
         return {
             "status": "image_required",
             "message": (
                 "该卡片报告仍要求 Seedance 2.5 直出的 hero.gif；请先生成、登记并上传 GIF，获得真实 image_key 后重新编译。"
                 if dynamic
+                else "该卡片报告仍要求 HTML 信息图导出的 hero.png；请先完成 HTML→PNG 渲染与溯源登记，上传它获得真实 image_key 后重新编译。"
+                if html_route
                 else "该卡片报告仍要求 Seedream 5.0 Pro 直出的 hero.png；请先生成、登记并上传图片，获得真实 image_key 后重新编译。"
             ),
             "card": str(path),
@@ -221,6 +224,45 @@ def _image_upload_gate(path: Path) -> Optional[Dict[str, Any]]:
                     "image": str(path),
                     "provenance": str(provenance_path),
                 }
+            if (
+                isinstance(provenance, dict)
+                and (
+                    provenance.get("schema") == "feishu-card-html-render-provenance/1"
+                    or provenance.get("tool") == "html_to_png"
+                    or provenance.get("render_strategy") == "html_infographic_to_png"
+                )
+            ):
+                html_value = Path(str(provenance.get("html_file") or ""))
+                html_path = html_value if html_value.is_absolute() else path.parent / html_value
+                prompt_value = Path(str(provenance.get("prompt_file") or ""))
+                prompt_path = prompt_value if prompt_value.is_absolute() else path.parent / prompt_value
+                image_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
+                html_sha256 = hashlib.sha256(html_path.read_bytes()).hexdigest() if html_path.is_file() else None
+                prompt_hash_ok = bool(prompt_path.is_file() and provenance.get("prompt_sha256"))
+                if prompt_hash_ok:
+                    prompt_hash_ok = provenance.get("prompt_sha256") == hashlib.sha256(prompt_path.read_bytes()).hexdigest()
+                html_valid = (
+                    provenance.get("schema") == "feishu-card-html-render-provenance/1"
+                    and provenance.get("tool") == "html_to_png"
+                    and provenance.get("generation_family") == "html-render"
+                    and provenance.get("render_strategy") == "html_infographic_to_png"
+                    and provenance.get("generation_mode") == "html_infographic_to_png"
+                    and provenance.get("text_policy") == "html_selected_text_and_layout"
+                    and provenance.get("asset_name") == "hero.png"
+                    and provenance.get("image_sha256") == image_sha256
+                    and provenance.get("html_sha256") == html_sha256
+                    and prompt_hash_ok
+                )
+                if html_valid:
+                    return None
+                return {
+                    "ok": False,
+                    "status": "html_render_provenance_failed",
+                    "message": "hero.png 的 HTML→PNG 溯源、HTML 源文件、文件哈希或提示词哈希校验失败，不能上传。",
+                    "image": str(path),
+                    "provenance": str(provenance_path),
+                    "html": str(html_path),
+                }
             text_policy = str(provenance.get("text_policy") or "").strip() if isinstance(provenance, dict) else ""
             generation_mode = str(provenance.get("generation_mode") or "").strip() if isinstance(provenance, dict) else ""
             if not generation_mode:
@@ -257,14 +299,14 @@ def _image_upload_gate(path: Path) -> Optional[Dict[str, Any]]:
                 return {
                     "ok": False,
                     "status": "visual_provenance_failed",
-                    "message": "hero.png 的 Seedream 5.0 Pro 直出溯源、模式、文件哈希或提示词哈希校验失败，不能上传。",
+                    "message": "hero.png 的 Seedream/HTML 视觉溯源、模式、文件哈希或提示词哈希校验失败，不能上传。",
                     "image": str(path),
                     "provenance": str(provenance_path),
                 }
         return {
             "ok": False,
             "status": "visual_provenance_missing",
-            "message": "hero.png 没有被登记为 Doubao Seedream 5.0 Pro 一次性完整卡片图片资产（当前模式可为竖版或横幅）；必须先生成图片分工清单中的图片并登记匹配的 generation_mode/text_policy。",
+            "message": "hero.png 没有被登记为 Doubao Seedream 5.0 Pro 一次性完整卡片图片资产或 HTML→PNG 完整卡片图片资产（当前模式可为竖版或横幅）；必须先按图片分工清单生成并登记匹配的 generation_mode/text_policy。",
             "image": str(path),
             "provenance": str(provenance_path),
         }

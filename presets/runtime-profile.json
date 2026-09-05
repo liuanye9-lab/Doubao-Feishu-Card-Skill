@@ -33,6 +33,18 @@
       "native_pairing": "Seedream 5.0 Pro 一次性生成横幅首图；原生 Card 紧随其后承载精简摘要、关键事实和真实按钮"
     }
   },
+  "render_strategies": {
+    "default": "native_model",
+    "html_infographic_to_png": {
+      "label": "自包含 HTML 信息图 → PNG",
+      "selection": "only_dense_structured_copy",
+      "text_policy": "html_selected_text_and_layout",
+      "renderer": "headless Chrome-family browser",
+      "viewport": {"width": 1200, "height": 1800, "scale": 2},
+      "source_contract": "self_contained_html_no_external_assets",
+      "card_contract": "upload_png_only_html_is_editable_source_and_provenance"
+    }
+  },
   "motion": {
     "provider": "doubao-work.builtin-video",
     "generation_tool": "doubao.video_gen",

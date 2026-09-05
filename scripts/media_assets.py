@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional, Sequence
 
 MAX_FRAME_SCAN = 240
 SUPPORTED_FORMATS = {"GIF", "JPEG", "PNG", "WEBP"}
-IMAGE_SOURCE_TYPES = {"real_image", "ai_generated"}
+IMAGE_SOURCE_TYPES = {"real_image", "ai_generated", "html_rendered"}
 
 
 def _sha256(path: Path) -> str:
@@ -157,7 +157,7 @@ def _parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Inspect card media without modifying the supplied files")
     parser.add_argument("--input", action="append", required=True, type=Path, help="local PNG/JPEG/WebP/GIF; repeat for a set")
     parser.add_argument("--role", default="supporting", help="asset role, e.g. hero, timeline, screenshot, gallery")
-    parser.add_argument("--image-source", choices=sorted(IMAGE_SOURCE_TYPES), default="real_image", help="source type for the inspected media; AI hero provenance uses hero-generation.json")
+    parser.add_argument("--image-source", choices=sorted(IMAGE_SOURCE_TYPES), default="real_image", help="source type for the inspected media; AI and HTML hero provenance use hero-generation.json")
     parser.add_argument("--output", type=Path, help="write the manifest JSON to this path")
     return parser.parse_args(argv)
 

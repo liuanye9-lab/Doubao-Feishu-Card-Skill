@@ -1,21 +1,21 @@
 # 飞书卡片 Skill：十项优化路线
 
-这份路线把参考图中的共同规律固化成可执行的卡片规则：Seedream 5.0 Pro 整图承载视觉关系和允许进入图片的功能性文字，Card 原生文字承载精简摘要、来源图表与真实行动，`source.txt` 承载完整事实。图片不得绘制按钮、CTA 胶囊或伪交互。它不是“把一张长海报塞进 Card”，而是把参考图拆成可以编辑、校验和投递的模块；默认不再使用“底图 + 确定性叠字”的两段式流程。
+这份路线把参考图中的共同规律固化成可执行的卡片规则：默认由 Seedream 5.0 Pro 整图承载视觉关系和允许进入图片的功能性文字；文字密集结构化信息图可改走自包含 HTML→PNG。Card 原生文字承载精简摘要、来源图表与真实行动，`source.txt` 承载完整事实。图片不得绘制按钮、CTA 胶囊或伪交互；两条视觉路径都不使用“底图 + 确定性叠字”的两段式补丁。
 
 ## 十个值得持续优化的地方
 
 | # | 优化点 | 规则与验收标准 | 当前状态 |
 | --- | --- | --- | --- |
-| 1 | 图片来源分类 | 所有媒体显式标记 `image_source`: `real_image` 或 `ai_generated`。真实图片保留原像素、来源、尺寸和 `alt`；AI 图片必须有生成工具、生成家族和 provenance manifest。 | 已落地到 `media_contract`、`hero`、报告和资产计划 |
+| 1 | 图片来源分类 | 所有媒体显式标记 `image_source`: `real_image`、`ai_generated` 或 `html_rendered`。真实图片保留原像素、来源、尺寸和 `alt`；模型/HTML 图片必须有匹配 provenance manifest。 | 已落地到 `media_contract`、`hero`、报告和资产计划 |
 | 2 | AI 封面图合同 | AI 图片首先作为 `cover`：一眼交代主题、状态和视觉气质；移动端中心裁切安全，不允许无关氛围图、伪 Logo、水印或模型自由写事实。 | 已落地；统一要求 豆包工作 内置 `image_gen` 的 Seedream 5.0 Pro-class 生成步骤 |
-| 3 | 信息承载图片模板 | 按内容关系选择时间轴、课程路径、指标条、背景—做法—结果、界面解释或对比图；由 Seedream 5.0 Pro 在同一张完整图片中直接组织被分配的模块。时间、阶段、指标等选中文字必须直接进入最终 PNG，长说明留在 Card。 | 已落地；`information_allocation.image.include` 和 `functional_text` 作为 Seedream 5.0 Pro 源文案清单和人工复核依据 |
+| 3 | 信息承载图片模板 | 按内容关系选择时间轴、课程路径、指标条、背景—做法—结果、界面解释或对比图；默认由 Seedream 5.0 Pro 整图组织模块，文字密集结构化内容可由同一白名单驱动 HTML→PNG。时间、阶段、指标等选中文字必须进入最终 PNG，长说明留在 Card。 | 已落地；`information_allocation.image.include`、`functional_text` 和 `render_strategy` 共同约束模型/HTML 路径 |
 | 4 | 图片与文字协同 | 图片负责快速回答“是什么关系、先看哪里、如何流转”；相邻 Card 原生文字负责摘要、关键点、来源图表、可访问性和可编辑性，完整事实留在 `source.txt`。Banner 不承载 CTA 或按钮。 | 已落地；写入 `visual_contract.pairing` 和 `native_companion_policy` |
 | 5 | 图片与按钮协同 | 图片不绘制下一步按钮或视觉索引；原生 Card 按钮才承担 `open_url`、callback 或表单动作。默认只保留一个主 CTA；没有真实 URL/后端就不造按钮。 | 已落地；按钮和交互契约独立校验 |
 | 6 | 真实图片证据链 | 用户给的 Logo、截图、看板和案例图按 `real_image` 管理；用 `media_assets.py` 记录哈希、格式、尺寸、帧数和来源，图片旁边必须有解释文字和信息任务。 | 已落地基础 manifest；真实图片的远程 `img_key` 仍需上传后写回 |
 | 7 | 动图、图集与切换 | GIF 必须有可读首帧；多张静态图用 `img_combination`；上一张/下一张才使用 application Bot callback + `card.update`。没有后端时自动回退首图/静态图集。 | 已落地媒体路由、首帧检查和切换边界 |
-| 8 | 文字与数据保真 | 日期、数字、姓名、URL、指标和按钮标签只来自源文案；Seedream 5.0 Pro 必须按图片文字白名单生成，人工逐字复核错字、漏字、乱排版，失败时重新生成。 | 已落地；`source_sha256`、prompt hash、Seedream 5.0 Pro provenance 和人工视觉质量门 |
+| 8 | 文字与数据保真 | 日期、数字、姓名、URL、指标和按钮标签只来自源文案；选定视觉路径必须按图片文字白名单生成/排版，人工逐字复核错字、漏字、乱排版，失败时按路径重新生成或导出。 | 已落地；`source_sha256`、prompt/hash、模型或 HTML provenance 和人工视觉质量门 |
 | 9 | 移动端密度与性能 | 以手机单列为基线；主图保持一个焦点，卡片只留摘要、3–5 个关键点、图表和最多两个按钮；完整长文进入 `source.txt`。检查 Card 文件大小，避免“一张巨型长图替代所有信息”。 | 已强化；已加入文字密度门，后续可继续加入客户端回归截图 |
-| 10 | 可编辑投递与反馈闭环 | `.spec.json` 是 Card 原生编辑源，图片改字必须重新调用 Seedream 5.0 Pro；上传后必须拿到真实 `img_key` 并重新编译；CardKit 默认用 Byte CLI 直导并回读 `template_id + get/list`，需要可见验收时再用“我的卡片”列表名称 + 编辑页双证据；Bot 预览仅在用户明确要求时追加。 | 已落地流程；整条远程链默认 dry-run，一次确认后连续执行 |
+| 10 | 可编辑投递与反馈闭环 | `.spec.json` 是 Card 原生编辑源，图片改字必须按当前路径重新调用 Seedream 5.0 Pro 或重新导出受控 HTML；上传后必须拿到真实 `img_key` 并重新编译；CardKit 默认用 Byte CLI 直导并回读 `template_id + get/list`，需要可见验收时用“我的卡片”列表名称 + 编辑页双证据；Bot 预览仅在用户明确要求时追加。 | 已落地流程；整条远程链默认 dry-run，一次确认后连续执行 |
 
 ## 参考图转译成四类模板
 
@@ -41,4 +41,4 @@ AI 图或真实图在 `hero.image_roles` 中可以同时拥有以下角色，但
 
 豆包工作 调用内置生图工具时，生成家族必须记录为 `seedream-class`，工具写入实际可观察的标识（当前平台通常是 `doubao.image_gen`），并生成 `hero-generation.json`。平台若暴露具体模型 ID，额外写入 `model_id`；若没有暴露，使用 `platform-managed`，不能臆造“已使用某个具体 image2 模型”。
 
-Seedream 5.0 Pro 直接负责主题关系、物件、路径、光影、材质、选定标题、日期、阶段、指标、quote 和中文排版，但不负责按钮、CTA 标签或任何看起来可点击的控件。`hero.png` 就是最终图片；文字准确性依赖图片文字白名单、完整源文案核对、人工视觉复核和失败重生成，不依赖本地叠字器。原生 Card 承载精简关键事实与真实行动，完整事实由 `source.txt` 承载。
+模型路径由 Seedream 5.0 Pro 直接负责主题关系、物件、路径、光影、材质、选定标题、日期、阶段、指标、quote 和中文排版；HTML 路径由受控自包含源完成确定性排版。两者都不负责按钮、CTA 标签或任何看起来可点击的控件。`hero.png` 就是所选路径的最终图片；文字准确性依赖图片文字白名单、完整源文案核对、人工视觉复核和匹配 provenance，不依赖未登记的叠字器。原生 Card 承载精简关键事实与真实行动，完整事实由 `source.txt` 承载。

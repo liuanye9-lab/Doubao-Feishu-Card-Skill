@@ -2,7 +2,7 @@
 
 这份契约把案例图里的“图片、信息块、按钮”拆成可以复用的 Card 2.0 结构。它回答三个问题：图片要传递什么、卡片原生文字要兜底什么、点击之后由谁更新状态。
 
-每个媒体资产还必须标记来源：`real_image` 表示用户提供的真实截图、看板、Logo、照片或案例证据；`ai_generated` 表示 豆包工作 内置 Seedream 5.0 Pro 一次性生成的当前模式最终图片（默认竖版信息图，也可为横幅首图；只包含信息分工选中的图片文字）。AI 图片需要 `hero-generation.json` 溯源，真实图片需要媒体 manifest；两者都不能只凭“看起来像生成过”进入远程 Card。
+每个媒体资产还必须标记来源：`real_image` 表示用户提供的真实截图、看板、Logo、照片或案例证据；`ai_generated` 表示豆包工作内置 Seedream 5.0 Pro 一次性生成的当前模式最终图片；`html_rendered` 表示本 Skill 的自包含 HTML 经本机浏览器导出的确定性 PNG。AI/HTML 图片需要 `hero-generation.json` 溯源，真实图片需要媒体 manifest；任何来源都不能只凭“看起来像生成过”进入远程 Card。
 
 三个默认图片角色是：`cover`（主题/状态）、`information_carrier`（路径/节点/分区/短文字）和 `text_companion`（与原生事实块配对）。历史 `cta_companion` 仅保留为兼容元数据，不能让图片绘制按钮或 CTA。一个图片可以有多个角色，但每个角色都必须在报告中有信息任务。
 
@@ -39,7 +39,11 @@
 
 ### 1. `static`：一张信息型首图
 
-只输入文案时默认使用此模式。豆包工作 的 `image_gen` 让 Seedream 5.0 Pro 通过 Seedream 5.0 Pro 一次生成有文字、有信息结构、无水印的选定图片资产；默认是竖版完整信息图，也可显式选择约 3:1 横幅首图。只有 `information_allocation.image.include` 中的标题、日期、阶段动作、指标和短 quote 直接进入 `hero.png`，按钮、CTA 标签、URL 和其他真实交互一律留在 Card 原生层。Card 原生层只保留摘要、3–5 个关键点、来源图表和真实行动，完整事实保留在 `source.txt`。
+只输入文案时默认使用此模式。豆包工作的 `image_gen` 让 Seedream 5.0 Pro 一次生成有文字、有信息结构、无水印的选定图片资产；默认是竖版完整信息图，也可显式选择约 3:1 横幅首图。只有 `information_allocation.image.include` 中的标题、日期、阶段动作、指标和短 quote 直接进入 `hero.png`，按钮、CTA 标签、URL 和其他真实交互一律留在 Card 原生层。Card 原生层只保留摘要、3–5 个关键点、来源图表和真实行动，完整事实保留在 `source.txt`。若同一内容达到文字密集结构化阈值，路由器会改选 HTML→PNG 信息图；这不是默认路径，也不改变 preset 或 Card 原生分工。
+
+### 1.1 `html_infographic_to_png`：文字密集信息图
+
+当卡片同时包含多个结构化 section、关系节点或真实图表，且精确中文排版比模型自由排版更重要时，使用自包含 HTML 作为可编辑视觉源，再由本机 Chrome-family 导出 `hero.png`。HTML 不进入 CardKit、不承载动作；上传门禁必须同时验证 HTML 源、PNG、提示词和 provenance 哈希。短文、纯场景首图和轻量指标仍回到 Seedream 模型路径。
 
 ### 2. `gif`：Seedance 2.5 直出动图
 
@@ -104,9 +108,9 @@ Card 2.0 没有一个可以在客户端自动切换图片的通用 carousel 组�
 
 该模式只能通过 application Bot 发送；自定义 Bot/Webhook 不支持 callback，校验器会拒绝。回调值只传业务状态标识，不传用户身份、token、secret 或 webhook；点击者身份由飞书事件上下文和后端权限校验获得。
 
-## Seedream 5.0 Pro 图片生成与功能性文字
+## 视觉图片生成与功能性文字
 
-当前默认不把图片生成拆成“关系底图 + 文字层”。`image_gen` 的 Seedream 5.0 Pro 一次完成关系和氛围（路径、节点、屏幕、仪表盘、课程对象、光路），同时直接生成 `information_allocation.image.include` 白名单中的中文、数字、日期、quote 和卡片排版；严禁生成按钮、CTA 标签、URL 或伪交互。`visual_contract.functional_text` 作为提示词事实清单和人工复核清单，不是本地叠字输入；长文和完整事实留在 `source.txt`。
+当前默认不把图片生成拆成“关系底图 + 文字层”。模型路径由 Seedream 5.0 Pro 一次完成关系和氛围（路径、节点、屏幕、仪表盘、课程对象、光路），同时直接生成 `information_allocation.image.include` 白名单中的中文、数字、日期、quote 和卡片排版；HTML fallback 则由同一白名单驱动自包含 HTML 的确定性排版。两条路径都严禁生成按钮、CTA 标签、URL 或伪交互；`visual_contract.functional_text` 是事实清单和人工复核清单，不是未登记的后处理输入；长文和完整事实留在 `source.txt`。
 
 当用户要求“时间线图片”“课程日历图片”或“图片里直接有信息”时，Seedream 5.0 Pro 必须在同一张完整图片里生成分工清单选中的日期、阶段和动作；不能用一张漂亮但无事实的氛围图代替。Card 原生文字继续作为精简、可访问和可编辑的摘要层，完整事实由 `source.txt` 保底。
 

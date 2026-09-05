@@ -1,6 +1,6 @@
 # Seedream 5.0 Pro 图片信息契约
 
-这是 Seedream 5.0 Pro 一次性生成整张 `hero.png` 的信息契约。模型必须在同一次生成中完成被分配到图片的文字、排版、时间线和 quote；按钮、CTA、URL 和回调永远由原生 Card 承载。本仓库不提供底图、固定网格、叠字、拼接或后处理实现。
+这是当前视觉路径生成整张 `hero.png` 的信息契约：默认由 Seedream 5.0 Pro 一次性完成被分配到图片的文字、排版、时间线和 quote；文字密集结构化信息图可由自包含 HTML 固定排版后导出。按钮、CTA、URL 和回调永远由原生 Card 承载。本仓库不提供底图、叠字、拼接或未声明后处理实现。
 
 ## 当前版式入口
 
@@ -12,7 +12,7 @@
 
 ## 画布和坐标
 
-生成输入必须声明 `image_source`（`real_image` 或 `ai_generated`）和 `image_roles`。`ai_generated` 的完整图片必须对应 `hero-generation.json`；真实图片必须对应媒体来源/尺寸/哈希元数据。默认角色为 `cover`、`information_carrier`、`text_companion`；历史 `cta_companion` 仅兼容元数据，不得触发按钮绘制。
+生成输入必须声明 `image_source`（`real_image`、`ai_generated` 或 `html_rendered`）和 `image_roles`。`ai_generated` 的完整图片必须对应 Seedream `hero-generation.json`；`html_rendered` 必须对应 HTML 源、固定视口、提示词和 HTML render provenance；真实图片必须对应媒体来源/尺寸/哈希元数据。默认角色为 `cover`、`information_carrier`、`text_companion`；历史 `cta_companion` 仅兼容元数据，不得触发按钮绘制。
 
 ### 推荐 `reference_card_banner`（1200×720）
 
@@ -34,7 +34,7 @@
 | 寄语 | `(64,1230)-(1136,1470)` | 仅当源 blocks 有 quote 时显示 |
 | CTA | 不设图片区域 | 图片不得出现 CTA、按钮标签、按钮形控件或假链接；真实行动只在原生 Card 中出现 |
 
-Banner 画布逻辑尺寸是 600×360；长图信息版式逻辑尺寸是 600×800；这些只是给 Seedream 5.0 Pro 的构图参考，不是本地绘制坐标。Seedream 5.0 Pro 必须在完整图片中同时完成主题、文字、关系图和信息模块。
+Banner 画布逻辑尺寸是 600×360；长图信息版式逻辑尺寸是 600×800；这些只是给所选视觉路径的构图参考，不是本地绘制坐标。模型路径由 Seedream 5.0 Pro 完成主题、文字、关系图和信息模块；HTML 路径由受控自包含源完成确定性排版。
 
 ## 信息预算
 
@@ -51,7 +51,7 @@ Banner 画布逻辑尺寸是 600×360；长图信息版式逻辑尺寸是 600×8
 
 timeline 的视觉关系图必须展示一条由阶段节点组成的阅读路径；节点用几何图标区分“培训/准备”“提交/检查”“决赛/展示”等语义，同时在节点卡内直接显示源锁定日期和动作文字。图标是视觉编码，不得替代源文字，也不能增加新的事实。
 
-facts 使用对齐的 2×2 盒子、同一字号层级和同一颜色 token；不能每个事实卡使用不同风格的插画。AI 图片必须让材质、主题主体、关系图和信息卡在同一次生成中统一完成，不能把版式交给其他工具。
+facts 使用对齐的 2×2 盒子、同一字号层级和同一颜色 token；不能每个事实卡使用不同风格的插画。模型路径必须让材质、主题主体、关系图和信息卡在同一次 Seedream 生成中统一完成；HTML fallback 必须由受控自包含源统一排版，不能混用未登记的其他工具。
 
 ## 来源和失败条件
 
@@ -65,7 +65,7 @@ facts 使用对齐的 2×2 盒子、同一字号层级和同一颜色 token；�
 - `upstream_method_pass`：记录是否按 Guizang Social Card Skill → baoyu-skills 尝试调用/读取；不可用时记录本地映射降级，不得虚报调用；
 - `runtime.provider=doubao.image_gen`、`runtime.generation_mode` 为 `seedream_5_pro_direct_full_card` 或 `seedream_5_pro_banner_plus_native_card`、`runtime.generation_model_label=Seedream 5.0 Pro`、`runtime.post_processing=none`。
 
-能力包只改变 Seedream 5.0 Pro 的提示词约束。它不能改变 `analysis.source_text`、图片文字白名单、Card 原生事实、按钮目标、真实 `img_key` 或 CardKit 导入状态，也不能启动上游 HTML/CSS/SVG/Playwright 或其他模型。
+能力包只改变所选视觉路径的设计约束。它不能改变 `analysis.source_text`、图片文字白名单、Card 原生事实、按钮目标、真实 `img_key` 或 CardKit 导入状态；HTML fallback 只能使用本 Skill 生成的自包含 HTML，不启动上游 HTML/CSS/SVG/Playwright 渲染链或其他模型。
 
 渲染前必须校验：
 
@@ -76,4 +76,4 @@ facts 使用对齐的 2×2 盒子、同一字号层级和同一颜色 token；�
 5. 每个文字块都能在自己的 zone 内完整排版；`illustration.relationship_map.contains_text=true` 且每个 `text_nodes[].fitted=true`。
 6. `reference_card_banner` 的输出尺寸建议为 1200×720；`timeline_infographic_inside_illustration` 的输出尺寸建议为 1200×1600；横幅模式使用约 3:1 的宽高比，竖版信息图使用约 2:3。quote 是否进入图片由源文案和白名单决定；CTA 永远不进入图片。
 
-任一条件失败就停止并重新调用 Seedream 5.0 Pro。`hero-generation.json` 必须记录完整图片、提示词、来源 hash 和人工视觉复核状态，不能生成或依赖叠字 sidecar。
+任一条件失败就停止：模型路径重新调用 Seedream 5.0 Pro，HTML 路径修改受控 HTML 后重新导出并登记。`hero-generation.json` 必须记录完整图片、提示词、来源 hash 和人工视觉复核状态，不能生成或依赖叠字 sidecar。

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Doubao Work text -> Seedream/Seedance Feishu Card 2.0 pipeline.
 
-Static information visuals use Seedream 5.0 Pro. Motion-worthy timelines,
+Static information visuals use Seedream 5.0 Pro by default. Dense, structured
+text may use the self-contained HTML -> PNG route. Motion-worthy timelines,
 processes, demonstrations, and state transitions automatically route to a
-Seedance 2.5 GIF. This module never fabricates facts or performs local media
-composition, text overlays, video-to-GIF conversion, or post-processing.
+Seedance 2.5 GIF. No route fabricates facts, performs media composition or
+text overlays, converts video to GIF, or uses undeclared post-processing.
 """
 
 from __future__ import annotations
@@ -36,6 +37,15 @@ from card_studio_contract import (  # noqa: E402
 from content_intelligence import NO_IMAGE_RE, URL_RE, build_information_allocation, clean_url  # noqa: E402
 from generate_card import compile_outputs, contains_placeholder, load_preset_registry  # noqa: E402
 from generate_style import build_style_document, infer_style  # noqa: E402
+from html_infographic import (  # noqa: E402
+    HTML_RENDER_STRATEGY,
+    HTML_TEXT_POLICY,
+    NATIVE_MODEL_STRATEGY,
+    build_html_artifact,
+    choose_render_strategy,
+    current_render_strategy,
+    html_render_gate,
+)
 from motion_strategy import build_motion_prompt, build_motion_spec  # noqa: E402
 from runtime_profile import (  # noqa: E402
     default_image_mode,
@@ -59,6 +69,7 @@ DEFAULT_DESIGN_PLAN: Dict[str, Any] = {
         "native_text_pairing": "image immediately before or beside the native block it explains",
         "facts_must_remain_in_text": True,
         "default_visual_required": True,
+        "render_strategy": "auto_model_first",
     }
 }
 
@@ -149,7 +160,7 @@ def _image_generation_mode(spec: Mapping[str, Any]) -> str:
 
 
 def _refresh_functional_text_contract(spec: Dict[str, Any]) -> None:
-    """Refresh the source-backed Seedream 5.0 Pro proofing checklist after transforms."""
+    """Refresh the source-backed visual proofing checklist after transforms."""
     blocks = spec.get("blocks")
     if not isinstance(blocks, list):
         return
@@ -168,7 +179,9 @@ def _refresh_functional_text_contract(spec: Dict[str, Any]) -> None:
     labels = build_image_text_checklist(blocks, str(spec.get("title") or ""), allocation=existing_allocation)
     has_hero = isinstance(spec.get("hero"), dict)
     generation_mode = _image_generation_mode(spec) if has_hero else _default_image_mode()
+    render_strategy = current_render_strategy(spec) if has_hero else ""
     mode = (
+        HTML_TEXT_POLICY if render_strategy == HTML_RENDER_STRATEGY else
         str(_mode_config(generation_mode).get("text_policy") or DIRECT_SEEDREAM_TEXT_MODE)
         if has_hero and labels
         else "none"
@@ -181,10 +194,15 @@ def _refresh_functional_text_contract(spec: Dict[str, Any]) -> None:
     contract["functional_text"] = labels if mode != "none" else []
     contract["functional_text_source_locked"] = mode != "none"
     analysis = spec.get("analysis")
-    image_text_layout = generation_mode if mode != "none" else None
+    image_text_layout = (
+        HTML_RENDER_STRATEGY if render_strategy == HTML_RENDER_STRATEGY else generation_mode
+    ) if mode != "none" else None
+    contract["render_strategy"] = render_strategy or (NATIVE_MODEL_STRATEGY if has_hero else "none")
     contract["image_text_layout"] = image_text_layout if mode != "none" else None
     contract["image_text_scope"] = (
-        "the Seedream 5.0 Pro model must render only the source-backed text selected by information_allocation.image.include; native Card keeps a concise editable summary and key facts while source.txt keeps the complete source; no post-processing text layer is allowed"
+        "the browser-rendered self-contained HTML infographic must render only the source-backed text selected by information_allocation.image.include; native Card keeps a concise editable summary and key facts while source.txt keeps the complete source; buttons remain native Card actions"
+        if mode != "none" and render_strategy == HTML_RENDER_STRATEGY
+        else "the Seedream 5.0 Pro model must render only the source-backed text selected by information_allocation.image.include; native Card keeps a concise editable summary and key facts while source.txt keeps the complete source; no post-processing text layer is allowed"
         if mode != "none"
         else None
     )
@@ -196,6 +214,7 @@ def _refresh_functional_text_contract(spec: Dict[str, Any]) -> None:
         media["functional_text"] = labels if mode != "none" else []
         media["functional_text_source_locked"] = mode != "none"
         media["image_text_layout"] = image_text_layout if mode != "none" else None
+        media["render_strategy"] = render_strategy or (NATIVE_MODEL_STRATEGY if has_hero else "none")
         media["information_allocation"] = existing_allocation
     hero = spec.get("hero")
     if isinstance(hero, dict) and mode != "none":
@@ -204,6 +223,7 @@ def _refresh_functional_text_contract(spec: Dict[str, Any]) -> None:
         hero["functional_text_source_locked"] = True
         hero["image_text_layout"] = image_text_layout
         hero["image_generation_mode"] = generation_mode
+        hero["render_strategy"] = render_strategy or NATIVE_MODEL_STRATEGY
         hero["information_allocation"] = existing_allocation
     if isinstance(analysis, dict):
         analysis["information_allocation"] = existing_allocation
@@ -806,6 +826,50 @@ def _image_prompt(spec: Dict[str, Any], *, brand_context: str = "") -> str:
                               banner=mode == BANNER_SEEDREAM_MODE, brand_context=brand_context)
 
 
+def _html_infographic_assets(
+    spec: Dict[str, Any],
+    *,
+    html_path: Path,
+    html_prompt_path: Path,
+    html_plan_path: Path,
+    image_path: Path,
+    generation_manifest_path: Path,
+    brand_context: str = "",
+) -> tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+    """Build, render and register the deterministic HTML infographic route."""
+    html_plan = build_html_artifact(spec, html_path, brand_context=brand_context)
+    _write_text(html_prompt_path, str(html_plan.get("prompt") or ""))
+    _write_json(html_plan_path, html_plan)
+    render_execution: Dict[str, Any] = {"status": "not_started", "html": str(html_path), "output": str(image_path)}
+    try:
+        from render_html_infographic import render
+        render_execution = render(
+            str(html_path),
+            str(image_path),
+            width=int((html_plan.get("viewport") or {}).get("width", 1200)),
+            height=int((html_plan.get("viewport") or {}).get("height", 1800)),
+            scale=float((html_plan.get("viewport") or {}).get("scale", 2)),
+        )
+        render_execution["status"] = "rendered"
+        from register_html_render import register
+        register(
+            str(image_path),
+            str(html_path),
+            prompt=str(html_prompt_path),
+            output=str(generation_manifest_path),
+            renderer=str(render_execution.get("renderer") or "headless Chrome-family browser"),
+            width=int((html_plan.get("viewport") or {}).get("width", 1200)),
+            height=int((html_plan.get("viewport") or {}).get("height", 1800)),
+            scale=float((html_plan.get("viewport") or {}).get("scale", 2)),
+        )
+        render_execution["registered"] = True
+    except Exception as exc:  # noqa: BLE001 - the report must expose a local browser/registration failure
+        render_execution.update(status="render_or_registration_failed", error=str(exc))
+    gate = html_render_gate(image_path, generation_manifest_path, html_path, required=True)
+    gate["render_execution"] = render_execution
+    return html_plan, render_execution, gate
+
+
 def _compile_once(
     spec: Dict[str, Any],
     *,
@@ -879,6 +943,9 @@ def run_pipeline(
     card_path = bundle / f"{safe_name}.card"
     style_path = bundle / f"{safe_name}.style.md"
     image_prompt_path = bundle / f"{safe_name}.image-prompt.md"
+    html_path = bundle / f"{safe_name}.infographic.html"
+    html_prompt_path = bundle / f"{safe_name}.html-prompt.md"
+    html_plan_path = bundle / f"{safe_name}.html-render-plan.json"
     visual_spec_path = bundle / f"{safe_name}.visual-spec.json"
     motion_prompt_path = bundle / f"{safe_name}.motion-prompt.md"
     motion_spec_path = bundle / f"{safe_name}.motion-spec.json"
@@ -900,13 +967,22 @@ def run_pipeline(
     )
     effective_plan = _deep_merge(DEFAULT_DESIGN_PLAN, design_plan)
     explicit_media_mode = None
+    explicit_render_strategy = None
     if isinstance(design_plan, Mapping):
+        requested_strategy = str(design_plan.get("render_strategy") or "").strip().lower()
         requested_media = design_plan.get("media_policy")
         if isinstance(requested_media, Mapping):
             requested_mode = str(requested_media.get("image_generation_mode") or "").strip()
             if requested_mode:
                 explicit_media_mode = requested_mode
-    if explicit_media_mode:
+            requested_strategy = str(requested_media.get("render_strategy") or requested_strategy).strip().lower()
+        if requested_strategy in {"html", "html_to_png", HTML_RENDER_STRATEGY}:
+            explicit_render_strategy = HTML_RENDER_STRATEGY
+        elif requested_strategy in {"native", "model", "native_model", "image_model"}:
+            explicit_render_strategy = NATIVE_MODEL_STRATEGY
+        elif requested_strategy and requested_strategy != "auto_model_first":
+            raise ValueError("render_strategy must be auto_model_first, native_model, or html_infographic_to_png")
+    if explicit_media_mode or explicit_render_strategy:
         # An explicit mode is a user-selected image layout, not merely a
         # reporting preference. Keep the default auto-allocation conservative,
         # but make direct mode selection actually request its image asset.
@@ -932,6 +1008,8 @@ def run_pipeline(
     )
     from layout_coordination import choose_image_mode, coordinate_layout
     choose_image_mode(spec, explicit_mode=explicit_media_mode, banner_mode=BANNER_SEEDREAM_MODE)
+    # The final render route is chosen after motion scoring so dense copy does
+    # not accidentally select HTML while a user-visible GIF is the better fit.
     detected_urls = _detect_urls(text)
     if link_mode == "button":
         _merge_detected_url_buttons(spec, detected_urls)
@@ -973,7 +1051,18 @@ def run_pipeline(
         image_required=image_requested and preliminary_source != "real_image",
         force_motion=force_motion,
     )
+    spec["motion_spec"] = motion_spec
+    render_strategy = choose_render_strategy(
+        spec,
+        explicit_strategy=explicit_render_strategy,
+        allow_auto=not explicit_media_mode and not explicit_no_image,
+    )
     motion_selected = bool(motion_spec.get("selected"))
+    if motion_selected and render_strategy == HTML_RENDER_STRATEGY and explicit_render_strategy == HTML_RENDER_STRATEGY:
+        motion_selected = False
+        motion_spec["selected"] = False
+        motion_spec["status"] = "suppressed_by_explicit_html_route"
+        motion_spec.setdefault("reasons", []).append("用户显式选择 HTML 信息图，优先保证密集文字的确定性排版")
     motion_generation_mode = default_motion_mode() if motion_selected else "none"
     if motion_selected:
         motion_spec["generation_mode"] = motion_generation_mode
@@ -983,7 +1072,13 @@ def run_pipeline(
         selected_roles = list(motion_mode.get("roles") or ["cover", "information_carrier", "motion_explainer"])
     else:
         runtime = _runtime_image_profile()
-        selected_roles = list(_mode_config(image_generation_mode).get("roles") or IMAGE_ROLES) if image_requested else []
+        selected_roles = (
+            ["information_carrier", "text_companion"]
+            if image_requested and render_strategy == HTML_RENDER_STRATEGY
+            else list(_mode_config(image_generation_mode).get("roles") or IMAGE_ROLES)
+            if image_requested
+            else []
+        )
     generation_tool = str(runtime.get("generation_tool") or runtime.get("provider") or "doubao.image_gen")
     generation_family = str(runtime.get("generation_family") or "seedream-class")
     generation_model = str(runtime.get("generation_model") or ("seedance-2.5" if motion_selected else "seedream-5.0-pro"))
@@ -1025,6 +1120,7 @@ def run_pipeline(
         "model_id_source": runtime.get("model_id_source"),
         "generation_provenance": generation_manifest_path.name,
         "image_generation_mode": image_generation_mode if image_requested else "none",
+        "render_strategy": render_strategy if image_requested else "none",
         "motion_generation_mode": motion_generation_mode,
         "motion_auto_selected": motion_selected and force_motion is None,
         "motion_reasons": motion_spec.get("reasons"),
@@ -1032,15 +1128,21 @@ def run_pipeline(
         "image_upload": "lark-cli im images create",
         "cardkit_delivery": "python3 scripts/feishu_cli.py push-cardkit (Byte CLI Web-backed CardKit template)",
         "api_cardkit_delivery": "lark-cli api POST /open-apis/cardkit/v1/cards (explicit API Entity only)",
-        "image_text_layout": image_generation_mode,
+        "image_text_layout": HTML_RENDER_STRATEGY if render_strategy == HTML_RENDER_STRATEGY else image_generation_mode,
         "source_locked": image_requested,
         "source_copy_in_prompt": image_requested,
         "native_text_fallback": True,
-        "image_source_types": ["real_image", "ai_generated"],
+        "image_source_types": ["real_image", "ai_generated", "html_rendered"],
         "ai_image_roles": selected_roles or IMAGE_ROLES,
         "media_mode": "gif" if motion_selected else "static",
         "requires_application_bot": bool((spec.get("media_contract") or {}).get("requires_application_bot")) if isinstance(spec.get("media_contract"), dict) else False,
         "media_manifest_command": "python3 scripts/media_assets.py --input <asset> --output <bundle>/<name>.media-manifest.json",
+        "html_render_required": image_requested and render_strategy == HTML_RENDER_STRATEGY,
+        "html_render_files": {
+            "html": str(html_path),
+            "prompt": str(html_prompt_path),
+            "plan": str(html_plan_path),
+        } if image_requested and render_strategy == HTML_RENDER_STRATEGY else None,
     }
     decision_log = analysis.setdefault("decision_log", [])
     if isinstance(decision_log, list):
@@ -1097,24 +1199,44 @@ def run_pipeline(
                 component["status"] = "applied"
                 component["reason"] = "豆包工作 默认首图策略已写入 spec；等待内置生图和真实 img_key"
                 break
+    if image_requested and render_strategy == HTML_RENDER_STRATEGY:
+        html_hero = spec.get("hero")
+        if isinstance(html_hero, dict):
+            html_hero.update({
+                "image_source": "html_rendered",
+                "asset_kind": "image",
+                "html_source": str(html_path),
+                "html_prompt": str(html_prompt_path),
+                "html_render_plan": str(html_plan_path),
+                "role": "information_anchor",
+                "information_carrier": True,
+            })
     _promote_quote_block(spec)
     _refresh_functional_text_contract(spec)
-    coordinate_layout(spec, banner=image_generation_mode == BANNER_SEEDREAM_MODE and not motion_selected)
+    coordinate_layout(
+        spec,
+        banner=image_generation_mode == BANNER_SEEDREAM_MODE and not motion_selected and render_strategy != HTML_RENDER_STRATEGY,
+    )
     visual_contract = spec.get("visual_contract") if isinstance(spec.get("visual_contract"), dict) else {}
     if isinstance(analysis.get("doubao_mode"), dict):
-        analysis["doubao_mode"]["image_text_layout"] = visual_contract.get("image_text_layout") or image_generation_mode
+        analysis["doubao_mode"]["image_text_layout"] = visual_contract.get("image_text_layout") or (
+            HTML_RENDER_STRATEGY if render_strategy == HTML_RENDER_STRATEGY else image_generation_mode
+        )
         analysis["doubao_mode"]["image_generation_mode"] = image_generation_mode
         analysis["doubao_mode"]["media_generation_mode"] = active_generation_mode
     hero = spec.get("hero") if isinstance(spec.get("hero"), dict) else {}
     media_contract = spec.get("media_contract") if isinstance(spec.get("media_contract"), dict) else {}
     image_source = str(hero.get("image_source") or media_contract.get("image_source") or "ai_generated") if image_requested else "none"
-    if image_source not in {"real_image", "ai_generated"}:
+    if image_source not in {"real_image", "ai_generated", "html_rendered"}:
         image_source = "ai_generated" if image_requested else "none"
+    if image_requested and render_strategy == HTML_RENDER_STRATEGY:
+        image_source = "html_rendered"
     image_roles = hero.get("image_roles") if isinstance(hero.get("image_roles"), list) else media_contract.get("image_roles")
     image_roles = [str(item) for item in image_roles if str(item).strip()] if isinstance(image_roles, list) else []
     if image_requested and not image_roles:
         image_roles = list(selected_roles or IMAGE_ROLES)
     motion_selected = motion_selected and image_source == "ai_generated"
+    html_render_required = image_requested and render_strategy == HTML_RENDER_STRATEGY and image_source == "html_rendered" and not motion_selected
     seedream_required = image_requested and image_source == "ai_generated" and not motion_selected
     seedance_required = image_requested and image_source == "ai_generated" and motion_selected
     ai_generation_required = seedream_required or seedance_required
@@ -1124,24 +1246,73 @@ def run_pipeline(
             "image_source": image_source,
             "image_roles": image_roles,
             "ai_generation_required": ai_generation_required,
+            "html_render_required": html_render_required,
+            "render_strategy": render_strategy,
             "generation_model": generation_model,
             "generation_model_label": generation_model_label,
             "generation_tool": generation_tool,
             "generation_family": generation_family,
         })
-    _write_text(image_prompt_path, _image_prompt(spec, brand_context=brand_context))
+    html_plan: Optional[Dict[str, Any]] = None
+    html_render_execution: Dict[str, Any] = {"status": "not_selected"}
+    html_generation: Dict[str, Any] = {
+        "required": False,
+        "status": "not_required",
+        "ready": False,
+        "render_strategy": render_strategy,
+    }
+    if html_render_required:
+        html_plan, html_render_execution, html_generation = _html_infographic_assets(
+            spec,
+            html_path=html_path,
+            html_prompt_path=html_prompt_path,
+            html_plan_path=html_plan_path,
+            image_path=bundle / "hero.png",
+            generation_manifest_path=image_generation_manifest_path,
+            brand_context=brand_context,
+        )
+        html_hero = spec.get("hero")
+        if isinstance(html_hero, dict):
+            html_hero["prompt"] = str(html_plan.get("prompt") or "")
+        _write_text(
+            image_prompt_path,
+            "Native Seedream route not selected for this dense structured infographic. "
+            f"Use the editable HTML source and render provenance in {html_path.name}; "
+            "real actions remain native Card elements.",
+        )
+    else:
+        _write_text(image_prompt_path, _image_prompt(spec, brand_context=brand_context))
     _write_text(motion_prompt_path, build_motion_prompt(motion_spec))
-    seedream_generation = _ai_generation_gate(
-        bundle / "hero.png",
-        image_generation_manifest_path,
-        required=seedream_required,
-        generation_mode=image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE,
+    seedream_generation = (
+        html_generation
+        if html_render_required
+        else _ai_generation_gate(
+            bundle / "hero.png",
+            image_generation_manifest_path,
+            required=seedream_required,
+            generation_mode=image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE,
+        )
     )
-    seedream_output = _direct_seedream_visual_status(
-        bundle / "hero.png",
-        required=seedream_required,
-        generation=seedream_generation,
-        mode=image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE,
+    seedream_output = (
+        {
+            "required": True,
+            "mode": HTML_RENDER_STRATEGY,
+            "path": str(bundle / "hero.png"),
+            "ready": bool(html_generation.get("ready")),
+            "status": "html_render_ready_for_visual_review" if html_generation.get("ready") else html_generation.get("status"),
+            "post_processing": "none",
+            "manual_visual_review_required": True,
+            "text_and_layout_source": "self-contained HTML rendered by a local Chrome-family browser",
+            "html": str(html_path),
+            "render_execution": html_render_execution,
+        }
+        if html_render_required
+        else _direct_seedream_visual_status(
+            bundle / "hero.png",
+            required=seedream_required,
+            generation=seedream_generation,
+            mode=image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE,
+        )
     )
     seedance_generation = _motion_generation_gate(
         bundle / "hero.gif",
@@ -1229,6 +1400,7 @@ def run_pipeline(
     ai_generation_ready = not ai_generation_required or bool(ai_generation.get("ready"))
     seedream_output_ready = not seedream_required or bool(seedream_output.get("ready"))
     seedance_output_ready = not seedance_required or bool(seedance_output.get("ready"))
+    html_render_ready = not html_render_required or bool(html_generation.get("ready"))
     visual_output_ready = not image_requested or (ai_generation_ready and seedream_output_ready and seedance_output_ready)
     card_image_embedded = image_required and _contains_tag(card, {"img"})
     image_ready = image_key_ready and visual_output_ready and card_image_embedded
@@ -1247,10 +1419,14 @@ def run_pipeline(
     if not image_gate_clear:
         if not visual_output_ready:
             cardkit_editor_blockers.append(
-                f"the selected {generation_model_label} final {'GIF' if motion_selected else 'image'} is required before CardKit delivery"
+                "the selected HTML-rendered PNG is required before CardKit delivery"
+                if html_render_required
+                else f"the selected {generation_model_label} final {'GIF' if motion_selected else 'image'} is required before CardKit delivery"
             )
         if not ai_generation_ready:
             cardkit_editor_blockers.append(f"{generation_model_label} final asset and provenance manifest are required")
+        if not html_render_ready:
+            cardkit_editor_blockers.append("HTML source, browser-rendered PNG, and HTML provenance manifest are required")
         if not image_key_ready:
             cardkit_editor_blockers.append("real Feishu img_key for the final image is required before CardKit delivery")
     if not cardkit_size_ok:
@@ -1263,6 +1439,8 @@ def run_pipeline(
             blockers.append(f"the selected {generation_model_label} final asset is required for the media-led card")
         if not ai_generation_ready:
             blockers.append(f"{generation_model_label} generation is required before the selected final asset can be accepted")
+        if not html_render_ready:
+            blockers.append("HTML → PNG render and provenance registration are required before the final asset can be accepted")
         if not image_key_ready:
             blockers.append("real img_key upload is required for the default visual card")
     if not sendable and not needs_media:
@@ -1272,16 +1450,20 @@ def run_pipeline(
     if not image_required:
         image_contract_status = "not_required"
     elif card_image_embedded and image_ready:
-        image_contract_status = "embedded_seedance_gif" if motion_selected else "embedded_seedream_image"
+        image_contract_status = (
+            "embedded_html_infographic_png" if html_render_required
+            else "embedded_seedance_gif" if motion_selected else "embedded_seedream_image"
+        )
     elif visual_output_ready and not card_image_embedded:
-        image_contract_status = "visual_output_ready_waiting_real_img_key"
+        image_contract_status = "html_output_ready_waiting_real_img_key" if html_render_required else "visual_output_ready_waiting_real_img_key"
     elif final_image_path.is_file() and not visual_output_ready:
-        image_contract_status = "visual_output_blocked"
+        image_contract_status = "html_output_blocked" if html_render_required else "visual_output_blocked"
     else:
-        image_contract_status = "seedance_gif_required" if motion_selected else "seedream_image_required"
+        image_contract_status = "html_infographic_png_required" if html_render_required else "seedance_gif_required" if motion_selected else "seedream_image_required"
     card_image_contract = {
         "status": image_contract_status,
         "image_generation_mode": image_generation_mode,
+        "render_strategy": render_strategy,
         "media_generation_mode": active_generation_mode,
         "media_kind": "gif" if motion_selected else "image",
         "motion_auto_selected": motion_selected and force_motion is None,
@@ -1289,13 +1471,15 @@ def run_pipeline(
         "image_text_layout": (
             visual_contract.get("image_text_layout")
             or (media_policy.get("image_text_layout") if isinstance(media_policy, Mapping) else None)
-            or DIRECT_SEEDREAM_MODE
+            or (HTML_RENDER_STRATEGY if html_render_required else DIRECT_SEEDREAM_MODE)
         ),
         "image_source": image_source,
         "image_roles": image_roles,
         "final_asset": str(final_image_path),
         "final_asset_role": (
-            "seedance_gif_plus_native_card_components"
+            "html_infographic_png_plus_native_card_components"
+            if html_render_required
+            else "seedance_gif_plus_native_card_components"
             if motion_selected
             else (
                 "seedream_banner_plus_native_card_components"
@@ -1310,6 +1494,12 @@ def run_pipeline(
         "real_img_key_supplied": bool(hero_img_key and image_required),
         "ai_generation_required": ai_generation_required,
         "ai_generation_manifest": str(generation_manifest_path) if ai_generation_required else None,
+        "html_render_required": html_render_required,
+        "html_render_ready": html_render_ready,
+        "html_source": str(html_path) if html_render_required else None,
+        "html_prompt": str(html_prompt_path) if html_render_required else None,
+        "html_render_plan": str(html_plan_path) if html_render_required else None,
+        "html_render_manifest": str(image_generation_manifest_path) if html_render_required else None,
     }
 
     quality_gates = build_quality_gates(
@@ -1420,8 +1610,38 @@ def run_pipeline(
     }
 
     status = "blocked" if not valid else (
-        "needs_gif" if needs_media and motion_selected else ("needs_image" if needs_media else "ready")
+        "needs_html_render" if needs_media and html_render_required and not html_render_ready
+        else "needs_gif" if needs_media and motion_selected
+        else "needs_image" if needs_media else "ready"
     )
+    html_viewport = html_plan.get("viewport") if isinstance(html_plan, dict) and isinstance(html_plan.get("viewport"), dict) else {}
+    html_width = int(html_viewport.get("width", 1200))
+    html_height = int(html_viewport.get("height", 1800))
+    html_scale = float(html_viewport.get("scale", 2))
+    if html_render_required:
+        generate_media_step = (
+            f"HTML 信息图已生成并完成浏览器导出：检查 {shlex.quote(str(html_path))} 与 {shlex.quote(str(final_image_path))}；"
+            "如需改内容，编辑 HTML 源文件后重新执行 render_html_infographic.py 和 register_html_render.py。"
+        ) if html_render_ready else (
+            f"强制下一步：执行 python3 scripts/render_html_infographic.py --html {shlex.quote(str(html_path))} "
+            f"--output {shlex.quote(str(final_image_path))} --width {html_width} --height {html_height} --scale {html_scale:g}"
+        )
+        register_media_step = (
+            f"python3 scripts/register_html_render.py --image {shlex.quote(str(final_image_path))} "
+            f"--html {shlex.quote(str(html_path))} --prompt {shlex.quote(str(html_prompt_path))} "
+            f"--output {shlex.quote(str(image_generation_manifest_path))}"
+        )
+    else:
+        generate_media_step = (
+            f"强制下一步（{status} 不是成品）：读取 {shlex.quote(str(motion_spec_path))} 与 {shlex.quote(str(motion_prompt_path))}，通过豆包工作内置 Seedance 2.5 工具直接生成循环 GIF 并保存为 {shlex.quote(str(bundle / 'hero.gif'))}；禁止本地视频转 GIF、按钮、CTA、伪交互和编造信息"
+            if motion_selected
+            else f"强制下一步（{status} 不是成品）：读取 {shlex.quote(str(visual_spec_path))} 与 {shlex.quote(str(image_prompt_path))}，通过豆包工作内置 Seedream 5.0 Pro 一次性生成 {('横幅首图' if image_generation_mode == BANNER_SEEDREAM_MODE else '竖版信息图')}并保存为 {shlex.quote(str(bundle / 'hero.png'))}；只使用来源白名单文字"
+        )
+        register_media_step = (
+            f"python3 scripts/register_motion_generation.py --asset {shlex.quote(str(bundle / 'hero.gif'))} --prompt {shlex.quote(str(motion_prompt_path))} --output {shlex.quote(str(motion_generation_manifest_path))} --generation-mode {shlex.quote(motion_generation_mode)}"
+            if motion_selected
+            else f"python3 scripts/register_image_generation.py --image {shlex.quote(str(bundle / 'hero.png'))} --prompt {shlex.quote(str(image_prompt_path))} --output {shlex.quote(str(image_generation_manifest_path))} --generation-family {shlex.quote(generation_family)} --generation-mode {shlex.quote(image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE)} --text-policy {shlex.quote(str(_mode_config(image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE).get('text_policy') or DIRECT_SEEDREAM_TEXT_MODE))}"
+        )
     report: Dict[str, Any] = {
         "status": status,
         "workflow_profile": workflow_profile,
@@ -1432,10 +1652,19 @@ def run_pipeline(
         "source": str(source_path),
         "style": str(style_path),
         "image_prompt": str(image_prompt_path),
+        "html_prompt": str(html_prompt_path) if html_render_required else None,
         "visual_spec": str(visual_spec_path),
         "motion_prompt": str(motion_prompt_path),
         "motion_spec": str(motion_spec_path),
         "motion_selection": motion_spec,
+        "html_infographic": {
+            "strategy": render_strategy,
+            "source": str(html_path),
+            "prompt": str(html_prompt_path),
+            "plan": str(html_plan_path),
+            "render_execution": html_render_execution,
+            "generation": html_generation,
+        } if html_render_required else {"strategy": render_strategy, "status": "not_selected"},
         "ai_generation": ai_generation,
         "prompt_routing_file": str(prompt_routing_path),
         "input_brief": input_brief,
@@ -1462,6 +1691,7 @@ def run_pipeline(
         "proposals": proposals,
         "media": {
             "mode": "gif" if motion_selected else "static",
+            "render_strategy": render_strategy,
             "motion_auto_selected": motion_selected and force_motion is None,
             "motion_reasons": motion_spec.get("reasons"),
             "media_generation_mode": active_generation_mode,
@@ -1480,6 +1710,10 @@ def run_pipeline(
             "final_asset": str(final_image_path),
             "manifest_path": str(bundle / f"{safe_name}.media-manifest.json"),
             "manifest_status": "not_run",
+            "html_source": str(html_path) if html_render_required else None,
+            "html_prompt": str(html_prompt_path) if html_render_required else None,
+            "html_render_plan": str(html_plan_path) if html_render_required else None,
+            "html_render_ready": html_render_ready,
         },
         "prompt_routing": spec.get("prompt_routing") if isinstance(spec.get("prompt_routing"), dict) else None,
         "information_allocation": spec.get("information_allocation", {}),
@@ -1495,6 +1729,7 @@ def run_pipeline(
             "model_id_source": runtime.get("model_id_source"),
             "runtime_profile": str((ROOT / "presets" / "runtime-profile.json").relative_to(ROOT)),
             "image_generation_mode": image_generation_mode,
+            "render_strategy": render_strategy,
             "motion_generation_mode": motion_generation_mode,
             "motion_auto_selected": motion_selected and force_motion is None,
             "seedream_required": seedream_required,
@@ -1511,6 +1746,15 @@ def run_pipeline(
             "image_roles": image_roles,
             "ai_generation_ready": ai_generation_ready,
             "ai_generation_manifest": str(generation_manifest_path),
+            "html_render_required": html_render_required,
+            "html_render_ready": html_render_ready,
+            "html_render_manifest": str(image_generation_manifest_path) if html_render_required else None,
+            "html_infographic": {
+                "source": str(html_path),
+                "prompt": str(html_prompt_path),
+                "plan": str(html_plan_path),
+                "render_execution": html_render_execution,
+            } if html_render_required else None,
             "hero_img_key_supplied": bool(hero_img_key and image_required),
             "card_image_contract": card_image_contract,
             "delivery_workflow": delivery_workflow,
@@ -1553,6 +1797,7 @@ def run_pipeline(
         "readiness": {
             "valid": valid,
             "image_ready": image_ready,
+            "html_render_ready": html_render_ready,
             "seedream_output_ready": seedream_output_ready,
             "seedance_output_ready": seedance_output_ready,
             "visual_output_ready": visual_output_ready,
@@ -1563,16 +1808,17 @@ def run_pipeline(
             "cardkit_editor_blockers": cardkit_editor_blockers,
         },
         "next_steps": {
-            "generate_media": (
-                f"强制下一步（{status} 不是成品）：读取 {shlex.quote(str(motion_spec_path))} 与 {shlex.quote(str(motion_prompt_path))}，通过豆包工作内置 Seedance 2.5 工具直接生成循环 GIF 并保存为 {shlex.quote(str(bundle / 'hero.gif'))}；禁止本地视频转 GIF、按钮、CTA、伪交互和编造信息"
-                if motion_selected
-                else f"强制下一步（{status} 不是成品）：读取 {shlex.quote(str(visual_spec_path))} 与 {shlex.quote(str(image_prompt_path))}，通过豆包工作内置 Seedream 5.0 Pro 一次性生成 {('横幅首图' if image_generation_mode == BANNER_SEEDREAM_MODE else '竖版信息图')}并保存为 {shlex.quote(str(bundle / 'hero.png'))}；只使用来源白名单文字"
+            "generate_media": generate_media_step,
+            "register_generated_media": register_media_step,
+            "generate_html_infographic": (
+                f"python3 scripts/html_infographic.py --help；可编辑源文件已写入 {shlex.quote(str(html_path))}"
+                if html_render_required else "not_selected"
             ),
-            "register_generated_media": (
-                f"python3 scripts/register_motion_generation.py --asset {shlex.quote(str(bundle / 'hero.gif'))} --prompt {shlex.quote(str(motion_prompt_path))} --output {shlex.quote(str(motion_generation_manifest_path))} --generation-mode {shlex.quote(motion_generation_mode)}"
-                if motion_selected
-                else f"python3 scripts/register_image_generation.py --image {shlex.quote(str(bundle / 'hero.png'))} --prompt {shlex.quote(str(image_prompt_path))} --output {shlex.quote(str(image_generation_manifest_path))} --generation-family {shlex.quote(generation_family)} --generation-mode {shlex.quote(image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE)} --text-policy {shlex.quote(str(_mode_config(image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE).get('text_policy') or DIRECT_SEEDREAM_TEXT_MODE))}"
+            "render_html_infographic": (
+                f"python3 scripts/render_html_infographic.py --html {shlex.quote(str(html_path))} --output {shlex.quote(str(final_image_path))} --width {html_width} --height {html_height} --scale {html_scale:g}"
+                if html_render_required else "not_selected"
             ),
+            "register_html_render": register_media_step if html_render_required else "not_selected",
             "inspect_media": f"python3 scripts/media_assets.py --input <asset> --output {shlex.quote(str(bundle / f'{safe_name}.media-manifest.json'))}",
             "inspect_prompt_routing": f"python3 scripts/prompt_router.py --text-file {shlex.quote(str(source_path))}",
             "view_proposals": f"查看三版布局方案：{shlex.quote(str(proposals_path))}；选择后用 --layout banner-led、--layout infographic-led 或 --layout text-led 重跑",
@@ -1616,6 +1862,7 @@ def run_pipeline(
         "motion_selection": motion_spec,
         "quality_gates": quality_gates,
         "generation_workflow": generation_workflow,
+        "render_strategy": render_strategy,
         "image_source": image_source,
         "image_roles": image_roles,
         "seedream_output": seedream_output,
@@ -1625,6 +1872,13 @@ def run_pipeline(
         "seedream_output_ready": seedream_output_ready,
         "seedance_output_ready": seedance_output_ready,
         "visual_output_ready": visual_output_ready,
+        "html_render_ready": html_render_ready,
+        "html_infographic": {
+            "source": str(html_path),
+            "prompt": str(html_prompt_path),
+            "plan": str(html_plan_path),
+            "generation_manifest": str(image_generation_manifest_path),
+        } if html_render_required else None,
         "final_visual_asset": str(final_image_path),
         "file_size_bytes": cardkit_file_size_bytes,
         "max_file_size_bytes": cardkit_max_bytes,
@@ -1667,7 +1921,7 @@ def run_pipeline(
         "blockers": cardkit_editor_blockers,
         "bot_preview_command": f"python3 scripts/feishu_cli.py preview-card --card {shlex.quote(str(card_path))} --as bot --dry-run",
         "cardkit_cli_dry_run_command": delivery_workflow["cardkit_import"]["dry_run_command"],
-        "note": "默认直接导入 CardKit：raw .card 供 Byte CLI 模板导入，CLI 不可用时使用同源 .cardkit.card wrapper 网页导入；HTML 仅保留为可选本地调试，Bot 预览仅在用户明确要求时执行。lark-cli Card Entity 不能替代模板导入。图片内文字和排版来自 Seedream 5.0 Pro 整图直出；图片禁止按钮、CTA 和伪交互，改文案后必须重新调用 Seedream 5.0 Pro 并重新上传。",
+        "note": "默认直接导入 CardKit：raw .card 供 Byte CLI 模板导入，CLI 不可用时使用同源 .cardkit.card wrapper 网页导入；Bot 预览仅在用户明确要求时执行。lark-cli Card Entity 不能替代模板导入。纯视觉和轻量信息图优先由 Seedream 5.0 Pro 整图直出；文字密集且结构化的信息图可由自包含 HTML 设计并经本机浏览器导出 hero.png，按钮、CTA 和伪交互始终只在原生 Card，改文案后必须重新生成/导出、登记并重新上传。",
     }
     _write_json(cardkit_manifest_path, cardkit_manifest)
     report["cardkit_editor_import"] = str(cardkit_manifest_path)

@@ -4,7 +4,13 @@ import hashlib
 import importlib
 import json
 import shlex
+import sys
 from pathlib import Path
+
+
+SCRIPTS = Path(__file__).resolve().parent
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
 
 
 def digest(path):
@@ -27,6 +33,8 @@ def attach_delivery_evidence(report):
     contract = provider.get("card_image_contract", {})
     required = bool(provider.get("image_required"))
     asset = Path(contract.get("final_asset") or card.with_name("hero.png"))
+    render_strategy = str(provider.get("render_strategy") or contract.get("render_strategy") or "").strip()
+    html_route = render_strategy == "html_infographic_to_png"
     record = card.with_name(card.stem + ".visual-review.json")
     fingerprints = {"card_sha256": digest(card),
                     "asset_sha256": digest(asset) if required and asset.is_file() else None}
@@ -50,15 +58,21 @@ def attach_delivery_evidence(report):
         if "final visual review is pending or stale" not in blockers:
             blockers.append("final visual review is pending or stale")
     motion = bool(provider.get("seedance_required"))
-    prompt = report.get("motion_prompt") if motion else report.get("image_prompt")
+    prompt = (
+        report.get("motion_prompt") if motion
+        else report.get("html_prompt") if html_route
+        else report.get("image_prompt")
+    )
     ready = report["readiness"].get("image_ready")
     report["media_task"] = {
         "required": required, "kind": "gif" if motion else "image",
-        "tool_hint": provider.get("generation_tool"),
+        "render_strategy": render_strategy or ("native_model" if required else "none"),
+        "tool_hint": "html_to_png" if html_route else provider.get("generation_tool"),
         "model_label": provider.get("generation_model_label"), "prompt_file": prompt,
         "output_file": str(asset) if required else None,
         "next_action": ("complete" if report["status"] == "ready" else
                         "inspect_media_and_card_then_record_review" if ready and not reviewed else
+                        "render_html_register_and_upload" if html_route and required else
                         "invoke_host_generation_tool_then_register_and_upload" if required else
                         "fix_report_blockers"),
         "art_direction": {"file": str(Path(__file__).resolve().parents[1] / "presets/image-art-direction.json"),
@@ -99,7 +113,22 @@ def resume(spec_value, hero_img_key=None):
     provider = old[edition]
     required = bool(provider.get("image_required"))
     motion = bool(provider.get("seedance_required"))
-    if motion:
+    contract = provider.get("card_image_contract") if isinstance(provider.get("card_image_contract"), dict) else {}
+    render_strategy = str(provider.get("render_strategy") or contract.get("render_strategy") or spec.get("render_strategy") or "").strip()
+    html_route = render_strategy == "html_infographic_to_png" and not motion
+    html_info = provider.get("html_infographic") if isinstance(provider.get("html_infographic"), dict) else {}
+    html_source_value = contract.get("html_source") or html_info.get("source")
+    if not html_source_value and isinstance(spec.get("hero"), dict):
+        html_source_value = spec["hero"].get("html_source")
+    html_source = Path(str(html_source_value or spec_path.with_name(stem + ".infographic.html")))
+    if html_route:
+        generation = pipeline.html_render_gate(
+            card_path.with_name("hero.png"),
+            card_path.with_name("hero-generation.json"),
+            html_source,
+            required=required,
+        )
+    elif motion:
         generation = pipeline._motion_generation_gate(card_path.with_name("hero.gif"),
             card_path.with_name("hero-motion-generation.json"), required=required)
     else:
@@ -132,6 +161,7 @@ def resume(spec_value, hero_img_key=None):
                        "image2_output_ready": asset_ready if edition == "codex" else True,
                        "seedream_output_ready": asset_ready if edition == "doubao" and not motion else True,
                        "seedance_output_ready": asset_ready if motion else True,
+                       "html_render_ready": asset_ready if html_route else True,
                        "sendable": valid and bool(compiled.get("sendable")) and (not required or image_ready),
                        "cardkit_editor_ready": valid and (not required or image_ready),
                        "cardkit_entity_ready": valid and (not required or image_ready),
@@ -139,15 +169,26 @@ def resume(spec_value, hero_img_key=None):
     provider["quality_gates"] = gates
     provider["image_ready"] = image_ready
     provider["visual_output_ready" if edition == "doubao" else "image2_ready"] = asset_ready
+    provider["render_strategy"] = render_strategy
+    provider["html_render_required"] = bool(html_route and required)
+    provider["html_render_ready"] = asset_ready if html_route else True
     contract = provider["card_image_contract"]
     asset_path = card_path.with_name("hero.gif" if motion else "hero.png")
-    embedded_status = ("embedded_image2_card_image" if edition == "codex" else
-                       "embedded_seedance_gif" if motion else "embedded_seedream_image")
+    embedded_status = (
+        "embedded_html_infographic_png" if html_route else
+        "embedded_image2_card_image" if edition == "codex" else
+        "embedded_seedance_gif" if motion else "embedded_seedream_image"
+    )
+    waiting_status = "html_output_ready_waiting_real_img_key" if html_route else "visual_output_ready_waiting_real_img_key"
     contract.update(status="not_required" if not required else embedded_status if image_ready else
-                    "visual_output_ready_waiting_real_img_key" if asset_ready else generation.get("status"),
+                    waiting_status if asset_ready else generation.get("status"),
                     card_image_embedded=key_ready, real_img_key_supplied=key_ready,
                     final_asset=str(asset_path), final_asset_exists=asset_path.is_file(),
-                    final_asset_contains_functional_text=required and asset_ready)
+                    final_asset_contains_functional_text=required and asset_ready,
+                    render_strategy=render_strategy,
+                    html_source=str(html_source) if html_route else None,
+                    html_render_required=bool(html_route and required),
+                    html_render_ready=asset_ready if html_route else True)
     provider["ai_generation_ready"] = asset_ready
     provider["hero_img_key_supplied"] = key_ready
     old["cardkit_import_file"] = wrapper["cardkit_card"]
