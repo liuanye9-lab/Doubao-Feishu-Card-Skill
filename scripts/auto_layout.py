@@ -1202,6 +1202,19 @@ def apply_design_plan(
     ]
     metric_sources = {str(item["source_text"]).strip() for item in metric_records}
     if enabled("metrics") and metric_rows:
+        if emoji_mode == "semantic" and not any(has_emoji(str(item.get("label") or "")) for item in metric_rows):
+            # Metric-only cards have no paragraph/fact heading where the
+            # semantic emoji budget can naturally attach. Put one restrained
+            # chart marker on the first metric label so the native Card still
+            # gets a real scan anchor instead of failing the emoji gate.
+            metric_rows[0]["label"] = f"📊 {metric_rows[0]['label']}"
+            decisions.append({
+                "kind": "metrics_emoji",
+                "source": metric_rows[0]["source_text"],
+                "output": metric_rows[0]["label"],
+                "emoji": "📊",
+                "reason": "指标组缺少段落标题；在首个指标上保留一个语义图表锚点",
+            })
         result = _remove_source_lines(result, metric_sources)
         result.insert(0, {"type": "metrics", "items": metric_rows[:4]})
         decisions.append({"decision": "applied", "component": "metrics", "reason": "来源数值已提升为事实卡；缩短/提升等前缀与单位保持原文"})
@@ -1653,7 +1666,7 @@ def build_auto_spec(
         ),
         "explicit_template_supported": True,
         "spacing_multiplier": 1.5,
-        "base_visual_language": "Apple 官网式现代主义极简：克制配色、极致留白、通栏/细线分隔、微圆角、无装饰性渐变",
+        "base_visual_language": "Apple 官网式现代主义层级纪律 + 高级信息设计材质：克制配色、舒展留白、通栏/细线分隔、透明磨砂玻璃、柔和动态模糊与低饱和渐变光晕；禁止廉价高饱和装饰和无意义卡片墙",
     }
     design["template_selection"] = template_selection
     # The first non-empty line is promoted to the Card title, but it can still

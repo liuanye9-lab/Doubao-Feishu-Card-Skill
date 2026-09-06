@@ -405,7 +405,12 @@ def _visual_label(value: Any, *, strip_marker: bool = True) -> str:
     text = str(value or "").strip()
     if strip_marker:
         text = re.sub(r"^\s*(?:[-*•]|\d+[.)、])\s*", "", text)
-        text = re.sub(r"^[📣🫶📅🗓️⏰📍🔗🧩💬🏁🖼️🔔📚📝⏳🚀🏆⚠️✅💡✨🎓📄]\s*", "", text)
+        # Source headings may use an emoji plus U+FE0F variation selector,
+        # such as ``🛠️ 做法`` or ``⚠️ 背景``. Strip only leading emoji
+        # markers so the case-title matcher can still recover the node while
+        # preserving emoji inside the actual copy.
+        emoji_marker = r"[\U0001F000-\U0001FAFF\u2600-\u27BF]"
+        text = re.sub(rf"^\s*(?:{emoji_marker}\ufe0f?[\u200d\ufe0f]*)+\s*", "", text)
     return re.sub(r"\s+", " ", text).strip()
 
 

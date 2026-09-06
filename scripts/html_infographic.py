@@ -265,6 +265,8 @@ def _palette(spec: Mapping[str, Any]) -> Dict[str, str]:
         "accent": "#214DFA",
         "warm": "#EACD76",
         "header": "#F5F5F3",
+        "glass": "#EAF1FF",
+        "gradient": "#F0F5FF",
     }
     preset = str(spec.get("preset") or "").strip()
     try:
@@ -281,6 +283,8 @@ def _palette(spec: Mapping[str, Any]) -> Dict[str, str]:
                     "muted": _safe_color(gallery.get("muted_hex"), fallback["muted"]),
                     "accent": _safe_color(gallery.get("accent_hex"), fallback["accent"]),
                     "header": str(gallery.get("header_fill") or gallery.get("header_gradient") or fallback["header"]),
+                    "glass": _safe_color(gallery.get("glass_hex"), fallback["glass"]),
+                    "gradient": _safe_color(gallery.get("gradient_hex"), fallback["gradient"]),
                 })
                 break
     except (OSError, ValueError, TypeError):
@@ -431,13 +435,15 @@ def build_html_design_prompt(spec: Mapping[str, Any], *, brand_context: str = ""
     return f"""# HTML 信息图设计提示词
 
 渲染策略：{HTML_RENDER_STRATEGY}（仅作为模型生图失败风险较高的文字密集信息图 fallback；纯视觉首图仍优先交给宿主图片模型）。
-视觉方向：保留现有 template={spec.get('template_id') or spec.get('preset') or 'apple-minimal'} 的选定模板与共享 Apple 官网式现代主义极简基线：中等字重现代无衬线、轻盈数字、克制配色、1.5 倍留白、通栏/细线分隔；不得引入装饰性渐变、封闭卡片墙或重阴影。
+视觉方向：保留现有 template={spec.get('template_id') or spec.get('preset') or 'apple-minimal'} 的选定模板与共享 Apple 官网式现代主义层级纪律，但升级为高级信息设计：中等字重现代无衬线、轻盈数字、克制配色、1.5 倍留白、透明磨砂玻璃、轻微动态模糊、低饱和渐变光晕、通栏/细线分隔；不得使用廉价高饱和渐变、无意义卡片墙或硬边重阴影。
 品牌上下文：{brand_context.strip() or '未提供额外品牌事实，仅使用当前 preset token。'}
 
 硬约束：
 - 只使用 source/spec 与 information_allocation.image.include 中的来源锁定文字、数字和关系；不能补写事实、结果、单位或 URL。
 - 使用自包含 HTML/CSS，所有字体、颜色和布局声明写在文件内；禁止外链资源、网络字体、脚本交互和动态数据。
 - 将长文拆成标题、指标、节点、关系、图表和短句；不要输出密密麻麻的段落墙。
+- 允许 1–3 个有信息作用的磨砂玻璃层：标题锚点、证据窗口、图表台或流程节点；玻璃层必须帮助分组或引导阅读，不能只是装饰。
+- 可使用 backdrop-filter blur、柔和环境阴影、内侧高光和受控渐变建立空间感；所有文字、数字、日期和图表标签必须清晰锐利。
 - 真实按钮、CTA、链接和回调只能留在原生 Card，不得画进图片。
 - 图表只能复用 visual_spec/chart 的真实数据；没有可比较数据时使用指标排版，不制造比例。
 - 输出固定尺寸、适配移动端的单张视觉图，后续由浏览器截图为 hero.png；HTML 文件保留为可编辑源与溯源证据。
@@ -526,49 +532,52 @@ def build_html_artifact(
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html_lib.escape(title)}</title>
   <style>
-    :root {{ --bg:{palette['background']}; --paper:{palette['body']}; --ink:{palette['ink']}; --muted:{palette['muted']}; --accent:{palette['accent']}; --warm:{palette['warm']}; --header:{palette['header']}; }}
+    :root {{ --bg:{palette['background']}; --paper:{palette['body']}; --ink:{palette['ink']}; --muted:{palette['muted']}; --accent:{palette['accent']}; --warm:{palette['warm']}; --header:{palette['header']}; --glass:{palette['glass']}; --gradient:{palette['gradient']}; }}
     * {{ box-sizing:border-box; }}
     @page {{ size:1200px {page_height}px; margin:0; }}
     html, body {{ margin:0; width:1200px; min-height:{page_height}px; background:var(--bg); color:var(--ink); }}
     body {{ font-family:"Noto Sans SC","Source Han Sans SC","PingFang SC","Helvetica Neue",Arial,sans-serif; -webkit-font-smoothing:antialiased; font-variant-numeric:tabular-nums; }}
-    main {{ width:1200px; min-height:{page_height}px; padding:96px 104px 120px; background:var(--paper); position:relative; overflow:hidden; }}
+    main {{ width:1200px; min-height:{page_height}px; padding:96px 104px 120px; background:radial-gradient(circle at 100% 0%, var(--gradient) 0%, transparent 28%), radial-gradient(circle at 0% 100%, var(--glass) 0%, transparent 24%), linear-gradient(135deg, var(--paper) 0%, #FFFFFF 54%, var(--bg) 100%); position:relative; overflow:hidden; }}
+    main::before, main::after {{ content:""; position:absolute; z-index:0; border-radius:999px; pointer-events:none; filter:blur(26px); opacity:.28; }}
+    main::before {{ width:420px; height:420px; top:-180px; right:-100px; background:radial-gradient(circle, var(--accent) 0%, transparent 68%); }}
+    main::after {{ width:360px; height:360px; bottom:-180px; left:-90px; background:radial-gradient(circle, var(--glass) 0%, transparent 70%); }}
     header, section {{ position:relative; z-index:1; }}
-    header {{ padding:0 0 42px; background:var(--header); color:var(--ink); min-height:238px; display:flex; flex-direction:column; justify-content:flex-end; border-bottom:2px solid var(--ink); }}
-    .eyebrow {{ color:var(--accent); font-size:22px; letter-spacing:.12em; text-transform:uppercase; margin-bottom:28px; font-weight:500; }}
+    header {{ padding:42px 46px 46px; background:linear-gradient(135deg, rgba(255,255,255,.80), rgba(255,255,255,.42)), var(--header); color:var(--ink); min-height:238px; display:flex; flex-direction:column; justify-content:flex-end; border:1px solid rgba(255,255,255,.78); border-radius:24px; box-shadow:0 22px 80px rgba(17,24,39,.09), inset 0 1px 0 rgba(255,255,255,.92); backdrop-filter:blur(22px) saturate(122%); }}
+    .eyebrow {{ align-self:flex-start; color:var(--accent); font-size:20px; letter-spacing:.10em; text-transform:uppercase; margin-bottom:28px; padding:10px 16px; border:1px solid rgba(255,255,255,.82); border-radius:999px; background:linear-gradient(135deg, rgba(255,255,255,.68), rgba(255,255,255,.30)); box-shadow:inset 0 1px 0 rgba(255,255,255,.88); font-weight:600; }}
     h1 {{ margin:0; max-width:1000px; font-size:64px; line-height:1.16; letter-spacing:-.035em; font-weight:600; }}
     .summary {{ margin-top:28px; max-width:920px; color:var(--muted); font-size:26px; line-height:1.5; }}
-    .signal-grid {{ margin:58px 0 0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:64px; border-top:1px solid rgba(21,23,26,.28); border-left:0; }}
+    .signal-grid {{ margin:58px 0 0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; }}
     .signal-grid.single {{ grid-template-columns:1fr; }}
-    .signal {{ min-height:138px; display:grid; grid-template-columns:60px 1fr; gap:18px; padding:30px 0; border-right:0; border-bottom:1px solid rgba(21,23,26,.18); background:transparent; }}
+    .signal {{ min-height:138px; display:grid; grid-template-columns:60px 1fr; gap:18px; padding:30px 28px; border:1px solid rgba(255,255,255,.72); border-radius:20px; background:linear-gradient(135deg, rgba(255,255,255,.70), rgba(255,255,255,.32)), var(--glass); box-shadow:0 18px 54px rgba(17,24,39,.07), inset 0 1px 0 rgba(255,255,255,.90); backdrop-filter:blur(18px) saturate(118%); }}
     .signal-index {{ color:var(--accent); font-size:22px; font-weight:500; }}
     .signal-label, .section-kicker, .metric-label {{ color:var(--muted); font-size:21px; line-height:1.25; letter-spacing:.02em; }}
     .signal-body {{ margin-top:14px; font-size:28px; line-height:1.42; font-weight:400; }}
     .signal-value {{ margin-top:10px; color:var(--accent); font-size:36px; line-height:1.15; font-weight:400; }}
-    .content-section, .chart-section {{ margin-top:64px; padding-top:24px; border-top:1px solid var(--ink); }}
+    .content-section, .chart-section {{ margin-top:64px; padding:30px 34px 34px; border:1px solid rgba(255,255,255,.76); border-radius:22px; background:linear-gradient(135deg, rgba(255,255,255,.74), rgba(255,255,255,.35)), var(--glass); box-shadow:0 20px 68px rgba(17,24,39,.08), inset 0 1px 0 rgba(255,255,255,.92); backdrop-filter:blur(20px) saturate(120%); }}
     .section-kicker {{ color:var(--ink); font-size:25px; font-weight:600; margin-bottom:24px; }}
     .metric-grid {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:64px; row-gap:0; }}
-    .metric-card {{ min-height:142px; padding:28px 0; background:transparent; border:0; border-bottom:1px solid rgba(21,23,26,.16); }}
+    .metric-card {{ min-height:142px; padding:28px 24px; background:linear-gradient(135deg, rgba(255,255,255,.50), rgba(255,255,255,.18)); border:1px solid rgba(255,255,255,.64); border-radius:16px; box-shadow:inset 0 1px 0 rgba(255,255,255,.72); }}
     .metric-value {{ margin-top:16px; font-size:44px; line-height:1.12; font-weight:400; color:var(--ink); }}
-    .fact-grid {{ display:grid; grid-template-columns:1fr; border-top:1px solid rgba(21,23,26,.16); }}
-    .fact-row {{ display:grid; grid-template-columns:32% 68%; gap:18px; padding:20px 0; border-bottom:1px solid rgba(21,23,26,.16); font-size:24px; line-height:1.45; }}
+    .fact-grid {{ display:grid; grid-template-columns:1fr; gap:12px; }}
+    .fact-row {{ display:grid; grid-template-columns:32% 68%; gap:18px; padding:20px 22px; border:1px solid rgba(255,255,255,.64); border-radius:16px; background:linear-gradient(135deg, rgba(255,255,255,.48), rgba(255,255,255,.18)); font-size:24px; line-height:1.45; }}
     .fact-row span {{ color:var(--muted); }} .fact-row b {{ font-weight:400; }}
     .section-card ul {{ margin:0; padding:0; list-style:none; display:grid; gap:18px; }}
     .section-card li {{ position:relative; padding-left:0; font-size:26px; line-height:1.5; }}
     .section-card li::before {{ content:none; }}
     .timeline-section {{ display:grid; gap:0; }}
-    .timeline-row {{ display:grid; grid-template-columns:220px 1fr; gap:32px; padding:26px 0; border-bottom:1px solid rgba(21,23,26,.16); }}
+    .timeline-row {{ display:grid; grid-template-columns:220px 1fr; gap:32px; padding:26px 22px; border-bottom:1px solid rgba(21,23,26,.16); background:linear-gradient(90deg, rgba(255,255,255,.36), transparent); }}
     .timeline-date {{ color:var(--accent); font-size:29px; font-weight:500; }}
     .timeline-title {{ font-size:29px; line-height:1.4; }} .timeline-body {{ margin-top:10px; color:var(--muted); font-size:23px; line-height:1.5; }}
-    .quote-section {{ margin-top:70px; padding:28px 0 28px 28px; background:transparent; color:var(--ink); border-left:3px solid var(--accent); display:grid; grid-template-columns:72px 1fr; gap:18px; font-size:31px; line-height:1.48; }}
+    .quote-section {{ margin-top:70px; padding:32px 34px; background:linear-gradient(135deg, rgba(255,255,255,.68), rgba(255,255,255,.28)), var(--glass); color:var(--ink); border:1px solid rgba(255,255,255,.76); border-left:4px solid var(--accent); border-radius:22px; box-shadow:0 18px 58px rgba(17,24,39,.07), inset 0 1px 0 rgba(255,255,255,.88); backdrop-filter:blur(18px) saturate(118%); display:grid; grid-template-columns:72px 1fr; gap:18px; font-size:31px; line-height:1.48; }}
     .quote-mark {{ color:var(--accent); font-size:70px; line-height:.8; }}
     .intro-note {{ font-size:26px; line-height:1.48; color:var(--ink); }}
     .bar-list {{ display:grid; gap:19px; }}
     .bar-row {{ display:grid; grid-template-columns:250px 1fr 150px; align-items:center; gap:16px; font-size:22px; }}
     .bar-label {{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); }}
-    .bar-track {{ height:12px; background:rgba(21,23,26,.1); overflow:hidden; }} .bar-track span {{ display:block; height:100%; }} .bar-value {{ text-align:right; font-size:24px; }}
+    .bar-track {{ height:16px; background:rgba(21,23,26,.09); overflow:hidden; border-radius:999px; box-shadow:inset 0 1px 3px rgba(17,24,39,.08); }} .bar-track span {{ display:block; height:100%; border-radius:999px; background:linear-gradient(90deg, var(--accent), var(--gradient)); box-shadow:0 0 22px rgba(50,107,255,.22); }} .bar-value {{ text-align:right; font-size:24px; }}
     .pie-layout {{ display:grid; grid-template-columns:360px 1fr; align-items:center; gap:56px; }}
-    .donut {{ width:330px; height:330px; border-radius:50%; display:grid; place-items:center; }} .donut-hole {{ width:160px; height:160px; border-radius:50%; background:var(--paper); }}
-    .legend-list {{ display:grid; gap:15px; }} .legend {{ display:grid; grid-template-columns:18px 1fr auto; gap:12px; align-items:center; font-size:22px; }} .legend i {{ width:18px; height:18px; display:block; }} .legend b {{ font-weight:400; color:var(--accent); }}
+    .donut {{ width:330px; height:330px; border-radius:50%; display:grid; place-items:center; box-shadow:0 18px 50px rgba(17,24,39,.12), 0 0 40px rgba(50,107,255,.13); }} .donut-hole {{ width:160px; height:160px; border-radius:50%; background:linear-gradient(135deg, rgba(255,255,255,.88), rgba(255,255,255,.52)), var(--paper); border:1px solid rgba(255,255,255,.82); box-shadow:inset 0 1px 0 rgba(255,255,255,.90); }}
+    .legend-list {{ display:grid; gap:15px; }} .legend {{ display:grid; grid-template-columns:18px 1fr auto; gap:12px; align-items:center; padding:14px 16px; border:1px solid rgba(255,255,255,.62); border-radius:14px; background:rgba(255,255,255,.34); font-size:22px; }} .legend i {{ width:18px; height:18px; display:block; border-radius:50%; box-shadow:0 0 18px currentColor; }} .legend b {{ font-weight:400; color:var(--accent); }}
   </style>
 </head>
 <body>

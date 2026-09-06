@@ -10,7 +10,7 @@
 
 ## 生产边界（优先于下方研究目录）
 
-实际生成只落到 `presets/preset-index.json` 的五套生产模板：`apple-minimal`、`swiss-grid`、`modern-editorial`、`data-narrative`、`product-showcase`。下方历史候选只用于提取构图和信息关系方法，不会被自动直接选中；所有生产模板都必须遵守 Apple 官网式现代主义极简基线、1.5 倍留白、克制色彩、现代无衬线、无装饰性渐变和无封闭卡片墙。
+实际生成只落到 `presets/preset-index.json` 的五套生产模板：`apple-minimal`、`swiss-grid`、`modern-editorial`、`data-narrative`、`product-showcase`。下方历史候选只用于提取构图和信息关系方法，不会被自动直接选中；所有生产模板都必须遵守 Apple 官网式层级纪律 + 高级信息设计基线、1.5 倍留白、克制色彩、现代无衬线，并允许 1–3 个有信息作用的磨砂玻璃、动态模糊和低饱和渐变层。
 
 ## 先给结论
 

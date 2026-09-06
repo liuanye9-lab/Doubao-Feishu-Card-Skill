@@ -1469,7 +1469,7 @@ def make_asset_plan(
         return None
     prompt = non_empty(hero.get("prompt"))
     if not prompt:
-        prompt = non_empty((preset or {}).get("hero_prompt")) or "Apple 官网式现代主义极简，纸白底、墨黑文字、单一克制信号色、极致留白、通栏分隔和细横线；无装饰性渐变、无封闭卡片堆叠、无重阴影、无水印，适合飞书卡片信息首图。"
+        prompt = non_empty((preset or {}).get("hero_prompt")) or "Apple 官网式现代主义层级纪律与高级信息设计材质，纸白底、墨黑文字、单一克制信号色、舒展留白、透明磨砂玻璃、柔和动态模糊和低饱和渐变光晕；禁止廉价高饱和装饰、封闭卡片墙、硬边重阴影和水印，适合飞书卡片信息首图。"
     runtime = image_runtime()
     image_generation_mode = non_empty(hero.get("image_generation_mode")) or default_image_mode()
     if image_generation_mode not in supported_image_modes():

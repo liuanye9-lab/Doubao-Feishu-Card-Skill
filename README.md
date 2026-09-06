@@ -125,17 +125,17 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 
 自动测试使用明确标注的合成媒体与 mock，不作为真实宿主/远程 CardKit 成功证据。
 
-默认生图提示词已统一为五套模板共享的 Apple 官网式现代主义极简基线：中等字重的现代无衬线标题、轻盈数字、克制标签、单一强调色、1.5 倍留白和细线分隔；透明底允许使用，并在实际卡片底色上验收。版式按真实指标数量或流程结构适配，不为套模板补造数据。具体可调参数见 [`presets/image-art-direction.json`](./presets/image-art-direction.json) 与 [`presets/preset-index.json`](./presets/preset-index.json)。
+默认生图提示词已统一为五套模板共享的 Apple 官网式层级纪律 + 高级信息设计基线：中等字重的现代无衬线标题、轻盈数字、克制标签、单一强调色、1.5 倍留白；允许 1–3 个有信息作用的透明磨砂玻璃层、动态模糊、柔和光晕和低饱和渐变，并在实际卡片底色上验收。版式按真实指标数量或流程结构适配，不为套模板补造数据。具体可调参数见 [`presets/image-art-direction.json`](./presets/image-art-direction.json) 与 [`presets/preset-index.json`](./presets/preset-index.json)。
 
 新增 [图文按钮协同排版](./references/layout-coordination.md)：轻量通知可自动选横幅，原生模块集中标题/说明/行动，按来源标题区间绑定按钮，保留显式短按钮文案；信息图完整展示而非居中裁切。新增模型优先 + HTML 信息图 fallback 路由，已有 spec 续编译不自动重排，但新生成和显式模板会统一采用五套生产模板基线。
 
 ### 五套生产模板
 
 系统会按内容自动选模板，也支持 `--template <template_id>` 由用户指定：
-`apple-minimal`（Apple 极简留白）、`swiss-grid`（瑞士国际主义网格）、
+`apple-minimal`（Apple 高级信息设计）、`swiss-grid`（瑞士国际主义网格）、
 `modern-editorial`（现代杂志编辑风）、`data-narrative`（数据叙事信息图）、
 `product-showcase`（产品发布/案例展示）。五套模板共用克制配色、1.5 倍间距、极致留白、
-现代无衬线、细线/通栏分隔和微圆角基线；颜色为内容服务，不使用装饰性渐变、重阴影或密集卡片墙。
+现代无衬线、细线/通栏分隔和微圆角基线；颜色为内容服务，允许受控的低饱和渐变、磨砂玻璃和柔和环境阴影，不使用廉价装饰、重阴影或密集卡片墙。
 
 ### 五套模板实测案例（2026-09-06）
 

@@ -7,16 +7,22 @@
     "ink": "#111111",
     "accent": "#0A84FF"
   },
-  "intent": "Apple 官网式现代主义极简：标题中等偏粗、正文细、数字轻盈、极致留白、克制配色，用信息本身形成视觉冲击",
+  "intent": "Apple 官网式现代主义高级信息设计：标题中等偏粗、正文细、数字轻盈、留白建立呼吸，磨砂玻璃、动态模糊、低饱和渐变和柔和光晕建立材质层次，用材质服务信息而不是用装饰抢注意力",
   "base_visual_contract": {
     "spacing_multiplier": 1.5,
     "color_service_only": true,
     "prefer_empty_space": true,
+    "richness_policy": "在保留呼吸感的前提下，每张图允许 1–3 个有信息作用的材质层；不得因为追求极简而只剩纯文字或生硬图表",
     "section_dividers": ["full_width_rule", "whitespace"],
-    "decorative_gradients": false,
+    "controlled_gradients": true,
+    "gradient_policy": "只允许低饱和、服务层级/景深/数据阅读的渐变；禁止廉价高饱和渐变和无意义色块",
+    "glass_material": "半透明磨砂玻璃、柔和边缘高光、轻微背景模糊、极淡环境阴影；玻璃层必须承载信息分组或视觉锚点",
+    "motion_blur": "允许一处动态模糊或光带暗示节奏/方向；不得模糊文字、数字和关键关系",
+    "soft_bloom": "允许低强度光晕和景深，让信息图有呼吸与空间感",
+    "purposeful_glass_panels": true,
     "closed_card_stacks": false,
-    "radius": "0–8px micro radius",
-    "shadow": "none or barely visible",
+    "radius": "8–18px soft glass radius",
+    "shadow": "very soft ambient shadow with large blur radius; never hard drop shadow",
     "font": "modern sans-serif; title 600, body 400, numbers 400"
   },
   "type_scale": {
@@ -28,9 +34,9 @@
   "layouts": {
     "metrics": "one clean editorial row per supplied metric (never add rows to fill a template): labels left, values right on shared baselines; emphasize the first by blue ink, not a larger font; no hero number, no icons, no boxes",
     "timeline": "a single strong vertical spine, large dates, alternating whitespace; stages stay in source order",
-    "relationship": "asymmetric editorial columns linked by one precise directional line",
+    "relationship": "asymmetric editorial columns linked by one precise directional line and one translucent evidence window",
     "quote": "one large typographic quote, a small grounded attribution if supplied",
-    "banner": "wide editorial strip: left-aligned title, one source-backed focal fact on the right; native Card holds details"
+    "banner": "wide editorial strip: left-aligned title, one source-backed focal fact and one restrained glass/visual anchor on the right; native Card holds details"
   },
   "avoid": [
     "beveled or extruded typography",
@@ -45,7 +51,10 @@
     "ultra-bold black fonts",
     "slanted or compressed glyphs",
     "outline or beveled text",
-    "decorative gradients",
+    "cheap decorative gradients",
+    "uncontrolled neon glow",
+    "blurred text or unreadable data",
+    "material layers with no information purpose",
     "dense high-saturation color",
     "closed card wall",
     "heavy shadow"
@@ -62,6 +71,7 @@
     "numerals": "Inter/Helvetica Neue-like regular numerals; clean open counters",
     "weight_policy": "medium-bold title / regular numerals / light-feeling body; never black or ultra-bold",
     "line_height": "1.35–1.5 for Chinese headings and body, natural tracking",
-    "background_policy": "opaque or transparent is allowed; inspect contrast on intended Card surface"
+    "background_policy": "opaque or transparent is allowed; inspect contrast on intended Card surface",
+    "material_policy": "glass and blur may enrich the image layer; native Card remains the only interaction layer"
   }
 }

@@ -31,7 +31,20 @@ class ReliabilityTests(unittest.TestCase):
         self.assertIn("完成率：95%以上", texts)
         self.assertIn("耗时：减少70%", texts)
 
-    def test_image_art_direction_is_single_refined_minimal_brief(self):
+    def test_emoji_prefixed_case_sections_reach_image_relationships(self):
+        from content_intelligence import build_image_text_items
+
+        blocks = [
+            {"type": "section", "title": "⚠️ 背景", "body": "资料分散，查找成本高。"},
+            {"type": "section", "title": "🛠️ 做法", "body": "1. 统一入口\n2. 建立索引。"},
+            {"type": "section", "title": "🏆 结果", "body": "查找时间缩短70%。"},
+        ]
+        labels = [item["text"] for item in build_image_text_items(blocks, "案例复盘")]
+        self.assertIn("背景：资料分散，查找成本高", labels)
+        self.assertIn("做法：统一入口", labels)
+        self.assertIn("结果：查找时间缩短70%", labels)
+
+    def test_image_art_direction_is_single_refined_material_brief(self):
         from image_art_direction import build_image_prompt
         prompt = build_image_prompt({"information_allocation": {"image": {"include": [
             {"role": "metric", "text": "完成率：95%以上"}]}}}, {"generation_family": "image2-class"})
@@ -40,6 +53,8 @@ class ReliabilityTests(unittest.TestCase):
         self.assertIn("medium-weight headings", prompt)
         self.assertIn("SAME regular-weight size", prompt)
         self.assertIn("Transparency is allowed", prompt)
+        self.assertIn("translucent frosted glass", prompt)
+        self.assertIn("controlled gradients are allowed", prompt)
         self.assertNotIn("alpha 255 everywhere", prompt)
         self.assertIn("95%以上", prompt)
         self.assertIn("never invent extra rows", prompt)

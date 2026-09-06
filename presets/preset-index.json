@@ -1,18 +1,18 @@
 {
   "version": "2.1",
   "default": "apple-minimal",
-  "purpose": "五套生产级视觉模板注册表；scene 负责内容结构，template/preset 负责视觉系统。所有模板共享现代主义极简基线。",
+  "purpose": "五套生产级视觉模板注册表；scene 负责内容结构，template/preset 负责视觉系统。所有模板共享高级信息设计基线：清晰层级、克制材质和有节奏的丰富度。",
   "template_contract": {
     "auto_select": true,
     "explicit_template_wins": true,
     "spacing_multiplier": 1.5,
-    "color_policy": "克制配色，色彩只服务内容层级与状态",
-    "whitespace_policy": "宁可留白，不用装饰填满",
-    "container_policy": "通栏模块、细横线和纯留白优先，禁止封闭卡片堆叠",
+    "color_policy": "克制配色，允许低饱和渐变与光晕；色彩只服务内容层级、状态和空间深度",
+    "whitespace_policy": "留白用于建立呼吸与节奏；允许 1–3 个材质层承载重点，不把留白做成空白",
+    "container_policy": "通栏模块、透明磨砂玻璃层、细横线和纯留白组合；禁止无意义的卡片墙",
     "typography": "现代无衬线；标题中等偏粗，正文细，数字轻盈",
-    "radius": "微圆角 0–8px",
-    "shadow": "无阴影或极淡大范围阴影",
-    "gradient": "禁止装饰性渐变；图表中的数据色阶除外"
+    "radius": "微圆角与柔和玻璃圆角 8–18px",
+    "shadow": "极淡的大范围环境阴影；禁止硬边重阴影",
+    "gradient": "允许受控的低饱和渐变、动态模糊光晕和数据色阶；禁止廉价高饱和装饰渐变"
   },
   "aliases": {
     "oriental-ink": "apple-minimal",
@@ -25,8 +25,8 @@
     {
       "id": "apple-minimal",
       "template_id": "apple-minimal",
-      "name": "Apple 极简留白",
-      "short_description": "以白、黑、单一强调色和大间距建立安静、现代、具有呼吸感的页面。",
+      "name": "Apple 高级信息设计",
+      "short_description": "以大标题、透明磨砂层、微妙光晕和单一强调色建立安静但不单薄的高级信息首屏。",
       "template_family": "apple-minimal",
       "header_template": "grey",
       "header_tag_color": "blue",
@@ -38,15 +38,16 @@
       "width_mode": "default",
       "body_padding": "20px 20px 32px 20px",
       "vertical_spacing": "16px",
-      "hero_prompt": "Apple 官网式现代主义极简，暖白或纯白底、石墨黑文字、单一克制蓝色信号、极致留白、通栏分隔、无渐变、无卡片堆叠、无装饰阴影；信息清晰而高级。",
+      "hero_prompt": "Apple 官网式现代主义高级信息设计，暖白底、石墨黑文字、单一克制蓝色信号；加入一到两层透明磨砂玻璃、极轻动态模糊和低饱和蓝色光晕，保留极致留白与通栏分隔，避免卡片墙和廉价科技感；信息清晰而有材质层次。",
       "best_for": ["活动信息", "培训概览", "普通通知", "产品摘要", "轻量案例"],
       "recipe": ["一句标题", "一条价值摘要", "3–5 个关键事实", "一条细分隔线", "唯一主行动"],
       "design_system": {
         "layout_signature": "full-width editorial bands with generous whitespace and one quiet accent",
         "palette_mode": "neutral base + single blue signal",
-        "surface_strategy": "open canvas, rules and whitespace; no closed tiles",
-        "visual_anchor": "typography and alignment",
-        "forbidden": ["decorative gradients", "stacked cards", "saturated fills", "heavy shadows", "UI screenshot look"]
+        "surface_strategy": "open canvas + one quiet frosted-glass focus layer + rules and whitespace",
+        "visual_anchor": "typography, alignment and soft translucent depth",
+        "material_language": ["frosted glass", "soft bloom", "subtle motion blur", "low-saturation gradient"],
+        "forbidden": ["cheap decorative gradients", "stacked card wall", "saturated fills", "hard shadows", "UI screenshot look"]
       },
       "gallery": {
         "accent_hex": "#0A84FF",
@@ -54,16 +55,17 @@
         "ink_hex": "#111111",
         "muted_hex": "#6E6E73",
         "header_fill": "#F5F5F3",
-        "header_fill": "#F5F5F3",
         "body_hex": "#FFFFFF",
-        "palette_note": "石墨 #111111 · 系统蓝 #0A84FF · 中性灰 #6E6E73 · 白 #FFFFFF"
+        "palette_note": "石墨 #111111 · 系统蓝 #0A84FF · 玻璃蓝雾 #DCEBFF · 中性灰 #6E6E73 · 白 #FFFFFF",
+        "glass_hex": "#DCEBFF",
+        "gradient_hex": "#EAF3FF"
       }
     },
     {
       "id": "swiss-grid",
       "template_id": "swiss-grid",
       "name": "瑞士国际主义网格",
-      "short_description": "严格网格、强对齐、黑白底和一枚状态色，适合让顺序与数字一眼可读。",
+      "short_description": "严格网格、强对齐、一枚状态色与透明节点，让顺序和数字一眼可读但不显生硬。",
       "template_family": "swiss-grid",
       "header_template": "grey",
       "header_tag_color": "red",
@@ -75,15 +77,16 @@
       "width_mode": "default",
       "body_padding": "20px 20px 32px 20px",
       "vertical_spacing": "18px",
-      "hero_prompt": "瑞士国际主义编辑设计，白底、近黑文字、单一朱红状态色、12 栏严格网格、粗细对比清楚、细横线、日期和数字轻盈、无渐变、无阴影、无封闭卡片。",
+      "hero_prompt": "瑞士国际主义高级信息图，白底、近黑文字、单一朱红状态色、12 栏严格网格；用透明磨砂节点、轻微动态模糊和一条低饱和红色光带增加空间节奏，粗细对比清楚、细横线、日期和数字轻盈，拒绝硬邦邦的纯文字流程图和卡片墙。",
       "best_for": ["时间线", "截止提醒", "流程路径", "阶段公告", "结果发布"],
       "recipe": ["大标题", "左对齐日期或编号", "一条主路径", "每段只保留一个动作", "状态色只标重点"],
       "design_system": {
         "layout_signature": "12-column Swiss grid, asymmetric alignment, hairline rules and one red signal",
         "palette_mode": "black/white + one restrained red",
-        "surface_strategy": "single canvas with horizontal rules; no bento grid",
-        "visual_anchor": "sequence, baseline and measured contrast",
-        "forbidden": ["decorative gradients", "rounded tile grids", "multiple accent colors", "oversized hero numbers", "ornamental icons"]
+        "surface_strategy": "single grid canvas + translucent stage nodes + horizontal rules; no bento grid",
+        "visual_anchor": "sequence, baseline, measured contrast and a soft material rail",
+        "material_language": ["frosted stage nodes", "blurred red signal rail", "soft glass edge", "quiet gradient haze"],
+        "forbidden": ["cheap decorative gradients", "rounded tile grids", "multiple accent colors", "oversized hero numbers", "ornamental icons"]
       },
       "gallery": {
         "accent_hex": "#D92D20",
@@ -91,16 +94,17 @@
         "ink_hex": "#111111",
         "muted_hex": "#6B6B6B",
         "header_fill": "#FFFFFF",
-        "header_fill": "#FFFFFF",
         "body_hex": "#FFFFFF",
-        "palette_note": "近黑 #111111 · 朱红 #D92D20 · 中性灰 #6B6B6B · 白 #FFFFFF"
+        "palette_note": "近黑 #111111 · 朱红 #D92D20 · 玻璃粉雾 #F8E2DE · 中性灰 #6B6B6B · 白 #FFFFFF",
+        "glass_hex": "#F8E2DE",
+        "gradient_hex": "#FFF2EF"
       }
     },
     {
       "id": "modern-editorial",
       "template_id": "modern-editorial",
       "name": "现代杂志编辑风",
-      "short_description": "用非对称留白、细线和短句节奏讲清案例、观点和可复用经验。",
+      "short_description": "用非对称留白、磨砂玻璃信息块、细线和短句节奏讲清案例、观点和可复用经验。",
       "template_family": "modern-editorial",
       "header_template": "grey",
       "header_tag_color": "green",
@@ -112,15 +116,16 @@
       "width_mode": "default",
       "body_padding": "22px 22px 36px 22px",
       "vertical_spacing": "18px",
-      "hero_prompt": "现代杂志编辑风，米白纸面、墨黑现代无衬线、低饱和苔绿色信号、非对称留白、细横线、短句层级、无渐变、无阴影、无密集卡片。",
+      "hero_prompt": "现代杂志编辑风与高级材料叙事，米白纸面、墨黑现代无衬线、低饱和苔绿色信号；在非对称留白之间嵌入半透明磨砂玻璃信息块、柔和景深和微妙绿雾渐变，用短句和细横线讲清问题—做法—结果，避免纯文字墙和廉价装饰。",
       "best_for": ["作品案例", "复盘总结", "观点表达", "团队故事", "经验沉淀"],
       "recipe": ["作品结论", "问题/背景", "做法", "结果", "一句可复用经验"],
       "design_system": {
         "layout_signature": "editorial asymmetric columns, long margins, short copy blocks and thin rules",
         "palette_mode": "warm neutral + muted green signal",
-        "surface_strategy": "open paper field with inset-free sections",
-        "visual_anchor": "case narrative and typographic rhythm",
-        "forbidden": ["decorative gradients", "card stacks", "sticker/handwriting clutter", "high-saturation color", "long paragraph walls"]
+        "surface_strategy": "open paper field + two or three inset frosted evidence layers with editorial rules",
+        "visual_anchor": "case narrative, typographic rhythm and translucent evidence windows",
+        "material_language": ["sage frosted glass", "soft depth blur", "editorial paper grain", "muted green haze"],
+        "forbidden": ["cheap decorative gradients", "card stacks", "sticker/handwriting clutter", "high-saturation color", "long paragraph walls"]
       },
       "gallery": {
         "accent_hex": "#526B63",
@@ -128,16 +133,17 @@
         "ink_hex": "#161616",
         "muted_hex": "#6C716E",
         "header_fill": "#F2F3F0",
-        "header_fill": "#F2F3F0",
         "body_hex": "#FCFCFA",
-        "palette_note": "墨黑 #161616 · 苔绿 #526B63 · 雾灰 #6C716E · 米白 #FCFCFA"
+        "palette_note": "墨黑 #161616 · 苔绿 #526B63 · 玻璃绿雾 #E0EBE5 · 雾灰 #6C716E · 米白 #FCFCFA",
+        "glass_hex": "#E0EBE5",
+        "gradient_hex": "#F0F6F2"
       }
     },
     {
       "id": "data-narrative",
       "template_id": "data-narrative",
       "name": "数据叙事信息图",
-      "short_description": "让真实指标、对比和趋势成为主角，以留白和基线代替仪表盘堆叠。",
+      "short_description": "让真实指标、对比和趋势成为主角，用磨砂图表台、柔和光晕和基线代替生硬的仪表盘堆叠。",
       "template_family": "data-narrative",
       "header_template": "grey",
       "header_tag_color": "blue",
@@ -149,15 +155,16 @@
       "width_mode": "fill",
       "body_padding": "20px 20px 34px 20px",
       "vertical_spacing": "18px",
-      "hero_prompt": "克制的数据叙事信息图，浅灰白底、深石板文字、单一低饱和蓝色数据强调、真实柱状/扇形/折线图、宽松基线、无渐变、无仪表盘卡片墙、无装饰阴影。",
+      "hero_prompt": "高级数据叙事信息图，浅灰白底、深石板文字、单一低饱和蓝色数据强调；真实柱状/扇形/折线图放在一块透明磨砂图表台上，加入克制的蓝色渐变光晕、柔和景深和清晰数据标签，用宽松基线传达结论，拒绝生硬默认图表和仪表盘卡片墙。",
       "best_for": ["经营复盘", "指标摘要", "对比分析", "数据报告", "效果展示"],
       "recipe": ["结论先行", "2–4 个真实指标", "一张真实图表", "一句洞察", "来源或行动"],
       "design_system": {
         "layout_signature": "data baseline, one chart, metric rows and quiet annotations",
         "palette_mode": "cool neutral + one blue data signal",
-        "surface_strategy": "chart and rules on one open canvas; no dashboard tiles",
-        "visual_anchor": "truthful comparison and scale",
-        "forbidden": ["decorative gradients", "gauge dashboards", "fake percentages", "dense KPI tile walls", "unverified values"]
+        "surface_strategy": "one frosted chart plate + metric baseline + quiet annotations; no dashboard tile wall",
+        "visual_anchor": "truthful comparison, scale and a readable glass chart surface",
+        "material_language": ["frosted chart plate", "soft blue glow", "controlled data gradient", "fine luminous baseline"],
+        "forbidden": ["cheap decorative gradients", "gauge dashboards", "fake percentages", "dense KPI tile walls", "unverified values"]
       },
       "gallery": {
         "accent_hex": "#326BFF",
@@ -165,16 +172,17 @@
         "ink_hex": "#17212B",
         "muted_hex": "#64748B",
         "header_fill": "#F4F6F8",
-        "header_fill": "#F4F6F8",
         "body_hex": "#FFFFFF",
-        "palette_note": "石板 #17212B · 数据蓝 #326BFF · 灰蓝 #64748B · 雾白 #F4F6F8"
+        "palette_note": "石板 #17212B · 数据蓝 #326BFF · 玻璃蓝雾 #DCE8FF · 灰蓝 #64748B · 雾白 #F4F6F8",
+        "glass_hex": "#DCE8FF",
+        "gradient_hex": "#ECF2FF"
       }
     },
     {
       "id": "product-showcase",
       "template_id": "product-showcase",
       "name": "产品发布 / 案例展示",
-      "short_description": "用一个明确视觉锚点、短价值句和单一行动组织产品或案例的展示节奏。",
+      "short_description": "用一个明确视觉锚点、透明 UI 材质、短价值句和单一行动组织产品或案例的展示节奏。",
       "template_family": "product-showcase",
       "header_template": "grey",
       "header_tag_color": "blue",
@@ -186,15 +194,16 @@
       "width_mode": "default",
       "body_padding": "20px 20px 34px 20px",
       "vertical_spacing": "16px",
-      "hero_prompt": "高级产品发布与案例展示，白底、深墨标题、单一克制深钴蓝视觉锚点、产品/案例关系清楚、宽松留白、细分隔、无渐变、无阴影、无营销海报式堆叠。",
+      "hero_prompt": "高级产品发布与案例展示，白底、深墨标题、单一克制深钴蓝视觉锚点；用透明磨砂 UI 片层、受控蓝紫渐变、柔和动态模糊和一处有呼吸感的产品关系图增强质感，产品/案例关系清楚，宽松留白与细分隔并存，拒绝廉价营销海报和伪交互按钮。",
       "best_for": ["产品发布", "功能介绍", "案例首屏", "作品合集", "主视觉通知"],
       "recipe": ["一句价值主张", "一个视觉锚点", "3 个能力或结果", "一句证明", "一个真实主 CTA"],
       "design_system": {
         "layout_signature": "single focal object, short value proposition, three proof points and one action",
         "palette_mode": "neutral base + deep cobalt anchor",
-        "surface_strategy": "open showcase strip with rule-separated proof points",
-        "visual_anchor": "one object or one relationship, never a collage wall",
-        "forbidden": ["decorative gradients", "marketing poster clutter", "multiple CTA pills", "fake product UI", "stock-photo collage"]
+        "surface_strategy": "open showcase strip + one or two translucent product/evidence layers with rule-separated proof points",
+        "visual_anchor": "one object or one relationship with soft depth, never a collage wall",
+        "material_language": ["frosted UI frames", "blue-violet controlled gradient", "soft bloom", "dynamic blur depth"],
+        "forbidden": ["cheap decorative gradients", "marketing poster clutter", "multiple CTA pills", "fake product UI", "stock-photo collage"]
       },
       "gallery": {
         "accent_hex": "#3557A5",
@@ -202,9 +211,10 @@
         "ink_hex": "#111827",
         "muted_hex": "#687386",
         "header_fill": "#F7F8FA",
-        "header_fill": "#F7F8FA",
         "body_hex": "#FFFFFF",
-        "palette_note": "深墨 #111827 · 深钴蓝 #3557A5 · 蓝灰 #687386 · 白 #FFFFFF"
+        "palette_note": "深墨 #111827 · 深钴蓝 #3557A5 · 玻璃蓝雾 #E1E8FA · 蓝灰 #687386 · 白 #FFFFFF",
+        "glass_hex": "#E1E8FA",
+        "gradient_hex": "#EEF2FF"
       }
     }
   ]
