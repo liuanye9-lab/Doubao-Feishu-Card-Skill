@@ -99,6 +99,20 @@ def load_preset_registry() -> Dict[str, Any]:
     return registry
 
 
+def canonical_preset_id(preset_id: Optional[str], registry: Optional[Dict[str, Any]] = None) -> str:
+    """Resolve a legacy preset ID to one of the five production templates."""
+    value = str(preset_id or "").strip()
+    if not value:
+        return value
+    source = registry if isinstance(registry, dict) else load_preset_registry()
+    aliases = source.get("aliases") if isinstance(source.get("aliases"), dict) else {}
+    seen = set()
+    while value in aliases and value not in seen:
+        seen.add(value)
+        value = str(aliases.get(value) or value).strip()
+    return value
+
+
 def load_scene_registry() -> Dict[str, Any]:
     """Load the single source of truth for event lifecycle scene templates."""
     try:
@@ -136,7 +150,10 @@ def resolve_preset(spec: Dict[str, Any], scene: Optional[Dict[str, Any]] = None)
         return None
 
     registry = load_preset_registry()
-    preset_id = requested or non_empty((scene or {}).get("default_preset")) or non_empty(registry.get("default"))
+    preset_id = canonical_preset_id(
+        requested or non_empty((scene or {}).get("default_preset")) or non_empty(registry.get("default")),
+        registry,
+    )
     for item in registry.get("presets", []):
         if isinstance(item, dict) and item.get("id") == preset_id:
             return item
@@ -1452,7 +1469,7 @@ def make_asset_plan(
         return None
     prompt = non_empty(hero.get("prompt"))
     if not prompt:
-        prompt = non_empty((preset or {}).get("hero_prompt")) or "现代东方留白、暖纸色、墨黑飞书标志意象、香槟金汇聚路径与微妙节点；纯粹、克制、先锋；无文字、无水印、适合飞书卡片首图。"
+        prompt = non_empty((preset or {}).get("hero_prompt")) or "Apple 官网式现代主义极简，纸白底、墨黑文字、单一克制信号色、极致留白、通栏分隔和细横线；无装饰性渐变、无封闭卡片堆叠、无重阴影、无水印，适合飞书卡片信息首图。"
     runtime = image_runtime()
     image_generation_mode = non_empty(hero.get("image_generation_mode")) or default_image_mode()
     if image_generation_mode not in supported_image_modes():
@@ -1970,6 +1987,8 @@ def compile_outputs(
         "type": spec.get("type") or (resolved_scene or {}).get("type", "custom"),
         "scene": resolved_scene.get("id") if resolved_scene else None,
         "preset": resolved_preset.get("id") if resolved_preset else None,
+        "template_id": (resolved_preset or {}).get("template_id") if resolved_preset else None,
+        "template_name": (resolved_preset or {}).get("name") if resolved_preset else None,
         "callbacks": len(contracts),
         "asset_plan": str(hero_plan) if hero_plan else None,
         "interaction_contract": str(interaction_path) if interaction_path else None,
@@ -1993,7 +2012,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--type", choices=sorted(TYPE_LABELS), help="card type")
     parser.add_argument("--title", help="override the card title")
     parser.add_argument("--scene", help="event lifecycle scene id, for example training-notice")
-    parser.add_argument("--preset", help="built-in visual preset id, for example pioneer-red")
+    parser.add_argument("--preset", "--template", dest="preset", help="built-in visual template id; e.g. apple-minimal or swiss-grid")
     parser.add_argument("--layout", choices=("auto", "plain"), default="auto", help="plain-text layout mode; auto extracts dates, links, focus, and scene")
     parser.add_argument("--emoji-mode", choices=("auto", "aliases", "semantic", "off"), default="semantic", help="default adds 3–6 restrained semantic Emoji; use off to disable")
     parser.add_argument("--dedupe", choices=("safe", "preserve"), default="safe", help="remove exact repeated lines from the rendered layout while preserving the source in analysis")

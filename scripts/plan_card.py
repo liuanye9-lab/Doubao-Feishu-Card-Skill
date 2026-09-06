@@ -50,11 +50,11 @@ MOTION_WORDS = ("动图", "GIF", "动画", "动态底图", "animated", "motion")
 MEDIA_NEGATION_RE = re.compile(r"(?:不要|不需要|无需|不用|去掉|取消)\s*(?:生成)?\s*(?:图片|配图|海报|封面|首图|信息图|动图|GIF|动画|轮播|图集|多图)", re.I)
 
 ARCHETYPE_PRESETS = {
-    "editorial": "olive-editorial",
-    "cinematic": "black-gold-stage",
-    "dashboard": "blueprint-blue",
-    "alert": "pioneer-red",
-    "minimal-luxury": "oriental-ink",
+    "editorial": "modern-editorial",
+    "cinematic": "product-showcase",
+    "dashboard": "data-narrative",
+    "alert": "swiss-grid",
+    "minimal-luxury": "apple-minimal",
 }
 
 

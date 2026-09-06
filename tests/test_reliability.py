@@ -31,11 +31,12 @@ class ReliabilityTests(unittest.TestCase):
         self.assertIn("完成率：95%以上", texts)
         self.assertIn("耗时：减少70%", texts)
 
-    def test_image_art_direction_is_single_refined_swiss_brief(self):
+    def test_image_art_direction_is_single_refined_minimal_brief(self):
         from image_art_direction import build_image_prompt
         prompt = build_image_prompt({"information_allocation": {"image": {"include": [
             {"role": "metric", "text": "完成率：95%以上"}]}}}, {"generation_family": "image2-class"})
-        self.assertIn("SWISS EDITORIAL", prompt)
+        self.assertIn("Apple 官网式现代主义极简", prompt)
+        self.assertIn("no decorative gradients", prompt)
         self.assertIn("medium-weight headings", prompt)
         self.assertIn("SAME regular-weight size", prompt)
         self.assertIn("Transparency is allowed", prompt)

@@ -8,9 +8,13 @@
 
 机器可读索引见 [`presets/image-style-index.json`](../../presets/image-style-index.json)，能力包自动选择见 [`presets/visual-skill-packs.json`](../../presets/visual-skill-packs.json)。首次生成按内容关系自动选择风格；用户显式指定风格时覆盖自动结果，只有用户要求比较/切换时才暂停确认。这里的模板只改变视觉语言；原生模型路径不接入本地渲染器，HTML fallback 使用独立的自包含信息图排版契约。
 
+## 生产边界（优先于下方研究目录）
+
+实际生成只落到 `presets/preset-index.json` 的五套生产模板：`apple-minimal`、`swiss-grid`、`modern-editorial`、`data-narrative`、`product-showcase`。下方历史候选只用于提取构图和信息关系方法，不会被自动直接选中；所有生产模板都必须遵守 Apple 官网式现代主义极简基线、1.5 倍留白、克制色彩、现代无衬线、无装饰性渐变和无封闭卡片墙。
+
 ## 先给结论
 
-对于当前“AI 先锋大赛开营”这类培训通知，建议优先从下面三种中选：
+对于当前“AI 先锋大赛开营”这类培训通知，生产环境优先从五套模板中自动选择；历史研究目录不再作为默认生产风格：
 
 1. **蓝图流程**：最适合时间线、培训节点、提交和决赛路径。信息最清楚，建议作为第一候选。
 2. **极简编辑**：最稳妥、最像企业产品卡片。适合公告、培训概览和少量事实。

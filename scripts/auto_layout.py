@@ -520,6 +520,19 @@ def scene_default_preset(scene_id: Optional[str]) -> Optional[str]:
     return None
 
 
+def canonical_template_id(value: Optional[str]) -> Optional[str]:
+    """Resolve a scene/legacy preset ID to the current production template."""
+    candidate = str(value or "").strip()
+    if not candidate:
+        return None
+    try:
+        registry = json.loads((ROOT / "presets" / "preset-index.json").read_text(encoding="utf-8"))
+        aliases = registry.get("aliases") if isinstance(registry.get("aliases"), dict) else {}
+        return str(aliases.get(candidate) or candidate)
+    except (OSError, ValueError, TypeError):
+        return candidate
+
+
 def infer_button_label(context: str) -> str:
     for keywords, label in BUTTON_LABEL_RULES:
         if any(keyword in context for keyword in keywords):
@@ -1623,9 +1636,26 @@ def build_auto_spec(
     # Scene defaults are part of the stable visual contract.  An archetype
     # recommendation is useful for custom cards, but it must not override the
     # registered palette for an explicitly or structurally selected scene.
-    preset = requested_preset or scene_default_preset(scene_id) or design.get("recommended_preset")
+    scene_preset = scene_default_preset(scene_id)
+    preset = requested_preset or scene_preset or design.get("recommended_preset")
+    template_id = canonical_template_id(preset)
     if scene_id and preset:
         design["recommended_preset"] = preset
+    template_selection = {
+        "template_id": template_id,
+        "mode": "explicit" if requested_preset else ("scene_default" if scene_preset else "content_auto"),
+        "reason": (
+            "用户显式指定模板"
+            if requested_preset
+            else f"场景 {scene_id} 使用注册的默认模板 {template_id}"
+            if scene_preset
+            else f"按内容原型 {design.get('visual_archetype') or 'general'} 自动选择模板 {template_id}"
+        ),
+        "explicit_template_supported": True,
+        "spacing_multiplier": 1.5,
+        "base_visual_language": "Apple 官网式现代主义极简：克制配色、极致留白、通栏/细线分隔、微圆角、无装饰性渐变",
+    }
+    design["template_selection"] = template_selection
     # The first non-empty line is promoted to the Card title, but it can still
     # contain a real action URL or a markdown image. Keep it in the scan so a
     # title such as “报名入口: URL” is not silently discarded.
@@ -1775,11 +1805,14 @@ def build_auto_spec(
         "title": title,
         "scene": scene_id,
         "preset": preset,
+        "template_id": template_id,
+        "template_selection": template_selection,
         "route_contract": {
             "profile": "stable-v1",
             "precedence": "explicit_scene > source_structure > specific_keywords > custom",
-            "scene_default_preset": scene_default_preset(scene_id),
+            "scene_default_preset": scene_preset,
             "requested_scene": requested_scene,
+            "template_selection": template_selection,
         },
         "content_mode": summary_mode["mode"],
         "content_mode_confidence": summary_mode["confidence"],

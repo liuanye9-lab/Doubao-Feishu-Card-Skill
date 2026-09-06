@@ -76,7 +76,7 @@ def attach_delivery_evidence(report):
                         "invoke_host_generation_tool_then_register_and_upload" if required else
                         "fix_report_blockers"),
         "art_direction": {"file": str(Path(__file__).resolve().parents[1] / "presets/image-art-direction.json"),
-                          "style": "swiss-editorial", "font": "refined modern sans-serif", "transparency_allowed": True},
+                          "style": "five-production-templates", "font": "refined modern sans-serif", "transparency_allowed": True},
         "host_tool_must_be_discovered": True,
         "configuration_is_not_observed_model_evidence": True,
     }

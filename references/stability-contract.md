@@ -27,7 +27,7 @@ source_text
 3. 具体关键词。单个泛词（例如“结果”）不能单独把案例路由成 `result-announcement`。
 4. `custom` 保守兜底，并在 `route_contract` / `analysis.route_fallback` 记录原因。
 
-场景确定后，预设优先级固定为：显式 `--preset` → 场景注册表 `default_preset` → 规划器 archetype。比如 `case-showcase` 默认使用 `olive-editorial`，不会因为文案长短随机切到另一种风格。
+场景确定后，模板优先级固定为：显式 `--template`（`--preset` 兼容）→ 场景注册表 `default_preset` → 规划器 archetype。比如 `case-showcase` 的生产模板是 `modern-editorial`，旧 `olive-editorial` 只作为兼容别名，不会因为文案长短随机切到另一种风格。
 
 ## 输出不变量
 

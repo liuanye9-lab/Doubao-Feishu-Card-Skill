@@ -125,6 +125,28 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 
 自动测试使用明确标注的合成媒体与 mock，不作为真实宿主/远程 CardKit 成功证据。
 
-默认生图提示词已统一为瑞士编辑设计：中等字重的现代黑体标题、等尺度的轻盈数字、克制标签和单一强调色；透明底允许使用，并在实际卡片底色上验收。版式按真实指标数量或流程结构适配，不为套模板补造数据。具体可调参数见 [`presets/image-art-direction.json`](./presets/image-art-direction.json)。
+默认生图提示词已统一为五套模板共享的 Apple 官网式现代主义极简基线：中等字重的现代无衬线标题、轻盈数字、克制标签、单一强调色、1.5 倍留白和细线分隔；透明底允许使用，并在实际卡片底色上验收。版式按真实指标数量或流程结构适配，不为套模板补造数据。具体可调参数见 [`presets/image-art-direction.json`](./presets/image-art-direction.json) 与 [`presets/preset-index.json`](./presets/preset-index.json)。
 
-新增 [图文按钮协同排版](./references/layout-coordination.md)：轻量通知可自动选横幅，原生模块集中标题/说明/行动，按来源标题区间绑定按钮，保留显式短按钮文案；信息图完整展示而非居中裁切。新增模型优先 + HTML 信息图 fallback 路由，已有 preset、字体和色板不变，已有 spec 续编译不自动重排。
+新增 [图文按钮协同排版](./references/layout-coordination.md)：轻量通知可自动选横幅，原生模块集中标题/说明/行动，按来源标题区间绑定按钮，保留显式短按钮文案；信息图完整展示而非居中裁切。新增模型优先 + HTML 信息图 fallback 路由，已有 spec 续编译不自动重排，但新生成和显式模板会统一采用五套生产模板基线。
+
+### 五套生产模板
+
+系统会按内容自动选模板，也支持 `--template <template_id>` 由用户指定：
+`apple-minimal`（Apple 极简留白）、`swiss-grid`（瑞士国际主义网格）、
+`modern-editorial`（现代杂志编辑风）、`data-narrative`（数据叙事信息图）、
+`product-showcase`（产品发布/案例展示）。五套模板共用克制配色、1.5 倍间距、极致留白、
+现代无衬线、细线/通栏分隔和微圆角基线；颜色为内容服务，不使用装饰性渐变、重阴影或密集卡片墙。
+
+### 五套模板实测案例（2026-09-06）
+
+以下 5 条均已用 `stable_card.py` 跑过本地源锁定、模板路由、Card 2.0 编译和 `.card` 输出；未伪造图片 key，未把未完成的远程发送冒充为成功。
+
+| 输入主题 | 场景 | 自动模板 | 视觉表达建议 | 本地验收结果 |
+| --- | --- | --- | --- | --- |
+| “AI 先锋训练营报名开启，9 月 10 日—12 日完成学习、提交、展示” | `event-info` | `apple-minimal` | Seedream 5.0 Pro 轻量主题首图 + 原生入口按钮 | `.card` / wrapper / spec 通过编译 |
+| “9 月 10 日准备 → 9 月 12 日提交 → 9 月 20 日评审 → 9 月 30 日展示” | `activity-timeline` | `swiss-grid` | 单轨时间线 + 日期/动作层级 | `.card` / wrapper / spec 通过编译 |
+| “背景：案例资料分散；做法：统一收集；结果：查找时间 30 分钟降到 5 分钟” | `case-showcase` | `modern-editorial` | 问题—做法—结果关系图 + 案例摘要 | `.card` / wrapper / spec 通过编译 |
+| “提交 48 个、评审 36 个、入选展示 12 个，评审提升 20%” | `event-recap` | `data-narrative` | 真实指标优先，按数据选择柱状/对比图 | `.card` / wrapper / spec 通过编译 |
+| “案例卡片支持信息图、作品链接和一键提交” | `prelaunch-promo` | `product-showcase` | 产品价值首屏 + 单一真实行动 | `.card` / wrapper / spec 通过编译 |
+
+另做了一个结构化长文专项：显式选择 `html_infographic_to_png` 后，`case-showcase` 自动落到 `modern-editorial`，生成自包含 HTML、`hero.png` 和 provenance；并验证标题会压缩为“案例复盘”，不会把整段源文案塞进大标题。HTML/PNG 本地链路通过，仍需真实图片上传、视觉复核和 CardKit 回读后才能标记为 `ready`。

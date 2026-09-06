@@ -1,15 +1,26 @@
 {
   "schema": "feishu-image-art-direction/1",
-  "default_style": "swiss-editorial",
-  "version": "2026-09-05",
+  "default_style": "apple-minimal",
+  "version": "2026-09-06",
   "palette": {
-    "background": "#F6F5F1",
-    "ink": "#15171A",
-    "accent": "#214DFA"
+    "background": "#F5F5F3",
+    "ink": "#111111",
+    "accent": "#0A84FF"
   },
-  "intent": "瑞士编辑设计：中等字重标题、轻盈数字、非对称网格、克制用色，用信息本身形成视觉冲击",
+  "intent": "Apple 官网式现代主义极简：标题中等偏粗、正文细、数字轻盈、极致留白、克制配色，用信息本身形成视觉冲击",
+  "base_visual_contract": {
+    "spacing_multiplier": 1.5,
+    "color_service_only": true,
+    "prefer_empty_space": true,
+    "section_dividers": ["full_width_rule", "whitespace"],
+    "decorative_gradients": false,
+    "closed_card_stacks": false,
+    "radius": "0–8px micro radius",
+    "shadow": "none or barely visible",
+    "font": "modern sans-serif; title 600, body 400, numbers 400"
+  },
   "type_scale": {
-    "title": "52–64px at 1024px width, medium weight 500; two balanced lines",
+    "title": "52–64px at 1024px width, medium-bold weight 600; one or two balanced lines",
     "primary_metric": "96–116px, regular weight 400; same visual scale as supporting numbers",
     "secondary_metric": "96–116px, regular weight 400",
     "labels": "34–42px, regular weight 400; qualifiers at least 34px"
@@ -33,7 +44,11 @@
     "more than one visual style",
     "ultra-bold black fonts",
     "slanted or compressed glyphs",
-    "outline or beveled text"
+    "outline or beveled text",
+    "decorative gradients",
+    "dense high-saturation color",
+    "closed card wall",
+    "heavy shadow"
   ],
   "mobile_qa": [
     "headline readable at 360px",
@@ -45,8 +60,8 @@
   "typography": {
     "cjk": "modern humanist/grotesk CJK, Noto Sans SC or Source Han Sans-like",
     "numerals": "Inter/Helvetica Neue-like regular numerals; clean open counters",
-    "weight_policy": "medium title / regular numerals / regular labels; never black or ultra-bold",
-    "line_height": "1.25–1.35 for Chinese headings, natural tracking",
+    "weight_policy": "medium-bold title / regular numerals / light-feeling body; never black or ultra-bold",
+    "line_height": "1.35–1.5 for Chinese headings and body, natural tracking",
     "background_policy": "opaque or transparent is allowed; inspect contrast on intended Card surface"
   }
 }

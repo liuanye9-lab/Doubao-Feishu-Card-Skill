@@ -17,14 +17,19 @@ from typing import Any, Dict, Optional, Sequence
 
 
 PALETTE = {
-    "墨色": "#172238",
-    "黛蓝": "#425066",
-    "靛蓝": "#065279",
-    "月白": "#D6ECF0",
-    "暖纸": "#F4F0E6",
-    "胭脂": "#9D2933",
-    "赭色": "#955539",
-    "金色": "#EACD76",
+    "纸白": "#F5F5F3",
+    "墨黑": "#111111",
+    "信号蓝": "#0A84FF",
+    "静灰": "#6E6E73",
+    "细线": "#D8D8D3",
+}
+
+TEMPLATE_ALIASES = {
+    "oriental-ink": "apple-minimal",
+    "pioneer-red": "swiss-grid",
+    "blueprint-blue": "data-narrative",
+    "olive-editorial": "modern-editorial",
+    "black-gold-stage": "product-showcase",
 }
 
 
@@ -43,15 +48,17 @@ def infer_style(text: str, brand_context: str = "", preset: Optional[str] = None
     if preset:
         selected = preset
     elif oriental_brand and pioneer:
-        selected = "oriental-signal-hybrid"
+        selected = "product-showcase"
     elif oriental_brand:
-        selected = "oriental-ink-premium"
+        selected = "modern-editorial"
     elif pioneer:
-        selected = "pioneer-signal"
+        selected = "product-showcase"
     elif visual:
-        selected = "editorial-information-image"
+        selected = "modern-editorial"
     else:
-        selected = "modern-oriental-signal"
+        selected = "apple-minimal"
+
+    template_id = TEMPLATE_ALIASES.get(selected, selected)
 
     subject = "象上汇东方美学 × AI 先锋赛事" if oriental_brand and pioneer else (
         "象上汇东方美学" if oriental_brand else "AI 先锋赛事" if pioneer else "当前项目"
@@ -64,6 +71,7 @@ def infer_style(text: str, brand_context: str = "", preset: Optional[str] = None
         image_role = "可选主题首图：只做方向与氛围；核心事实仍保留在 Card 文本中"
     return {
         "style_id": selected,
+        "template_id": template_id,
         "subject": subject,
         "facts": [
             "来源事实：" + (brand_context.strip() if brand_context.strip() else "未提供独立品牌资料"),
@@ -82,7 +90,7 @@ def render_style(style: Dict[str, Any], *, sources: Optional[str] = None, resear
         f"| {name} | `{hex_value}` | {role} |"
         for (name, hex_value), role in zip(
             style["palette"].items(),
-            ("正文/主标题", "深色渐变中段", "知识/培训信号", "冷白留白", "宣纸底", "截止/风险小面积提醒", "暖色节点/渐变尾端", "日期/关键动作/主 CTA"),
+            ("背景基底", "标题与正文", "唯一强调色", "次级文字", "分隔线"),
         )
     )
     sources_block = sources.strip() if sources and sources.strip() else "- 暂无外部来源；当前为输入事实驱动的安全默认风格。"
@@ -94,9 +102,10 @@ def render_style(style: Dict[str, Any], *, sources: Optional[str] = None, resear
 ## 1. 风格决策
 
 - `style_id`: `{style['style_id']}`
+- `template_id`: `{style['template_id']}`
 - 信息第一：先让用户看懂“是什么、何时、做什么、如何完成”，再安排氛围和装饰。
 - 单卡单焦点：时间线卡先看日期/节点/动作，提醒卡先看截止/必须完成事项，案例卡先看作品结论或入口。
-- 视觉气质：高级、克制、东方留白；用深色渐变和细轨道保留类似 SpaceX 的推进感，不使用荧光赛博或满屏国潮纹样。
+- 视觉气质：Apple 官网式现代主义极简；克制配色、极致留白、现代无衬线、通栏模块和细横线，不用渐变海报或封闭卡片墙。
 
 ## 2. 事实与研究状态
 
@@ -112,13 +121,13 @@ def render_style(style: Dict[str, Any], *, sources: Optional[str] = None, resear
 
 {notes_block}
 
-## 3. 中国传统色语义色板
+## 3. 中性克制语义色板
 
 | 角色 | HEX | 用法 |
 | --- | --- | --- |
 {palette_rows}
 
-约束：金色只标记日期、关键数字和主 CTA；胭脂只用于截止/风险的小面积锚点；正文必须保持墨色高对比；深色渐变只承担题头/主图方向感，正文回到暖纸或月白。
+约束：颜色只服务内容层级或状态；默认仅保留一个强调色。禁止装饰性渐变、高饱和色堆叠、重阴影和密集卡片墙；宁可留白，不为填满模板补造组件。
 
 ## 4. 字体与层级
 
@@ -131,7 +140,7 @@ def render_style(style: Dict[str, Any], *, sources: Optional[str] = None, resear
 
 ## 5. 排版与交互
 
-- 手机单列优先；时间线每个节点满宽，日期在上、事项在下，日期统一显示为“几月几日”。
+- 手机单列优先；时间线每个节点满宽，日期在上、事项在下，日期统一显示为“几月几日”；垂直间距按基础值放大约 1.5 倍。
 - 不把长文案塞进卡片或折叠面板；卡片只留摘要、3–5 个关键点、指标/图表和 CTA，完整原文留在 source.txt。
 - 图片必须有信息角色：{style['image_role']}。
 - GIF 只做慢速轨道、节点呼吸或光线移动；第一帧必须完整静态可读，日期/截止信息不得只存在于 GIF，图片内不得出现按钮或伪 CTA。
@@ -141,7 +150,7 @@ def render_style(style: Dict[str, Any], *, sources: Optional[str] = None, resear
 ## 6. 图片生成提示词约束
 
 ```text
-{style['subject']}，高级现代东方美学，{('水墨山形与细腻流动路径从左下向右上汇聚，节点表达阶段推进' if style['timeline_first'] else '留白纸面、抽象路径、克制节点与柔和层次')}，黛蓝/墨色/暖纸/月白基底，少量香槟金信号点，深色渐变但不过度炫光，移动端横向首图安全区，主体不压满画面；请在同一次 Seedream 5.0 Pro 生成中只直接写出 information_allocation.image.include 中的来源锁定标题、关系节点、指标和短 quote，严禁按钮、CTA 标签、按钮形矩形、带动作标签的箭头和任何伪交互；原生 Card 只保留精简摘要、关键点、图表和真实行动，完整源文案留在 source.txt，不得留空白占位，也不得交给任何后续文字或图片处理。
+{style['subject']}，{('清晰的时间节点与单条阅读路径' if style['timeline_first'] else '一个明确主体与通栏信息关系')}，纸白/墨黑/单一信号蓝基底，Apple 官网式现代主义极简，极致留白，垂直间距约 1.5 倍，标题中等字重现代无衬线，正文与数字轻盈，细横线、微圆角、无装饰性渐变、无封闭卡片堆叠、无重阴影；移动端安全区，主体不压满画面；请在同一次 Seedream 5.0 Pro 生成中只直接写出 information_allocation.image.include 中的来源锁定标题、关系节点、指标和短 quote，严禁按钮、CTA 标签、按钮形矩形、带动作标签的箭头和任何伪交互；原生 Card 只保留精简摘要、关键点、图表和真实行动，完整源文案留在 source.txt，不得留空白占位，也不得交给任何后续文字或图片处理。
 ```
 
 生成图片后必须先取得真实飞书 `img_key` 再回填 spec；本地路径、HTTP URL、data URI 和假 key 都不能写入 Card。
@@ -185,7 +194,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         output = Path(args.output).expanduser().resolve()
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(document, encoding="utf-8")
-        print(json.dumps({"style": str(output), "style_id": infer_style(text, brand_context, args.preset)["style_id"]}, ensure_ascii=False, indent=2))
+        inferred = infer_style(text, brand_context, args.preset)
+        print(json.dumps({"style": str(output), "style_id": inferred["style_id"], "template_id": inferred["template_id"]}, ensure_ascii=False, indent=2))
         return 0
     except (OSError, ValueError, TypeError) as exc:
         print(f"generate_style.py: {exc}")

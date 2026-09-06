@@ -145,10 +145,10 @@ def coordinate_layout(spec, *, banner=False):
         intro = next((b for b in spec.get("blocks", []) if b.get("type") == "text" and _key(b.get("content")) == lead), None)
         if intro is not None:
             spec["blocks"] = [intro] + [b for b in spec["blocks"] if b is not intro]
-    spec.setdefault("body_padding", "12px 12px 16px 12px")
-    spec.setdefault("vertical_spacing", "8px")
+    spec.setdefault("body_padding", "18px 18px 24px 18px")
+    spec.setdefault("vertical_spacing", "12px")
     spec["layout_coordination"] = {
-        "version": VERSION, "style_preserved": spec.get("preset"),
+        "version": VERSION, "style_preserved": spec.get("template_id") or spec.get("preset"),
         "image_layout": "banner-led" if banner else "infographic-led" if hero else "native-only",
         "reading_order": ["visual entrance", "concise context", "native modules with local actions", "global action if supplied"],
         "spacing": {"within_module": "4px", "between_modules": "16px", "outer_inset": "12px"},

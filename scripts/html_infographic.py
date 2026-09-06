@@ -77,6 +77,20 @@ def _source(spec: Mapping[str, Any]) -> str:
     return str(analysis.get("source_text") or "")
 
 
+def _visual_title(spec: Mapping[str, Any]) -> str:
+    """Keep the hero heading short even when the source title is a paragraph."""
+    candidate = _text(spec.get("title"))
+    if not candidate:
+        return "信息图"
+    if len(candidate) <= 42 and not re.search(r"[。！？；;]", candidate):
+        return candidate
+    prefix = re.split(r"[：:|｜]", candidate, maxsplit=1)[0].strip()
+    if 2 <= len(prefix) <= 32:
+        return prefix
+    first_clause = re.split(r"[。！？；;]", candidate, maxsplit=1)[0].strip()
+    return _compact(first_clause or candidate, 32)
+
+
 def _media_policy(spec: Mapping[str, Any]) -> Dict[str, Any]:
     analysis = spec.get("analysis") if isinstance(spec.get("analysis"), Mapping) else {}
     design = analysis.get("design_plan") if isinstance(analysis, Mapping) else {}
@@ -250,11 +264,13 @@ def _palette(spec: Mapping[str, Any]) -> Dict[str, str]:
         "muted": "#667180",
         "accent": "#214DFA",
         "warm": "#EACD76",
-        "header": "linear-gradient(135deg, #172238 0%, #425066 55%, #955539 100%)",
+        "header": "#F5F5F3",
     }
     preset = str(spec.get("preset") or "").strip()
     try:
         registry = json.loads((ROOT / "presets" / "preset-index.json").read_text(encoding="utf-8"))
+        aliases = registry.get("aliases") if isinstance(registry.get("aliases"), Mapping) else {}
+        preset = str(aliases.get(preset) or preset)
         for item in registry.get("presets", []):
             if isinstance(item, Mapping) and item.get("id") == preset:
                 gallery = item.get("gallery") if isinstance(item.get("gallery"), Mapping) else {}
@@ -264,7 +280,7 @@ def _palette(spec: Mapping[str, Any]) -> Dict[str, str]:
                     "ink": _safe_color(gallery.get("ink_hex"), fallback["ink"]),
                     "muted": _safe_color(gallery.get("muted_hex"), fallback["muted"]),
                     "accent": _safe_color(gallery.get("accent_hex"), fallback["accent"]),
-                    "header": str(gallery.get("header_gradient") or fallback["header"]),
+                    "header": str(gallery.get("header_fill") or gallery.get("header_gradient") or fallback["header"]),
                 })
                 break
     except (OSError, ValueError, TypeError):
@@ -415,7 +431,7 @@ def build_html_design_prompt(spec: Mapping[str, Any], *, brand_context: str = ""
     return f"""# HTML 信息图设计提示词
 
 渲染策略：{HTML_RENDER_STRATEGY}（仅作为模型生图失败风险较高的文字密集信息图 fallback；纯视觉首图仍优先交给宿主图片模型）。
-视觉方向：保留现有 preset={spec.get('preset') or 'default'} 与瑞士编辑设计：中等字重现代黑体、轻盈数字、强网格、克制配色、清晰留白；不得替换现有视觉风格。
+视觉方向：保留现有 template={spec.get('template_id') or spec.get('preset') or 'apple-minimal'} 的选定模板与共享 Apple 官网式现代主义极简基线：中等字重现代无衬线、轻盈数字、克制配色、1.5 倍留白、通栏/细线分隔；不得引入装饰性渐变、封闭卡片墙或重阴影。
 品牌上下文：{brand_context.strip() or '未提供额外品牌事实，仅使用当前 preset token。'}
 
 硬约束：
@@ -440,12 +456,12 @@ def build_html_artifact(
     """Write an editable, self-contained HTML infographic and return its plan."""
     html_path = Path(html_path)
     palette = _palette(spec)
-    title = _text(spec.get("title") or "信息图")
-    summary = _compact(spec.get("lead") or "", 150)
+    title = _visual_title(spec)
+    summary = _compact(spec.get("lead") or "", 88)
     if not summary:
         for block in _flatten(spec.get("blocks") if isinstance(spec.get("blocks"), list) else []):
             if block.get("type") == "text":
-                summary = _compact(block.get("content") or block.get("text"), 150)
+                summary = _compact(block.get("content") or block.get("text"), 88)
                 if summary:
                     break
     visual = spec.get("visual_spec") if isinstance(spec.get("visual_spec"), Mapping) else {}
@@ -468,12 +484,37 @@ def build_html_artifact(
         if rendered and rendered not in sections:
             sections.append(rendered)
     if not sections:
-        sections.append(f'<section class="content-section intro-note">{html_lib.escape(summary or title)}</section>')
+        source = _source(spec)
+        clauses = [part.strip() for part in re.split(r"[。！？；;]", source) if part.strip()]
+        for index, clause in enumerate(clauses[:4], start=1):
+            match = re.match(r"^([^：:|｜]{1,18})[：:|｜]\s*(.*)$", clause)
+            label = match.group(1).strip() if match else f"要点 {index}"
+            value = match.group(2).strip() if match else clause
+            sections.append(
+                f'<section class="content-section section-card"><div class="section-kicker">{html_lib.escape(label)}</div>'
+                f'<ul><li>{html_lib.escape(_compact(value, 120))}</li></ul></section>'
+            )
+        if not sections:
+            sections.append(f'<section class="content-section intro-note">{html_lib.escape(summary or title)}</section>')
     html_path.parent.mkdir(parents=True, exist_ok=True)
     body = "\n".join(sections)
     source_chars = len(_source(spec))
     signal_markup = _signal_markup(spec)
     signal_present = bool(signal_markup)
+    aliases = {}
+    registry_data: Dict[str, Any] = {}
+    try:
+        registry_data = json.loads((ROOT / "presets" / "preset-index.json").read_text(encoding="utf-8"))
+        aliases = registry_data.get("aliases") if isinstance(registry_data.get("aliases"), dict) else {}
+    except (OSError, ValueError, TypeError):
+        aliases = {}
+    template_id = str(aliases.get(spec.get("template_id") or spec.get("preset") or "") or spec.get("template_id") or spec.get("preset") or "apple-minimal")
+    template_name = template_id
+    for item in registry_data.get("presets", []):
+        if isinstance(item, Mapping) and item.get("id") == template_id:
+            template_name = str(item.get("name") or template_id)
+            break
+    template_class = re.sub(r"[^a-z0-9-]", "-", template_id.lower()).strip("-") or "apple-minimal"
     page_height = max(
         1200,
         min(3600, int(620 + len(sections) * 145 + (140 if signal_present else 0) + min(1500, source_chars * 0.36))),
@@ -490,51 +531,50 @@ def build_html_artifact(
     @page {{ size:1200px {page_height}px; margin:0; }}
     html, body {{ margin:0; width:1200px; min-height:{page_height}px; background:var(--bg); color:var(--ink); }}
     body {{ font-family:"Noto Sans SC","Source Han Sans SC","PingFang SC","Helvetica Neue",Arial,sans-serif; -webkit-font-smoothing:antialiased; font-variant-numeric:tabular-nums; }}
-    main {{ width:1200px; min-height:{page_height}px; padding:72px 72px 88px; background:var(--paper); position:relative; overflow:hidden; }}
-    main::before {{ content:""; position:absolute; inset:0; pointer-events:none; opacity:.22; background:linear-gradient(90deg,transparent 0 7.9%,rgba(21,23,26,.08) 8% 8.08%,transparent 8.1% 91.9%,rgba(21,23,26,.08) 92% 92.08%,transparent 92.1%); }}
+    main {{ width:1200px; min-height:{page_height}px; padding:96px 104px 120px; background:var(--paper); position:relative; overflow:hidden; }}
     header, section {{ position:relative; z-index:1; }}
-    header {{ padding:34px 40px 42px; background:var(--header); color:#fff; min-height:238px; display:flex; flex-direction:column; justify-content:flex-end; }}
-    .eyebrow {{ color:var(--warm); font-size:22px; letter-spacing:.12em; text-transform:uppercase; margin-bottom:24px; font-weight:500; }}
-    h1 {{ margin:0; max-width:1000px; font-size:60px; line-height:1.12; letter-spacing:-.035em; font-weight:500; }}
-    .summary {{ margin-top:26px; max-width:920px; color:rgba(255,255,255,.82); font-size:25px; line-height:1.48; }}
-    .signal-grid {{ margin:32px 0 0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border-top:1px solid rgba(21,23,26,.28); border-left:1px solid rgba(21,23,26,.12); }}
+    header {{ padding:0 0 42px; background:var(--header); color:var(--ink); min-height:238px; display:flex; flex-direction:column; justify-content:flex-end; border-bottom:2px solid var(--ink); }}
+    .eyebrow {{ color:var(--accent); font-size:22px; letter-spacing:.12em; text-transform:uppercase; margin-bottom:28px; font-weight:500; }}
+    h1 {{ margin:0; max-width:1000px; font-size:64px; line-height:1.16; letter-spacing:-.035em; font-weight:600; }}
+    .summary {{ margin-top:28px; max-width:920px; color:var(--muted); font-size:26px; line-height:1.5; }}
+    .signal-grid {{ margin:58px 0 0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:64px; border-top:1px solid rgba(21,23,26,.28); border-left:0; }}
     .signal-grid.single {{ grid-template-columns:1fr; }}
-    .signal {{ min-height:138px; display:grid; grid-template-columns:60px 1fr; gap:18px; padding:24px 22px; border-right:1px solid rgba(21,23,26,.12); border-bottom:1px solid rgba(21,23,26,.18); background:rgba(255,255,255,.42); }}
+    .signal {{ min-height:138px; display:grid; grid-template-columns:60px 1fr; gap:18px; padding:30px 0; border-right:0; border-bottom:1px solid rgba(21,23,26,.18); background:transparent; }}
     .signal-index {{ color:var(--accent); font-size:22px; font-weight:500; }}
     .signal-label, .section-kicker, .metric-label {{ color:var(--muted); font-size:21px; line-height:1.25; letter-spacing:.02em; }}
-    .signal-body {{ margin-top:12px; font-size:27px; line-height:1.32; font-weight:400; }}
+    .signal-body {{ margin-top:14px; font-size:28px; line-height:1.42; font-weight:400; }}
     .signal-value {{ margin-top:10px; color:var(--accent); font-size:36px; line-height:1.15; font-weight:400; }}
-    .content-section, .chart-section {{ margin-top:38px; padding-top:20px; border-top:2px solid var(--ink); }}
-    .section-kicker {{ color:var(--ink); font-size:24px; font-weight:500; margin-bottom:20px; }}
-    .metric-grid {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }}
-    .metric-card {{ min-height:142px; padding:23px 24px; background:rgba(255,255,255,.55); border:1px solid rgba(21,23,26,.12); }}
-    .metric-value {{ margin-top:16px; font-size:42px; line-height:1.08; font-weight:400; color:var(--ink); }}
-    .fact-grid {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border-top:1px solid rgba(21,23,26,.16); }}
-    .fact-row {{ display:grid; grid-template-columns:40% 60%; gap:12px; padding:16px 0; border-bottom:1px solid rgba(21,23,26,.16); font-size:23px; line-height:1.35; }}
+    .content-section, .chart-section {{ margin-top:64px; padding-top:24px; border-top:1px solid var(--ink); }}
+    .section-kicker {{ color:var(--ink); font-size:25px; font-weight:600; margin-bottom:24px; }}
+    .metric-grid {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:64px; row-gap:0; }}
+    .metric-card {{ min-height:142px; padding:28px 0; background:transparent; border:0; border-bottom:1px solid rgba(21,23,26,.16); }}
+    .metric-value {{ margin-top:16px; font-size:44px; line-height:1.12; font-weight:400; color:var(--ink); }}
+    .fact-grid {{ display:grid; grid-template-columns:1fr; border-top:1px solid rgba(21,23,26,.16); }}
+    .fact-row {{ display:grid; grid-template-columns:32% 68%; gap:18px; padding:20px 0; border-bottom:1px solid rgba(21,23,26,.16); font-size:24px; line-height:1.45; }}
     .fact-row span {{ color:var(--muted); }} .fact-row b {{ font-weight:400; }}
-    .section-card ul {{ margin:0; padding:0; list-style:none; display:grid; gap:14px; }}
-    .section-card li {{ position:relative; padding-left:28px; font-size:25px; line-height:1.45; }}
-    .section-card li::before {{ content:""; position:absolute; left:0; top:.66em; width:8px; height:8px; border-radius:50%; background:var(--accent); }}
+    .section-card ul {{ margin:0; padding:0; list-style:none; display:grid; gap:18px; }}
+    .section-card li {{ position:relative; padding-left:0; font-size:26px; line-height:1.5; }}
+    .section-card li::before {{ content:none; }}
     .timeline-section {{ display:grid; gap:0; }}
-    .timeline-row {{ display:grid; grid-template-columns:220px 1fr; gap:28px; padding:20px 0; border-bottom:1px solid rgba(21,23,26,.16); }}
-    .timeline-date {{ color:var(--accent); font-size:28px; font-weight:500; }}
-    .timeline-title {{ font-size:28px; line-height:1.3; }} .timeline-body {{ margin-top:8px; color:var(--muted); font-size:22px; line-height:1.45; }}
-    .quote-section {{ margin-top:44px; padding:30px 34px; background:var(--ink); color:#fff; display:grid; grid-template-columns:80px 1fr; gap:18px; font-size:30px; line-height:1.4; }}
-    .quote-mark {{ color:var(--warm); font-size:70px; line-height:.8; }}
+    .timeline-row {{ display:grid; grid-template-columns:220px 1fr; gap:32px; padding:26px 0; border-bottom:1px solid rgba(21,23,26,.16); }}
+    .timeline-date {{ color:var(--accent); font-size:29px; font-weight:500; }}
+    .timeline-title {{ font-size:29px; line-height:1.4; }} .timeline-body {{ margin-top:10px; color:var(--muted); font-size:23px; line-height:1.5; }}
+    .quote-section {{ margin-top:70px; padding:28px 0 28px 28px; background:transparent; color:var(--ink); border-left:3px solid var(--accent); display:grid; grid-template-columns:72px 1fr; gap:18px; font-size:31px; line-height:1.48; }}
+    .quote-mark {{ color:var(--accent); font-size:70px; line-height:.8; }}
     .intro-note {{ font-size:26px; line-height:1.48; color:var(--ink); }}
     .bar-list {{ display:grid; gap:19px; }}
     .bar-row {{ display:grid; grid-template-columns:250px 1fr 150px; align-items:center; gap:16px; font-size:22px; }}
     .bar-label {{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); }}
-    .bar-track {{ height:22px; background:rgba(21,23,26,.1); overflow:hidden; }} .bar-track span {{ display:block; height:100%; }} .bar-value {{ text-align:right; font-size:24px; }}
+    .bar-track {{ height:12px; background:rgba(21,23,26,.1); overflow:hidden; }} .bar-track span {{ display:block; height:100%; }} .bar-value {{ text-align:right; font-size:24px; }}
     .pie-layout {{ display:grid; grid-template-columns:360px 1fr; align-items:center; gap:56px; }}
     .donut {{ width:330px; height:330px; border-radius:50%; display:grid; place-items:center; }} .donut-hole {{ width:160px; height:160px; border-radius:50%; background:var(--paper); }}
     .legend-list {{ display:grid; gap:15px; }} .legend {{ display:grid; grid-template-columns:18px 1fr auto; gap:12px; align-items:center; font-size:22px; }} .legend i {{ width:18px; height:18px; display:block; }} .legend b {{ font-weight:400; color:var(--accent); }}
   </style>
 </head>
 <body>
-  <main data-render-strategy="{HTML_RENDER_STRATEGY}">
+  <main class="template-{template_class}" data-template="{html_lib.escape(template_id)}" data-render-strategy="{HTML_RENDER_STRATEGY}">
     <header>
-      <div class="eyebrow">{html_lib.escape(_text(spec.get("preset") or "editorial information"))}</div>
+      <div class="eyebrow">{html_lib.escape(template_name)}</div>
       <h1>{html_lib.escape(title)}</h1>
       {f'<div class="summary">{html_lib.escape(summary)}</div>' if summary else ''}
     </header>
@@ -552,6 +592,8 @@ def build_html_artifact(
         "html_file": str(html_path),
         "html_sha256": digest,
         "viewport": {"width": 1200, "height": page_height, "scale": 2},
+        "template_id": template_id,
+        "template_name": template_name,
         "renderer": "headless Chrome-family browser",
         "output_file": str(html_path.with_name("hero.png")),
         "source_locked": True,

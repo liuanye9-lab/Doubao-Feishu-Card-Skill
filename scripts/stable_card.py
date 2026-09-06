@@ -34,7 +34,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--brand-context", default="")
     parser.add_argument("--brand-context-file")
     parser.add_argument("--scene", help="optional explicit scene, e.g. case-showcase")
-    parser.add_argument("--preset", help="optional explicit registered visual preset")
+    parser.add_argument("--preset", "--template", dest="preset", help="optional explicit registered visual template")
     parser.add_argument("--design-plan", help="JSON file containing design_plan overrides")
     parser.add_argument("--hero-img-key", help="real img_key returned by Feishu image upload")
     parser.add_argument(

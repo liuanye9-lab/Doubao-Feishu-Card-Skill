@@ -35,7 +35,7 @@ from card_studio_contract import (  # noqa: E402
     build_stability_contract,
 )
 from content_intelligence import NO_IMAGE_RE, URL_RE, build_information_allocation, clean_url  # noqa: E402
-from generate_card import compile_outputs, contains_placeholder, load_preset_registry  # noqa: E402
+from generate_card import canonical_preset_id, compile_outputs, contains_placeholder, load_preset_registry  # noqa: E402
 from generate_style import build_style_document, infer_style  # noqa: E402
 from html_infographic import (  # noqa: E402
     HTML_RENDER_STRATEGY,
@@ -639,13 +639,14 @@ def _degrade_to_no_image(spec: Dict[str, Any], *, reason: Optional[str] = None) 
 def _preset_color_line(preset_id: str) -> str:
     """Use the selected preset palette instead of hardcoding one visual."""
     fallback = (
-        "Color/material: restrained two-tone palette with generous white space and "
-        "one accent family; crisp edges, soft rounded modules, no visual noise."
+        "Color/material: neutral base with one restrained accent, 1.5x spacing, "
+        "open full-width sections and hairline rules; no decorative gradients, no card wall, no shadow."
     )
     try:
         registry = load_preset_registry()
     except (OSError, ValueError, json.JSONDecodeError):
         return fallback
+    preset_id = canonical_preset_id(preset_id, registry)
     presets = registry.get("presets") if isinstance(registry, dict) else None
     entry = next(
         (
@@ -663,10 +664,12 @@ def _preset_color_line(preset_id: str) -> str:
     name = str(entry.get("name") or preset_id).strip()
     if not (accent and background and ink):
         return fallback
+    system = entry.get("design_system") if isinstance(entry.get("design_system"), dict) else {}
+    signature = str(system.get("layout_signature") or "open editorial sections and measured alignment")
     return (
-        f"Color/material: follow the '{name}' palette — background {background}, "
-        f"ink {ink}, single accent {accent}; subtle depth, crisp edges, soft rounded "
-        "modules, generous white space, no visual noise."
+        f"Color/material: follow the '{name}' palette — background {background}, ink {ink}, "
+        f"single accent {accent}; {signature}; 1.5x whitespace, modern sans-serif, "
+        "micro-radius only, no decorative gradients, no closed card stack, no shadow."
     )
 
 
@@ -1985,7 +1988,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--brand-context", default="")
     parser.add_argument("--brand-context-file")
     parser.add_argument("--scene")
-    parser.add_argument("--preset")
+    parser.add_argument("--preset", "--template", dest="preset", help="registered visual template id")
     parser.add_argument("--design-plan", help="JSON file containing design_plan overrides")
     parser.add_argument("--hero-img-key", help="real img_key returned by Feishu image upload")
     parser.add_argument("--no-image", action="store_true", help="explicitly degrade to a sendable no-image fallback")
