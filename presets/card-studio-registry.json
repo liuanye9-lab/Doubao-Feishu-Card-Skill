@@ -74,14 +74,13 @@
     "replacement": {"note": "div or markdown", "action": "button or overflow"}
   },
   "image_policy": {
-    "sources": ["real_image", "ai_generated", "html_rendered"],
+    "sources": ["real_image", "ai_generated"],
     "roles": ["cover", "information_carrier", "text_companion"],
     "static_generation": "seedream_one_pass_selected_mode",
     "generation_tool": "doubao.image_gen",
     "generation_model": "seedream-5.0-pro",
     "generation_model_label": "Seedream 5.0 Pro",
-    "html_rendering": "self_contained_html_to_png_for_dense_structured_infographics_only",
-    "html_renderer": "local_chrome_family_browser",
+    "text_dense_policy": "native_card_highlighter_blocks",
     "supported_generation_modes": [
       "seedream_5_pro_direct_full_card",
       "seedream_5_pro_banner_plus_native_card"

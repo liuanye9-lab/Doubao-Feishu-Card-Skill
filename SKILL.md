@@ -7,7 +7,7 @@ metadata:
 
 # 豆包飞书卡片 Skill
 
-把用户材料做成一张“先看懂、再行动”的飞书 Card 2.0。默认结果不是长文搬运，而是：1 句摘要、3–5 个关键点、3–6 个节制的语义 Emoji、来源数据图表（如有）、一张信息视觉，以及最多 1 个主按钮和 1 个次按钮。完整原文始终锁定在 `source.txt` 和 `analysis.source_text`。最终交付仍是 Card 2.0 与 `.card` 文件；文字密集的结构化信息图可额外保留自包含 HTML 作为可编辑源，再导出 PNG。
+把用户材料做成一张“先看懂、再行动”的飞书 Card 2.0。默认结果不是长文搬运，而是：1 句摘要、3–5 个关键点、3–6 个节制的语义 Emoji、来源数据图表（如有）、一张信息视觉，以及最多 1 个主按钮和 1 个次按钮。完整原文始终锁定在 `source.txt` 和 `analysis.source_text`。最终交付仍是 Card 2.0 与 `.card` 文件；文字密集内容由原生 Card 高亮块、层级标题和短句承载，图片只使用模型直出或用户真实图片。
 
 本 Skill 是独立的豆包工作适配版。静态图调用宿主内置 Seedream 5.0 Pro；动效调用宿主内置 Seedance 2.5，优先请求直接生成 GIF，不在本地把视频转成 GIF。是否能直出须以本次宿主工具声明为准，不能从 CardKit 支持 GIF 推断模型必然直出 GIF。CardKit 可直接呈现上传后的 GIF `img_key`；关键事实、图表和按钮仍须保留在原生 Card 中，不能只存在于动画帧。
 
@@ -59,7 +59,7 @@ Apple 官网式现代主义层级纪律 + 高级信息设计基线：克制配�
 6. **原生事实兜底**：图片/GIF 不能成为唯一事实载体；摘要、关键点、图表、alt 和动作保留在 Card 原生组件中。
 7. **可编辑优先**：修改 `.spec.json`、`.visual-spec.json` 或 `.motion-spec.json` 后重编译，不直接手改最终 `.card`。
 8. **CardKit 二次编辑兼容**：正文 `text_color` 只用平台原生色名；禁止 `brand_accent`、`brand_gold`、`brand_ink` 等自定义颜色引用，避免二次编辑时报 `invalid color`。
-9. **远程结果要回读**：dry-run、HTML 预览或 API `card_id` 都不等于 CardKit 模板成功。模板导入必须回读 `template_id`、template get 和 template list。
+9. **远程结果要回读**：dry-run、浏览器预览或 API `card_id` 都不等于 CardKit 模板成功。模板导入必须回读 `template_id`、template get 和 template list。
 
 ## 豆包多模态自动路由
 
@@ -70,7 +70,7 @@ Apple 官网式现代主义层级纪律 + 高级信息设计基线：克制配�
 - `seedream_5_pro_direct_full_card`：2:3 竖版信息图，适合复杂指标/阶段/关系。
 - `seedream_5_pro_banner_plus_native_card`：约 3:1 横幅首图 + 原生 Card；轻量通知/培训可自动选择，显式图片模式优先。
 
-Seedream 默认直接生成最终 PNG。仅当文字密集且结构化关系/图表需要确定性排版时，才自动选择 `html_infographic_to_png`，由自包含 HTML 经本机 Chrome-family 导出 PNG；HTML 不进入 CardKit、不画按钮，且必须登记 HTML render provenance。两条路径的生成内容只取自 `information_allocation.image.include`，不把 URL、按钮或长段落画进图片；原生模型路径禁止 HTML/CSS、SVG、Pillow 叠字、本地拼接、二次模型补字或任何后处理。
+Seedream 统一直接生成最终 PNG。无论文字是否密集，均不经过 HTML/CSS、Chrome 截图、叠字或本地转图；图片内容只取自 `information_allocation.image.include`，不把 URL、按钮或长段落画进图片。文字密度由原生 Card 的高亮块、层级标题和短句解决；图片直出后只需登记模型 provenance。
 
 ### 动态视觉：Seedance 2.5 直出 GIF
 
@@ -114,7 +114,7 @@ python3 scripts/stable_card.py \
 
 流水线状态：
 
-- `needs_image`：静态卡结构已完成，按 `render_strategy` 继续调用 Seedream 5.0 Pro 或完成 HTML→PNG，登记并上传 `hero.png`。
+- `needs_image`：静态卡结构已完成，继续调用 Seedream 5.0 Pro 直出并登记、上传 `hero.png`。
 - `needs_gif`：动态卡结构已完成，必须继续调用 Seedance 2.5 直出、登记并上传 `hero.gif`。
 - `needs_visual_review`：媒体与 key 已就绪，继续检查最终媒体和原生卡片并记录验收。
 - `ready`：结构、provenance、真实 `img_key`、视觉验收和发送门禁均通过。
@@ -132,20 +132,7 @@ python3 scripts/register_image_generation.py \
   --prompt outputs/my-card/my-card.image-prompt.md
 ```
 
-如果报告中的 `render_strategy` 为 `html_infographic_to_png`，流水线会生成自包含的 `<name>.infographic.html`、`<name>.html-prompt.md` 和 `<name>.html-render-plan.json`，用本机 Chrome-family 导出后运行：
-
-```bash
-python3 scripts/render_html_infographic.py \
-  --html outputs/my-card/my-card.infographic.html \
-  --output outputs/my-card/hero.png \
-  --width 1200 --height 1800 --scale 2
-python3 scripts/register_html_render.py \
-  --image outputs/my-card/hero.png \
-  --html outputs/my-card/my-card.infographic.html \
-  --prompt outputs/my-card/my-card.html-prompt.md
-```
-
-HTML 只负责文字密集信息图的精确排版，不进入 CardKit、不绘制按钮；上传前必须通过 HTML 源、PNG 和提示词哈希门禁。
+不再存在 HTML→PNG 第二阶段；静态图片由 Seedream 5.0 Pro 一次性直出，文字密集部分回到原生 Card 的高亮块与可编辑文字。若历史 spec 仍写着 `html_infographic_to_png`，重新编译时会自动迁移为 `native_model`，不会生成 HTML 文件。
 
 动态路径：读取 `<name>.motion-spec.json` 与 `<name>.motion-prompt.md`，调用豆包工作内置 Seedance 2.5，直接保存为 `hero.gif`，然后运行：
 
@@ -164,9 +151,8 @@ python3 scripts/register_motion_generation.py \
 - `<name>.source.txt`：锁定原文。
 - `<name>.spec.json`：可编辑卡片源。
 - `<name>.visual-spec.json` / `<name>.image-prompt.md`：Seedream 静态视觉源与提示词。
-- `<name>.infographic.html` / `<name>.html-prompt.md` / `<name>.html-render-plan.json`：仅在 `render_strategy=html_infographic_to_png` 时生成的自包含 HTML 源、提示词和固定视口计划。
 - `<name>.motion-spec.json` / `<name>.motion-prompt.md`：Seedance 自动路由结论、动态源与提示词。
-- `hero.png` + `hero-generation.json`：Seedream 直出或 HTML→PNG 最终视觉资产与 provenance。
+- `hero.png` + `hero-generation.json`：Seedream 直出最终视觉资产与 provenance。
 - `hero.gif` + `hero-motion-generation.json`：动态直出与 provenance（动态模式）。
 - `<name>.card`：裸 Card 2.0，供 CLI 模板导入、API 或发送。
 - `<name>.cardkit.card`：网页导入 wrapper，顶层为 `{name, dsl, variables}`。
@@ -210,7 +196,7 @@ CLI 会话不可用时，使用已登录 CardKit 浏览器导入 `.cardkit.card`
 
 - `python3 scripts/validate_card.py outputs/<name>/<name>.card` 通过；`.cardkit.card` 同样通过。
 - `readiness.valid=true`、`readiness.image_ready=true`、`readiness.sendable=true`。
-- 静态模型模式 `seedream_output_ready=true`；HTML 信息图模式 `html_render_ready=true` 且 HTML/PNG/provenance 哈希一致；动态模式 `seedance_output_ready=true`。
+- 静态模型模式 `seedream_output_ready=true`；动态模式 `seedance_output_ready=true`。
 - PNG/GIF 中无错字、乱码、错数字、错日期、Logo 水印、假按钮或伪交互。
 - GIF 至少两帧、真实 GIF 格式、循环可读；关键事实和按钮仍在原生 Card。
 - 可见文字符合预算，Emoji 不堆叠，图表仅来自同口径真实数值。
@@ -226,6 +212,4 @@ CLI 会话不可用时，使用已登录 CardKit 浏览器导入 `.cardkit.card`
 - [`references/delivery.md`](./references/delivery.md)：上传、导入、预览和发送授权边界。
 - [`references/developer-guide.md`](./references/developer-guide.md)：模块职责、调试和回归验证。
 - [`references/beauty-review.md`](./references/beauty-review.md)：人工视觉验收。
-- [`references/html-infographic-route.md`](./references/html-infographic-route.md)：模型优先与 HTML→PNG fallback 的路由、编辑和 provenance 门禁。
-
-纯海报、Logo、单纯生图、单纯视频或长文档排版不属于本 Skill；转给相应图片、视频或文档能力。HTML 仅是本 Skill 内部为文字密集结构化信息图提供的受控排版 fallback，不是独立 HTML 设计交付。
+纯海报、Logo、单纯生图、单纯视频或长文档排版不属于本 Skill；转给相应图片、视频或文档能力。

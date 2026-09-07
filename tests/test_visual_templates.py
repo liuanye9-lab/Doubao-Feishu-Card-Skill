@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from auto_layout import build_auto_spec  # noqa: E402
 from generate_card import load_preset_registry, resolve_preset  # noqa: E402
-from html_infographic import build_html_artifact  # noqa: E402
+from html_infographic import choose_render_strategy  # noqa: E402
 from image_art_direction import build_image_prompt  # noqa: E402
 from runtime_profile import image_runtime  # noqa: E402
 
@@ -54,7 +54,7 @@ class VisualTemplateSystemTests(unittest.TestCase):
         resolved = resolve_preset(legacy)
         self.assertEqual(resolved["id"], "modern-editorial")
 
-    def test_prompt_and_html_use_the_selected_template_with_material_system(self) -> None:
+    def test_prompt_uses_selected_template_and_route_is_direct_only(self) -> None:
         source = "作品案例\n问题：资料分散\n做法：统一入口\n结果：查找时间缩短\n经验：先统一信息结构。"
         spec = build_auto_spec(source, requested_scene="case-showcase", requested_preset="modern-editorial")
         prompt = build_image_prompt(spec, image_runtime())
@@ -62,23 +62,8 @@ class VisualTemplateSystemTests(unittest.TestCase):
         self.assertIn("Apple 官网式现代主义极简", prompt)
         self.assertIn("translucent frosted glass", prompt)
         self.assertIn("controlled gradients are allowed", prompt)
-        with tempfile.TemporaryDirectory() as tmp:
-            html_path = Path(tmp) / "case.infographic.html"
-            plan = build_html_artifact(spec, html_path)
-            rendered = html_path.read_text(encoding="utf-8")
-            self.assertEqual(plan["template_id"], "modern-editorial")
-            self.assertIn('data-template="modern-editorial"', rendered)
-            self.assertIn("linear-gradient(", rendered)
-            self.assertIn("backdrop-filter:blur", rendered)
-            self.assertIn("box-shadow", rendered)
-
-            long_source = "案例复盘：背景是信息分散导致查找时间很长。做法：统一入口并按步骤整理。结果：查找时间从30分钟降到5分钟。"
-            long_spec = build_auto_spec(long_source, requested_scene="case-showcase")
-            long_html = Path(tmp) / "long.infographic.html"
-            build_html_artifact(long_spec, long_html)
-            long_rendered = long_html.read_text(encoding="utf-8")
-            self.assertIn(">案例复盘</h1>", long_rendered)
-            self.assertNotIn(long_source, long_rendered)
+        self.assertEqual(choose_render_strategy(spec), "native_model")
+        self.assertEqual(spec["render_strategy"], "native_model")
 
 
 if __name__ == "__main__":

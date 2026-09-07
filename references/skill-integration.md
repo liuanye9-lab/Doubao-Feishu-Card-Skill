@@ -20,7 +20,7 @@
 | [baoyu-xhs-images](https://github.com/JimLiu/baoyu-skills/blob/main/skills/baoyu-xhs-images/SKILL.md) | `baoyu-xhs-images` | 多图、系列作品、静态图集 | 只吸收系列一致性和主视觉锚点；旧 `baoyu-image-cards` 仅作别名 |
 | [baoyu-article-illustrator](https://github.com/JimLiu/baoyu-skills/blob/main/skills/baoyu-article-illustrator/SKILL.md) | `baoyu-article-illustrator` | 机制图、流程图、对比、框架、受控场景 | 只吸收图片角色判断，不能让场景图替代功能文字 |
 
-默认方法链是 Guizang Social Card Skill → baoyu-skills → 豆包工作 Seedream 5.0 Pro；调用/读取结果与不可用降级都写入 `upstream_method_pass`。上游能力包不会改变飞书 Card 2.0 的事实、按钮和 CardKit 投递边界。默认位图 provider 固定为 `doubao.image_gen` / `seedream-class`；文字密集结构化信息图才可由本 Skill 的自包含 HTML→PNG fallback 完成确定性排版，且 `post_processing` 必须是 `none`。
+默认方法链是 Guizang Social Card Skill → baoyu-skills → 豆包工作 Seedream 5.0 Pro；调用/读取结果与不可用降级都写入 `upstream_method_pass`。上游能力包不会改变飞书 Card 2.0 的事实、按钮和 CardKit 投递边界。默认位图 provider 固定为 `doubao.image_gen` / `seedream-class`；文字密集内容由原生 Card 高亮块承载，`post_processing` 必须是 `none`。
 
 没有把 Studio 的 393 个源包条目原样复制进来；只抽取公开安全的 Schema 快照、组件路由、内容模板和校验入口，过滤内网 `$id`、私有实现、第三方素材与令牌。需要运行时的能力被转译为小型脚本、参考规则和可测试契约，避免两个入口继续产生冲突。
 

@@ -35,15 +35,8 @@
   },
   "render_strategies": {
     "default": "native_model",
-    "html_infographic_to_png": {
-      "label": "自包含 HTML 信息图 → PNG",
-      "selection": "only_dense_structured_copy",
-      "text_policy": "html_selected_text_and_layout",
-      "renderer": "headless Chrome-family browser",
-      "viewport": {"width": 1200, "height": 1800, "scale": 2},
-      "source_contract": "self_contained_html_no_external_assets",
-      "card_contract": "upload_png_only_html_is_editable_source_and_provenance"
-    }
+    "direct_only": true,
+    "legacy_html_strategy": "migrate_to_native_model"
   },
   "motion": {
     "provider": "doubao-work.builtin-video",

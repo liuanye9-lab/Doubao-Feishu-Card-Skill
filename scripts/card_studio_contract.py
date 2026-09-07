@@ -34,7 +34,7 @@ def build_stability_contract() -> Dict[str, Any]:
             "allocate_image_native_card_and_actions",
             "compile_raw_card_and_cardkit_wrapper",
             "run_structural_and_source_gates",
-            "select_model_first_or_html_infographic_render_then_visual_review_if_required",
+            "select_model_then_visual_review_if_required",
             "upload_real_img_key_and_recompile_if_required",
             "import_cardkit_and_readback_after_explicit_authorization_bot_preview_is_optional",
         ],
@@ -51,7 +51,7 @@ def build_stability_contract() -> Dict[str, Any]:
         ],
         "render_contract": "Card 2.0 stable native subset; raw card and CardKit wrapper share one final DSL",
         "action_contract": "native_card_only; real URL or implemented application-bot callback/form required",
-        "image_contract": "Every card gets a model-generated visual by default: Seedream 5.0 Pro for static information or automatically selected Seedance 2.5 GIF for motion-worthy content; dense structured text may select a self-contained HTML→PNG route; explicit no-image is the only no-visual fallback; no local conversion or post-processing",
+        "image_contract": "Every card gets a direct model-generated visual by default: Seedream 5.0 Pro for static information or automatically selected Seedance 2.5 GIF for motion-worthy content; explicit no-image is the only no-visual fallback; no HTML conversion, local overlay, or post-processing",
         "fallback_contract": "preserve source and report the exact degraded field; never invent facts, URLs, img_keys, or remote evidence",
         "remote_delivery_contract": "one preflight and one confirmation for requested remote writes; import CardKit and read back evidence; Bot preview only if explicitly requested",
     }
@@ -327,7 +327,7 @@ def build_quality_gates(
             "image_readiness",
             status="pass" if not image_required or (visual_output_ready and image_ready) else "blocked",
             severity="error",
-            description="视觉卡片具备 Seedream 5.0 Pro、Seedance 2.5 或 HTML→PNG 溯源和真实 img_key；无图卡片不受此门影响。",
+            description="视觉卡片具备 Seedream 5.0 Pro、Seedance 2.5 或真实图片溯源和真实 img_key；无图卡片不受此门影响。",
             evidence={"image_required": image_required, "visual_output_ready": visual_output_ready, "image_ready": image_ready, "render_strategy": spec.get("render_strategy")},
         ),
     ]

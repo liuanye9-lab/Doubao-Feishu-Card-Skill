@@ -9,7 +9,7 @@ source_text
   → input_brief / source hash
   → 场景、内容和视觉方法路由
   → 信息分工与长文压缩
-  → Seedream/Seedance/HTML→PNG 自动媒体决策（模型优先）
+  → Seedream/Seedance 自动媒体决策
   → editable spec + visual spec + motion spec
   → raw Card 2.0 + CardKit wrapper 同源编译
   → 密度、Emoji、动作、图表、颜色、媒体和 CardKit 门禁
@@ -26,8 +26,6 @@ source_text
 | `content_intelligence.py` | 信息分工、长文压缩、Emoji 和按钮候选 |
 | `auto_layout.py` / `plan_card.py` | 场景、布局与组件计划 |
 | `visual_spec.py` | Seedream 可编辑视觉源 |
-| `html_infographic.py` / `render_html_infographic.py` | 文字密集结构化信息图的自包含 HTML 生成与本机浏览器导出 |
-| `register_html_render.py` | HTML→PNG source/hash provenance |
 | `motion_strategy.py` | Seedance 自动路由、motion spec 与提示词 |
 | `generate_card.py` | Card 2.0 编译 |
 | `cardkit_format.py` | raw Card 与 wrapper 同源转换、原生颜色清洗 |
@@ -45,8 +43,8 @@ source_text
 
 ```text
 needs_image
-  → 默认 Seedream 5.0 Pro 直出 hero.png；密集结构化内容选择 HTML→PNG
-  → register_image_generation.py 或 render_html_infographic.py + register_html_render.py
+  → 默认 Seedream 5.0 Pro 直出 hero.png
+  → register_image_generation.py
   → upload-image 得到真实 img_key
   → stable_card.py --resume <spec> --hero-img-key ...
   → needs_visual_review → 实际检查 → finalize_card.py --record-review
@@ -66,7 +64,7 @@ needs_gif
 
 动态模式只要求 Seedance GIF，不同时强制生成 Seedream PNG。原生 Card 必须保留关键事实和动作，因而 GIF 不是唯一信息载体。
 
-HTML fallback 只使用自包含、静态、固定视口的源文件；不加载外链/脚本，不画按钮，也不进入 CardKit。`--resume` 沿用 spec 已保存的 `render_strategy`，不会因为环境变化重新分流。
+不生成 HTML 源或执行 HTML fallback；`--resume` 沿用 spec 已保存的 `render_strategy`，历史 HTML 值会迁移为 `native_model`，不会因为环境变化重新分流。
 
 ## Provenance 规则
 
@@ -77,7 +75,7 @@ HTML fallback 只使用自包含、静态、固定视口的源文件；不加载
 - 生成模式属于 runtime profile；
 - 图片哈希、提示词路径和提示词哈希匹配；
 - 记录实际工具；具体模型 ID 未暴露时写 `platform-managed`。
-- 若 `render_strategy=html_infographic_to_png`，检查 HTML 路由标记、无脚本/外链、`generation_family=html-render`、HTML/PNG/提示词哈希和 `post_processing=none`。
+- `render_strategy` 必须为 `native_model`；检查模型 provenance、PNG/提示词哈希和 `post_processing=none`。
 
 动态门检查：
 
@@ -111,7 +109,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 - 强制 `--motion off` 能回到静态；来源明确“不要动图”不会被覆盖；
 - 伪 GIF、单帧 GIF、哈希或提示词不匹配被拒绝；
 - 长文密度、Emoji 数量、真实按钮和数据图表门有效；
-- 文字密集结构化内容自动进入 HTML→PNG，短文仍保持模型优先，HTML provenance 篡改会被上传门拒绝；
+- 文字密集内容仍保持模型直出，长文由原生 Card 高亮块承载；模型 provenance 缺失或篡改会被上传门拒绝；
 - raw Card 与 wrapper DSL 同源；非法颜色别名被清理；
 - `.json` 不进入 CardKit 导入路径；dry-run 不被当成成功。
 

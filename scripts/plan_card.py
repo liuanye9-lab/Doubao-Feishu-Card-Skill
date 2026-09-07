@@ -328,7 +328,7 @@ def plan_card(
             "application_bot_required": need_switcher,
             "reason": "图片切换需要 application-bot callback 更新卡片状态；无后端时退回首张静态图" if need_switcher else ("动图必须配静态首帧，且关键信息不能只存在动画中" if need_motion else ("多作品/多图片应使用 img_combination，不称为轮播" if need_gallery else (allocation_reason if need_hero and allocation_reason else "默认生成一张主题信息视觉；只有用户明确要求无图才跳过"))),
             "aspect_ratio": "5:3 reference banner" if need_hero else ("1:1 tiles" if need_gallery else None),
-            "prompt_brief": (f"为“{title}”按模型优先策略生成当前模式最终图片资产、无水印；默认由 Seedream 5.0 Pro 一次性生成，文字密集结构化内容可由受控自包含 HTML→PNG 确定性排版；图片只承载 information_allocation.image.include 中的短标题、关系节点、关键指标和必要 quote，严禁按钮、CTA 标签或伪交互；原生 Card 只保留精简摘要、关键点、图表和真实行动，长段落与完整事实保留在 source.txt；不要生成无字底图，不要使用未登记的后处理。" if need_hero or need_gallery else None),
+            "prompt_brief": (f"为“{title}”按模型直出策略生成当前模式最终图片资产、无水印；默认由 Seedream 5.0 Pro 一次性生成，文字密集内容回到原生 Card 高亮块与可编辑文字；图片只承载 information_allocation.image.include 中的短标题、关系节点、关键指标和必要 quote，严禁按钮、CTA 标签或伪交互；原生 Card 只保留精简摘要、关键点、图表和真实行动，长段落与完整事实保留在 source.txt；不要生成无字底图，不要使用未登记的后处理。" if need_hero or need_gallery else None),
             "information_carrier": content_analysis["media_plan"]["information_carrier"],
             "not_decorative": content_analysis["media_plan"].get("not_decorative", False),
             "visual_job": content_analysis["media_plan"].get("visual_job"),

@@ -11,9 +11,9 @@ It also records the default upstream method pass: when the environment exposes
 Guizang Social Card Skill or baoyu-skills, try to call/read them before selecting
 the local visual capability pack. If they are unavailable, the local mapping is
 the transparent fallback. The default bitmap provider remains 豆包工作's built-in
-Seedream 5.0 Pro path. The main pipeline may select a controlled, self-contained
-HTML→PNG fallback for dense structured infographics; it never invokes an
-upstream compositor or alternate image model.
+    Seedream 5.0 Pro path. Dense structured copy remains editable in native Card
+    highlighter blocks; the router never invokes an HTML/CSS-to-image converter,
+    upstream compositor, or alternate image model.
 """
 
 from __future__ import annotations
@@ -300,8 +300,8 @@ def route_visual_skill_packs(
             "默认先调用或读取 Guizang Social Card Skill 与 baoyu-skills 的可用方法",
             "上游 Skill 不可调用时使用本地等价映射，并在路由记录降级",
             "默认实际位图仍由 豆包工作 内置 Seedream 5.0 Pro 一次生成",
-            "仅文字密集结构化信息图可由主 pipeline 选择自包含 HTML → PNG fallback",
-            "不执行上游 HTML/CSS/SVG/Canvas/Pillow 渲染器或 alternate provider",
+            "文字密集内容回到原生 Card 高亮块，图片继续由 Seedream 5.0 Pro 一次性直出",
+            "不执行 HTML/CSS/SVG/Canvas/Pillow 转图、上游渲染器或 alternate provider",
             "图片不绘制按钮、CTA 控件或伪交互；真实行为只在原生 Card",
         ],
         "selection_reason": reason,

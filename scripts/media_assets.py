@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional, Sequence
 
 MAX_FRAME_SCAN = 240
 SUPPORTED_FORMATS = {"GIF", "JPEG", "PNG", "WEBP"}
-IMAGE_SOURCE_TYPES = {"real_image", "ai_generated", "html_rendered"}
+IMAGE_SOURCE_TYPES = {"real_image", "ai_generated"}
 
 
 def _sha256(path: Path) -> str:

@@ -14,9 +14,9 @@
       "seedream_5_pro_banner_plus_native_card"
     ],
     "text_policy": "seedream_5_pro_direct_selected_text_and_layout",
-    "image_source_types": ["real_image", "ai_generated", "html_rendered"],
+    "image_source_types": ["real_image", "ai_generated"],
     "render_strategy": "auto_model_first",
-    "supported_render_strategies": ["auto_model_first", "native_model", "html_infographic_to_png"],
+    "supported_render_strategies": ["auto_model_first", "native_model"],
     "ai_generation_family": "seedream-class",
     "generation_tool": "doubao.image_gen",
     "generation_model": "seedream-5.0-pro",

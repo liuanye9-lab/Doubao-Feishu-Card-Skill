@@ -1479,9 +1479,12 @@ def make_asset_plan(
         )
     mode_config = image_mode_config(image_generation_mode)
     image_source = non_empty(hero.get("image_source")) or "ai_generated"
+    if image_source == "html_rendered":
+        image_source = "ai_generated"
     render_strategy = non_empty(hero.get("render_strategy")) or non_empty(spec.get("render_strategy")) or "native_model"
-    is_html_render = render_strategy == "html_infographic_to_png" or image_source == "html_rendered"
-    is_ai_image = image_source not in {"real_image", "html_rendered"} and not is_html_render
+    if render_strategy in {"html_infographic_to_png", "html_to_png", "html"}:
+        render_strategy = "native_model"
+    is_ai_image = image_source != "real_image"
     generation_model = (
         non_empty(hero.get("generation_model"))
         or (str(runtime.get("generation_model") or "").strip() if is_ai_image else None)
@@ -1490,39 +1493,26 @@ def make_asset_plan(
         non_empty(hero.get("generation_model_label"))
         or (str(runtime.get("generation_model_label") or "").strip() if is_ai_image else None)
     )
-    text_policy = non_empty(hero.get("text_in_image")) or (
-        "html_selected_text_and_layout"
-        if is_html_render
-        else str(mode_config.get("text_policy") or "seedream_5_pro_direct_selected_text_and_layout")
+    text_policy = non_empty(hero.get("text_in_image")) or str(
+        mode_config.get("text_policy") or "seedream_5_pro_direct_selected_text_and_layout"
     )
-    constraints = (
-        [
-            "HTML 信息图：保持模型生图优先；仅当本 spec 已选择 html_infographic_to_png 时使用自包含 HTML/CSS 作为文字密集、结构化信息图的确定性渲染源，再用本机 Chrome-family 浏览器导出 hero.png；HTML 源文件、html-prompt、html-render-plan 和 hero-generation.json 必须互相哈希匹配。",
-            "只渲染 information_allocation.image.include 中的来源锁定短标题、关系节点、指标和必要 quote；不得把按钮、CTA、URL、回调或伪交互画进图片，真实行为只由原生 Card 承载。",
-            "图表只能复用 visual-spec 中的真实数据；没有可比较数据时使用指标/事实排版，不制造比例；长文拆成层级、网格和短句，避免段落墙。",
-            "HTML 必须自包含、无外链资源/网络字体/动态数据/交互脚本；导出后只上传 hero.png，HTML 作为可编辑源与溯源证据，不进入 Card JSON。",
-            "真实图片：保留原始像素、尺寸、来源和 alt；先用 scripts/media_assets.py 生成媒体 manifest，再将真实图片与相邻原生事实/按钮配对，不把真实截图重绘成装饰图。",
-            "图片必须表达主题关系、阶段或分组，不得只做装饰；最终 PNG 与原生 Card 的 seam、对比度、裁切和移动端可读性必须人工复核。",
-        ]
-        if is_html_render
-        else [
-            f"AI 图片：默认先调用或读取 Guizang Social Card Skill 与 baoyu-skills 的内容/视觉方法，再用 豆包工作 内置 image_gen 的 Seedream 5.0 Pro-class（{generation_model_label or 'Seedream 5.0 Pro'}）步骤一次性生成 {mode_config.get('label', '最终图片')}；图片只渲染 information_allocation.image.include 中的短标题、关系节点、指标和必要 quote，严禁按钮、CTA 标签或伪交互；原生 Card 只保留精简摘要、关键点、图表和真实行动，完整原文保留在 source.txt；登记 hero-generation.json 后直接上传 hero.png，并把返回的 img_key 写入 spec.hero.img_key；禁止 Pillow、HTML/CSS/SVG、文字叠加、图片拼接或其他图片模型后处理。",
-            "真实图片：保留原始像素、尺寸、来源和 alt；先用 scripts/media_assets.py 生成媒体 manifest，再将真实图片与相邻原生事实/按钮配对，不把真实截图重绘成装饰图。",
-            "图片必须表达主题关系、阶段或分组，不得只做装饰。",
-            "图片内必须由 Seedream 5.0 Pro 或 HTML fallback 准确呈现 information_allocation.image.include 对应的全部来源锁定文字、日期、阶段动作、指标和必要 quote；不得呈现按钮、CTA 标签、URL 或伪交互；未分配给图片的长文和完整事实保留在 source.txt，原生 Card 只做精简可编辑摘要；文字准确性和无伪按钮状态必须人工逐字复核。",
-            "不得使用未登记的文字后处理、图片拼接或第二个模型修正图片；发现问题按当前路径重新调用 Seedream 5.0 Pro 或重新导出受控 HTML。",
-            "优先静态图；GIF 只用于轻微流动或节点聚合，不使用高频闪烁。",
-        ]
-    )
+    constraints = [
+        f"AI 图片：默认先调用或读取 Guizang Social Card Skill 与 baoyu-skills 的内容/视觉方法，再用豆包工作内置 image_gen 的 Seedream 5.0 Pro-class（{generation_model_label or 'Seedream 5.0 Pro'}）步骤一次性生成 {mode_config.get('label', '最终图片')}；图片只渲染 information_allocation.image.include 中的短标题、关系节点、指标和必要 quote，严禁按钮、CTA 标签或伪交互；原生 Card 只保留精简摘要、关键点、图表和真实行动，完整原文保留在 source.txt；登记 hero-generation.json 后直接上传 hero.png，并把返回的 img_key 写入 spec.hero.img_key；禁止 Pillow、HTML/CSS/SVG、文字叠加、图片拼接或其他图片模型后处理。",
+        "真实图片：保留原始像素、尺寸、来源和 alt；先用 scripts/media_assets.py 生成媒体 manifest，再将真实图片与相邻原生事实/按钮配对，不把真实截图重绘成装饰图。",
+        "图片必须表达主题关系、阶段或分组，不得只做装饰；长文通过原生 Card 的高亮块、层级标题和短句承载。",
+        "图片内必须由 Seedream 5.0 Pro 直接呈现 information_allocation.image.include 对应的全部来源锁定文字、日期、阶段动作、指标和必要 quote；不得呈现按钮、CTA 标签、URL 或伪交互；未分配给图片的长文和完整事实保留在 source.txt，原生 Card 只做精简可编辑摘要；文字准确性和无伪按钮状态必须人工逐字复核。",
+        "不得使用未登记的文字后处理、图片拼接或第二个模型修正图片；发现问题只能重新调用 Seedream 5.0 Pro。",
+        "优先静态图；GIF 只用于轻微流动或节点聚合，不使用高频闪烁。",
+    ]
     plan = {
         "status": "needs_img_key",
         "card_field": "body.elements[hero].img_key",
         "asset_kind": non_empty(hero.get("asset_kind")) or "image",
         "image_source": image_source,
         "render_strategy": render_strategy,
-        "html_source": non_empty(hero.get("html_source")) if is_html_render else None,
-        "html_prompt": non_empty(hero.get("html_prompt")) if is_html_render else None,
-        "html_render_plan": non_empty(hero.get("html_render_plan")) if is_html_render else None,
+        "html_source": None,
+        "html_prompt": None,
+        "html_render_plan": None,
         "image_roles": hero.get("image_roles", []),
         "generation_family": non_empty(hero.get("generation_family")) if is_ai_image else None,
         "generation_tool": non_empty(hero.get("generation_tool")) if is_ai_image else None,

@@ -2,7 +2,7 @@
 
 更新时间：2026-09-01。
 
-本目录把两个上游项目中适合飞书卡片的“判断方法”内置为本地能力包。每次需要图片时，默认先尝试调用或读取可用的 Guizang Social Card Skill 与 baoyu-skills，再把结果映射为本地路由规则；默认由 豆包工作 内置 Seedream 5.0 Pro 一次完成整张图片，只有文字密集结构化内容才进入本 Skill 的自包含 HTML→PNG fallback。上游不可调用时透明降级到本地映射；没有可观察调用证据时不声称上游已经执行。原生模型路径禁止 HTML/CSS/SVG/Canvas/Pillow 叠字、拼接和第二个图片模型；HTML fallback 也禁止外链、脚本、按钮和未登记后处理。
+本目录把两个上游项目中适合飞书卡片的“判断方法”内置为本地能力包。每次需要图片时，默认先尝试调用或读取可用的 Guizang Social Card Skill 与 baoyu-skills，再把结果映射为本地路由规则；整张图片统一由 豆包工作 内置 Seedream 5.0 Pro 一次完成，文字密集结构化内容回到原生 Card 高亮块。上游不可调用时透明降级到本地映射；没有可观察调用证据时不声称上游已经执行。禁止 HTML/CSS/SVG/Canvas/Pillow 转图、叠字、拼接和第二个图片模型。
 
 机器可读规则在 [`presets/visual-skill-packs.json`](../presets/visual-skill-packs.json)，普通提示词在 [`presets/prompt-presets.json`](../presets/prompt-presets.json)。每次路由都会写入 `<name>.prompt-routing.json` 的 `visual_skill_routing`，方便检查“为什么选这个能力包和风格”。
 
@@ -15,7 +15,7 @@
 | [baoyu-xhs-images](https://github.com/JimLiu/baoyu-skills/blob/main/skills/baoyu-xhs-images/SKILL.md) | 系列图一致性、一个主视觉锚点、统一色板、每张图独立信息任务 | `baoyu-xhs-images` | 小红书平台尺寸和封面钩子不直接套到长通知 |
 | [baoyu-article-illustrator](https://github.com/JimLiu/baoyu-skills/blob/main/skills/baoyu-article-illustrator/SKILL.md) | infographic / scene / flowchart / comparison / framework 的图片角色判断 | `baoyu-article-illustrator` | 纯场景图不能替代来源事实和关系信息 |
 
-默认方法顺序是 Guizang Social Card Skill → baoyu-skills → 豆包工作 Seedream 5.0 Pro；路由器随后才判断是否需要 HTML→PNG 的确定性文字排版 fallback。上游不可调用时，`upstream_method_pass` 必须记录 `local_mirrored_method_mapping` 降级；实际 Seedream 5.0 Pro provider 不跟随 [baoyu-image-gen](https://github.com/JimLiu/baoyu-skills/blob/main/skills/baoyu-image-gen/SKILL.md) 的多 provider 选择，原因是模型路径仍是 豆包工作 Seedream 5.0 Pro-only。
+默认方法顺序是 Guizang Social Card Skill → baoyu-skills → 豆包工作 Seedream 5.0 Pro；路由器不再分流到本地转图器。上游不可调用时，`upstream_method_pass` 必须记录 `local_mirrored_method_mapping` 降级；实际 Seedream 5.0 Pro provider 不跟随 [baoyu-image-gen](https://github.com/JimLiu/baoyu-skills/blob/main/skills/baoyu-image-gen/SKILL.md) 的多 provider 选择，原因是模型路径仍是 豆包工作 Seedream 5.0 Pro-only。
 
 ## 自动选择规则
 
@@ -41,7 +41,7 @@
   "selected_packs": ["baoyu-infographic", "guizang-social-swiss"],
   "style_id": "blueprint-timeline",
   "visual_layout": "linear-progression",
-  "runtime": "doubao.image_gen / seedream_5_pro_direct_full_card (HTML fallback only for dense structured copy)"
+  "runtime": "doubao.image_gen / seedream_5_pro_direct_full_card"
 }
 ```
 
@@ -53,7 +53,7 @@
 - 用户说“使用蓝图/极简/墨色/小红书风格”：显式风格覆盖自动风格，但保留原内容结构。
 - 用户说“给我三个风格看看”：返回三组“能力包 + 风格 + 版式”候选；确认后才重新生成和上传。
 - 用户明确要求“不要图片/无图”：不调用 Seedream 5.0 Pro，仍可产出原生 Card；否则默认生成至少一张信息视觉。
-- Seedream 5.0 Pro 生成失败或文字不清：从完整源文案和同一白名单重新生成整图；文字密集结构化内容可切换到受控 HTML→PNG。两条路径都不许缩小到不可读、叠字、OCR 修补或换成其他模型。
+- Seedream 5.0 Pro 生成失败或文字不清：从完整源文案和同一白名单重新生成整图；文字密集内容回到原生 Card 高亮块。不得缩小到不可读、叠字、OCR 修补、本地转图或换成其他模型。
 
 ## 版权与品牌边界
 

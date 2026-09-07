@@ -36,7 +36,7 @@
 7. 用户明确否定的词不触发，例如“不要轮播，也不需要动图”不会命中 `gallery`、`gif-motion` 或 `image-switcher`。
 8. 没有命中内容策略时，自动使用 `general-information` 和 `clean-editorial`，不会因为缺少关键词而停住。
 
-可理解为：先尝试调用或读取 Guizang Social Card Skill，再尝试 baoyu-skills，决定“信息是什么关系”，再决定“用什么能力包和版式承载”，默认把它们一次性组合成 Seedream 5.0 Pro 整图提示词；若文字密集且结构化，再自动生成受控 HTML 源并导出 PNG。上游不可调用时使用本地映射并记录透明降级；这里没有“底图 + 叠字”第二阶段，且不会把上游当作位图渲染器。风格不会覆盖时间线、指标或案例的事实。
+可理解为：先尝试调用或读取 Guizang Social Card Skill，再尝试 baoyu-skills，决定“信息是什么关系”，再决定“用什么能力包和版式承载”，默认把它们一次性组合成 Seedream 5.0 Pro 整图提示词；文字密集内容由原生 Card 高亮块承载。上游不可调用时使用本地映射并记录透明降级；这里没有“底图 + 叠字”第二阶段，且不会把上游当作位图渲染器。风格不会覆盖时间线、指标或案例的事实。
 
 ## 用户怎么说最省事
 
@@ -68,7 +68,7 @@
 
 - `<name>.prompt-routing.json`：本次命中的 profile、Guizang/Baoyu 能力包、触发词、组合顺序、负向约束和自动动作。
 - `<name>.image-prompt.md`：已经组合好的 豆包工作 `image_gen` Seedream 5.0 Pro 整图提示词，含逐项 `Image text whitelist` 和仅供核对的完整源文案；用户无需手工拼接。
-- `<name>.infographic.html`、`<name>.html-prompt.md`、`<name>.html-render-plan.json`：仅在文字密集结构化路由触发时生成的自包含 HTML 源、提示词和固定视口计划。
+- 不生成 HTML 源、HTML 提示词或渲染计划；文字密集结构化内容由原生 Card 高亮块承载，图片仍由 Seedream 5.0 Pro 直出。
 - `<name>.spec.json` 中的 `prompt_routing`：与卡片源文件绑定的同一份路由结果。
 - `<name>.report.json` 中的 `prompt_routing`：方便检查最终卡片为什么选择某个图片任务。
 
