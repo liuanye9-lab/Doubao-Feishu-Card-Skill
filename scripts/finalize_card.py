@@ -120,7 +120,13 @@ def resume(spec_value, hero_img_key=None):
         generation = pipeline._ai_generation_gate(card_path.with_name("hero.png"),
             card_path.with_name("hero-generation.json"), required=required,
             generation_mode=spec.get("image_generation_mode") or pipeline.DIRECT_IMAGE2_MODE
-            if edition == "codex" else spec.get("image_generation_mode") or pipeline.DIRECT_SEEDREAM_MODE)
+            if edition == "codex" else spec.get("image_generation_mode") or pipeline.DIRECT_SEEDREAM_MODE,
+            background_policy=str(
+                (spec.get("hero") or {}).get("background_policy")
+                or (spec.get("visual_contract") or {}).get("image_background_policy")
+                or contract.get("background_policy")
+                or "preserve_source_background"
+            ))
     asset_ready = not required or bool(generation.get("ready"))
     key_ready = bool((spec.get("hero") or {}).get("img_key")) and pipeline._contains_tag(card, {"img"})
     image_ready = required and asset_ready and key_ready

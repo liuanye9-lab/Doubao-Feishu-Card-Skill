@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import feishu_cli  # noqa: E402
+from asset_validation import validate_image_contract  # noqa: E402
 from cardkit_format import wrap_card  # noqa: E402
 from register_motion_generation import register as register_motion  # noqa: E402
 
@@ -64,10 +65,16 @@ class FeishuCliAdapterTests(unittest.TestCase):
                 json.dumps({
                     "tool": "doubao.image_gen",
                     "generation_family": "seedream-class",
+                    "generation_mode": "seedream_5_pro_direct_full_card",
                     "text_policy": "seedream_5_pro_direct_selected_text_and_layout",
                     "image_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
                     "prompt_file": str(prompt_path),
                     "prompt_sha256": hashlib.sha256(prompt_path.read_bytes()).hexdigest(),
+                    "asset_contract": validate_image_contract(
+                        image_path,
+                        expected_aspect_ratio="2:3",
+                        expected_format="PNG",
+                    ),
                 }),
                 encoding="utf-8",
             )
@@ -86,7 +93,7 @@ class FeishuCliAdapterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=ROOT / "outputs") as temp_dir:
             temp_path = Path(temp_dir)
             image_path = temp_path / "hero.png"
-            write_test_png(image_path)
+            write_test_png(image_path, size=(300, 100))
             prompt_path = temp_path / "prompt.md"
             prompt_path.write_text("Seedream 5.0 Pro banner prompt\n", encoding="utf-8")
             (temp_path / "hero-generation.json").write_text(
@@ -98,6 +105,11 @@ class FeishuCliAdapterTests(unittest.TestCase):
                     "image_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
                     "prompt_file": str(prompt_path),
                     "prompt_sha256": hashlib.sha256(prompt_path.read_bytes()).hexdigest(),
+                    "asset_contract": validate_image_contract(
+                        image_path,
+                        expected_aspect_ratio="3:1",
+                        expected_format="PNG",
+                    ),
                 }),
                 encoding="utf-8",
             )
@@ -111,6 +123,31 @@ class FeishuCliAdapterTests(unittest.TestCase):
         self.assertEqual(result["status"], "preview_only")
         self.assertEqual(result["image_key"], "img_banner")
         run_cli.assert_called_once()
+
+    def test_upload_image_rejects_manifest_without_asset_contract(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "outputs") as temp_dir:
+            temp_path = Path(temp_dir)
+            image_path = temp_path / "hero.png"
+            write_test_png(image_path)
+            prompt_path = temp_path / "prompt.md"
+            prompt_path.write_text("Seedream 5.0 Pro direct prompt\n", encoding="utf-8")
+            (temp_path / "hero-generation.json").write_text(
+                json.dumps({
+                    "tool": "doubao.image_gen",
+                    "generation_family": "seedream-class",
+                    "generation_mode": "seedream_5_pro_direct_full_card",
+                    "text_policy": "seedream_5_pro_direct_selected_text_and_layout",
+                    "image_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
+                    "prompt_file": str(prompt_path),
+                    "prompt_sha256": hashlib.sha256(prompt_path.read_bytes()).hexdigest(),
+                }),
+                encoding="utf-8",
+            )
+            with patch.object(feishu_cli, "_run_cli") as run_cli:
+                result = feishu_cli.upload_image(str(image_path), identity="bot", dry_run=True)
+
+        self.assertEqual(result["status"], "image_asset_contract_missing")
+        run_cli.assert_not_called()
 
     @unittest.skipIf(Image is None, "Pillow is required for GIF tests")
     def test_upload_image_accepts_verified_seedance_gif(self) -> None:

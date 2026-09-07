@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from auto_layout import build_auto_spec  # noqa: E402
+from asset_validation import validate_image_contract  # noqa: E402
 from preview_card import EditorState, contains_tag  # noqa: E402
 
 
@@ -38,10 +39,16 @@ class PreviewCardTests(unittest.TestCase):
                 json.dumps({
                     "tool": "doubao.image_gen",
                     "generation_family": "seedream-class",
+                    "generation_mode": "seedream_5_pro_direct_full_card",
                     "text_policy": "seedream_5_pro_direct_selected_text_and_layout",
                     "image_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
                     "prompt_file": str(prompt_path),
                     "prompt_sha256": hashlib.sha256(prompt_path.read_bytes()).hexdigest(),
+                    "asset_contract": validate_image_contract(
+                        image_path,
+                        expected_aspect_ratio="2:3",
+                        expected_format="PNG",
+                    ),
                 }),
                 encoding="utf-8",
             )

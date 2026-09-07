@@ -459,7 +459,7 @@ def local_visual_output_ready(spec: Dict[str, Any], output_path: Path) -> bool:
         return False
     image_path = output_path.parent / "hero.png"
     provenance_path = output_path.parent / "hero-generation.json"
-    from asset_validation import asset_error
+    from asset_validation import asset_error, validate_image_contract
     if asset_error(image_path, "PNG"):
         return False
     if not image_path.is_file() or not provenance_path.is_file():
@@ -469,6 +469,37 @@ def local_visual_output_ready(spec: Dict[str, Any], output_path: Path) -> bool:
     except (OSError, json.JSONDecodeError):
         return False
     if not isinstance(provenance, dict):
+        return False
+    declared_contract = provenance.get("asset_contract")
+    if not isinstance(declared_contract, dict) or declared_contract.get("ok") is not True:
+        return False
+    expected_ratio = image_mode_config(generation_mode).get("aspect_ratio")
+    if declared_contract.get("expected_aspect_ratio") not in {None, expected_ratio}:
+        return False
+    visual_contract = spec.get("visual_contract") if isinstance(spec.get("visual_contract"), dict) else {}
+    expected_background_policy = str(
+        hero.get("background_policy")
+        or visual_contract.get("image_background_policy")
+        or "preserve_source_background"
+    ).strip()
+    declared_background_policy = str(
+        declared_contract.get("background_policy") or "preserve_source_background"
+    ).strip()
+    if declared_background_policy != expected_background_policy:
+        return False
+    try:
+        asset_contract = validate_image_contract(
+            image_path,
+            expected_aspect_ratio=expected_ratio,
+            aspect_ratio_tolerance=float(declared_contract.get("aspect_ratio_tolerance", 0.025)),
+            allow_crop=bool(declared_contract.get("allow_crop", False)),
+            background_policy=expected_background_policy,
+            source_kind="ai_generated",
+            expected_format="PNG",
+        )
+    except (OSError, ValueError, TypeError):
+        return False
+    if not asset_contract["ok"]:
         return False
     family = str(provenance.get("generation_family") or "").strip().lower()
     tool = str(provenance.get("tool") or "").strip()

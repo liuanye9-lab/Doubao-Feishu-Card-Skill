@@ -12,7 +12,7 @@ from zipfile import ZipFile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from media_fixtures import write_test_png
-from asset_validation import inspect_asset
+from asset_validation import inspect_asset, validate_image_contract
 from visual_spec import parse_metric_line, build_chart_plan, extract_relationship_nodes
 from doubao_pipeline import run_pipeline
 from finalize_card import resume, record_review
@@ -52,7 +52,10 @@ class ReliabilityTests(unittest.TestCase):
         self.assertIn("no decorative gradients", prompt)
         self.assertIn("medium-weight headings", prompt)
         self.assertIn("SAME regular-weight size", prompt)
-        self.assertIn("Transparency is allowed", prompt)
+        self.assertIn("preserve a complete opaque", prompt)
+        self.assertIn("Do not remove the background", prompt)
+        self.assertIn("First-principles geometry contract", prompt)
+        self.assertNotIn("transparent output is explicitly authorized", prompt)
         self.assertIn("translucent frosted glass", prompt)
         self.assertIn("controlled gradients are allowed", prompt)
         self.assertNotIn("alpha 255 everywhere", prompt)
@@ -102,7 +105,7 @@ class ReliabilityTests(unittest.TestCase):
         self.assertEqual([n["text"] for n in nodes], ["接收", "分类", "处理"])
         self.assertEqual(extract_relationship_nodes("9月1日：开营")[0]["label"], "9月1日")
 
-    def test_transparent_infographic_is_allowed_and_recorded(self):
+    def test_transparent_infographic_requires_explicit_opt_in(self):
         from PIL import Image
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "hero.png"
@@ -110,6 +113,33 @@ class ReliabilityTests(unittest.TestCase):
             inspection = inspect_asset(path, "PNG")
             self.assertTrue(inspection["has_transparency"])
             self.assertEqual(inspection["alpha_extrema"], [0, 0])
+            default_contract = validate_image_contract(
+                path,
+                expected_aspect_ratio="2:3",
+                expected_format="PNG",
+            )
+            self.assertFalse(default_contract["ok"])
+            self.assertTrue(any("opaque background" in error for error in default_contract["errors"]))
+            opt_in_contract = validate_image_contract(
+                path,
+                expected_aspect_ratio="2:3",
+                background_policy="allow_transparent_background",
+                expected_format="PNG",
+            )
+            self.assertTrue(opt_in_contract["ok"])
+
+    def test_image_ratio_mismatch_is_rejected_without_crop_opt_in(self):
+        from PIL import Image
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "hero.png"
+            Image.new("RGB", (300, 100), "#D9E7FF").save(path, format="PNG")
+            contract = validate_image_contract(
+                path,
+                expected_aspect_ratio="2:3",
+                expected_format="PNG",
+            )
+            self.assertFalse(contract["ok"])
+            self.assertTrue(any("never stretch" in error for error in contract["errors"]))
 
     def test_fake_png_is_rejected_by_registration_and_upload(self):
         with tempfile.TemporaryDirectory(dir=ROOT / "outputs") as tmp:

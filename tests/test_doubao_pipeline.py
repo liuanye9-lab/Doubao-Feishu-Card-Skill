@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from auto_layout import build_auto_spec, infer_scene  # noqa: E402
+from asset_validation import validate_image_contract  # noqa: E402
 from doubao_pipeline import run_pipeline  # noqa: E402
 from content_intelligence import build_information_allocation, suggest_buttons  # noqa: E402
 
@@ -104,10 +105,16 @@ class DoubaoPipelineTests(unittest.TestCase):
                 "model_id": "test",
                 "asset": str(image_path),
                 "asset_name": "hero.png",
+                "generation_mode": "seedream_5_pro_direct_full_card",
                 "image_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
                 "prompt_file": str(prompt_path),
                 "prompt_sha256": hashlib.sha256(prompt_path.read_bytes()).hexdigest(),
                 "text_policy": "seedream_5_pro_direct_selected_text_and_layout",
+                "asset_contract": validate_image_contract(
+                    image_path,
+                    expected_aspect_ratio="2:3",
+                    expected_format="PNG",
+                ),
             }, ensure_ascii=False),
             encoding="utf-8",
         )
@@ -137,6 +144,12 @@ class DoubaoPipelineTests(unittest.TestCase):
         self.assertEqual(report["doubao"]["card_image_contract"]["image_text_layout"], "seedream_5_pro_direct_full_card")
         self.assertEqual(spec["visual_contract"]["text_in_image"], "seedream_5_pro_direct_selected_text_and_layout")
         self.assertEqual(spec["visual_contract"]["image_text_layout"], "seedream_5_pro_direct_full_card")
+        self.assertEqual(spec["visual_contract"]["image_aspect_ratio"], "2:3")
+        self.assertEqual(spec["visual_contract"]["image_background_policy"], "preserve_source_background")
+        self.assertEqual(
+            spec["visual_contract"]["image_text_integrity_policy"],
+            "preserve_glyph_aspect_ratio_no_non_uniform_scaling",
+        )
         self.assertEqual(spec["hero"]["image_source"], "ai_generated")
         self.assertEqual(spec["hero"]["image_roles"], ["cover", "information_carrier", "text_companion"])
         self.assertEqual(spec["hero"]["generation_family"], "seedream-class")
@@ -715,6 +728,8 @@ class DoubaoPipelineTests(unittest.TestCase):
         self.assertEqual(report["status"], "needs_image")
         self.assertEqual(spec["image_generation_mode"], "seedream_5_pro_banner_plus_native_card")
         self.assertEqual(spec["hero"]["text_in_image"], "seedream_5_pro_banner_selected_text_and_layout")
+        self.assertEqual(spec["hero"]["aspect_ratio"], "3:1")
+        self.assertFalse(spec["hero"]["allow_crop"])
         self.assertEqual(
             spec["hero"]["image_roles"],
             ["banner", "information_carrier", "text_companion"],

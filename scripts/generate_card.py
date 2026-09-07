@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from auto_layout import EMOJI_ALIASES, build_auto_spec, normalize_emoji_aliases
+from asset_validation import BACKGROUND_POLICIES
 from generate_style import build_style_document, infer_style
 from runtime_profile import default_image_mode, image_mode_config, image_runtime, supported_image_modes
 from validate_card import is_placeholder, normalize_cardkit_text_color
@@ -1469,7 +1470,7 @@ def make_asset_plan(
         return None
     prompt = non_empty(hero.get("prompt"))
     if not prompt:
-        prompt = non_empty((preset or {}).get("hero_prompt")) or "Apple 官网式现代主义层级纪律与高级信息设计材质，纸白底、墨黑文字、单一克制信号色、舒展留白、透明磨砂玻璃、柔和动态模糊和低饱和渐变光晕；禁止廉价高饱和装饰、封闭卡片墙、硬边重阴影和水印，适合飞书卡片信息首图。"
+        prompt = non_empty((preset or {}).get("hero_prompt")) or "Apple 官网式现代主义层级纪律与高级信息设计材质，纸白底、墨黑文字、舒展留白、透明磨砂玻璃、柔和动态模糊和低饱和渐变光晕；保留完整不透明背景，不做抠图、不拉伸、不压扁字体；禁止廉价高饱和装饰、封闭卡片墙、硬边重阴影和水印，适合飞书卡片信息首图。"
     runtime = image_runtime()
     image_generation_mode = non_empty(hero.get("image_generation_mode")) or default_image_mode()
     if image_generation_mode not in supported_image_modes():
@@ -1485,6 +1486,13 @@ def make_asset_plan(
     if render_strategy in {"html_infographic_to_png", "html_to_png", "html"}:
         render_strategy = "native_model"
     is_ai_image = image_source != "real_image"
+    background_policy = non_empty(hero.get("background_policy")) or "preserve_source_background"
+    if background_policy not in BACKGROUND_POLICIES:
+        raise ValueError(
+            "background_policy must be one of " + ", ".join(sorted(BACKGROUND_POLICIES))
+        )
+    aspect_ratio = mode_config.get("aspect_ratio")
+    allow_crop = bool(hero.get("allow_crop", False))
     generation_model = (
         non_empty(hero.get("generation_model"))
         or (str(runtime.get("generation_model") or "").strip() if is_ai_image else None)
@@ -1498,6 +1506,8 @@ def make_asset_plan(
     )
     constraints = [
         f"AI 图片：默认先调用或读取 Guizang Social Card Skill 与 baoyu-skills 的内容/视觉方法，再用豆包工作内置 image_gen 的 Seedream 5.0 Pro-class（{generation_model_label or 'Seedream 5.0 Pro'}）步骤一次性生成 {mode_config.get('label', '最终图片')}；图片只渲染 information_allocation.image.include 中的短标题、关系节点、指标和必要 quote，严禁按钮、CTA 标签或伪交互；原生 Card 只保留精简摘要、关键点、图表和真实行动，完整原文保留在 source.txt；登记 hero-generation.json 后直接上传 hero.png，并把返回的 img_key 写入 spec.hero.img_key；禁止 Pillow、HTML/CSS/SVG、文字叠加、图片拼接或其他图片模型后处理。",
+        f"图片比例是 P0 门禁：最终画布必须为 {aspect_ratio}，全流程只能等比缩放；禁止横向/纵向拉伸、压扁字体、固定高度裁切或用 crop 代替适配；若图片内含文字，必须保持自然字形比例，给白名单文字留出安全区，放不下就重新生成整张图片。",
+        "背景默认策略：保留完整原图/生成图背景，不主动抠图、不去背景、不新增透明底；只有用户明确授权时才允许切换为透明背景分支。",
         "真实图片：保留原始像素、尺寸、来源和 alt；先用 scripts/media_assets.py 生成媒体 manifest，再将真实图片与相邻原生事实/按钮配对，不把真实截图重绘成装饰图。",
         "图片必须表达主题关系、阶段或分组，不得只做装饰；长文通过原生 Card 的高亮块、层级标题和短句承载。",
         "图片内必须由 Seedream 5.0 Pro 直接呈现 information_allocation.image.include 对应的全部来源锁定文字、日期、阶段动作、指标和必要 quote；不得呈现按钮、CTA 标签、URL 或伪交互；未分配给图片的长文和完整事实保留在 source.txt，原生 Card 只做精简可编辑摘要；文字准确性和无伪按钮状态必须人工逐字复核。",
@@ -1525,6 +1535,17 @@ def make_asset_plan(
         "functional_text": hero.get("functional_text", []),
         "functional_text_source_locked": bool(hero.get("functional_text_source_locked", True)),
         "information_allocation": spec.get("information_allocation", {}),
+        "aspect_ratio": aspect_ratio,
+        "aspect_ratio_tolerance": hero.get("aspect_ratio_tolerance", 0.025),
+        "allow_crop": allow_crop,
+        "background_policy": background_policy,
+        "background_removal": (
+            "disabled"
+            if background_policy == "preserve_source_background"
+            else "explicit_opt_in_required"
+        ),
+        "text_integrity_policy": non_empty(hero.get("text_integrity_policy"))
+        or "preserve_glyph_aspect_ratio_no_non_uniform_scaling",
         "source_url": non_empty(hero.get("source_url")),
         "source_markers": hero.get("source_markers", []),
         "style": (preset or {}).get("name", "飞书 AI 先锋大赛"),

@@ -49,6 +49,14 @@ IMAGE_ROLES: Sequence[str] = (
     "text_companion",
 )
 
+DEFAULT_IMAGE_BACKGROUND_POLICY = "preserve_source_background"
+IMAGE_BACKGROUND_POLICIES = {
+    "preserve_source_background",
+    "allow_transparent_background",
+}
+DEFAULT_IMAGE_ASPECT_RATIO_TOLERANCE = 0.025
+IMAGE_TEXT_INTEGRITY_POLICY = "preserve_glyph_aspect_ratio_no_non_uniform_scaling"
+
 
 # Explicit aliases are safe to replace because the user has already marked
 # them as icon placeholders.  The stable default is ``semantic``: it preserves
@@ -1781,6 +1789,16 @@ def build_auto_spec(
         )
     selected_mode_config = _image_mode_config(selected_image_mode)
     runtime_model, runtime_model_label = _runtime_model()
+    background_policy = str(
+        media_policy.get("background_policy") or DEFAULT_IMAGE_BACKGROUND_POLICY
+    ).strip()
+    if background_policy not in IMAGE_BACKGROUND_POLICIES:
+        raise ValueError(
+            "media_policy.background_policy must be one of "
+            + ", ".join(sorted(IMAGE_BACKGROUND_POLICIES))
+        )
+    allow_crop = bool(media_policy.get("allow_crop", False))
+    image_aspect_ratio = selected_mode_config.get("aspect_ratio")
     image_roles: List[str] = (
         [str(item) for item in selected_mode_config.get("roles", []) if str(item).strip()]
         if image_source != "none"
@@ -1794,6 +1812,16 @@ def build_auto_spec(
         media_policy["generation_model"] = runtime_model if image_source == "ai_generated" else None
         media_policy["generation_model_label"] = runtime_model_label if image_source == "ai_generated" else None
         media_policy["image_generation_mode"] = selected_image_mode
+        media_policy["aspect_ratio"] = image_aspect_ratio
+        media_policy["aspect_ratio_tolerance"] = DEFAULT_IMAGE_ASPECT_RATIO_TOLERANCE
+        media_policy["allow_crop"] = allow_crop
+        media_policy["background_policy"] = background_policy
+        media_policy["background_removal"] = (
+            "disabled"
+            if background_policy == DEFAULT_IMAGE_BACKGROUND_POLICY
+            else "explicit_opt_in_required"
+        )
+        media_policy["text_integrity_policy"] = IMAGE_TEXT_INTEGRITY_POLICY
         media_policy["information_allocation"] = content_allocation
         media_policy["source_spans"] = [
             item.get("source_text")
@@ -1847,6 +1875,12 @@ def build_auto_spec(
             "source_spans": media_contract.get("source_spans", []),
             "pairing": media_contract.get("native_text_pairing"),
             "text_in_image": "none",
+            "image_aspect_ratio": media_contract.get("aspect_ratio"),
+            "image_aspect_ratio_tolerance": media_contract.get("aspect_ratio_tolerance"),
+            "image_allow_crop": bool(media_contract.get("allow_crop", False)),
+            "image_background_policy": media_contract.get("background_policy", DEFAULT_IMAGE_BACKGROUND_POLICY),
+            "image_background_removal": media_contract.get("background_removal", "disabled"),
+            "image_text_integrity_policy": media_contract.get("text_integrity_policy", IMAGE_TEXT_INTEGRITY_POLICY),
             "information_allocation": content_allocation,
             "native_text_is_complete": False,
             "native_text_policy": "concise summary + 3–5 key points + source-backed metrics/chart + real CTA",
@@ -1897,6 +1931,12 @@ def build_auto_spec(
         "generation_tool": "doubao.image_gen" if image_source == "ai_generated" else None,
         "generation_model": runtime_model if image_source == "ai_generated" else None,
         "generation_model_label": runtime_model_label if image_source == "ai_generated" else None,
+        "aspect_ratio": media_contract.get("aspect_ratio"),
+        "aspect_ratio_tolerance": media_contract.get("aspect_ratio_tolerance"),
+        "allow_crop": bool(media_contract.get("allow_crop", False)),
+        "background_policy": media_contract.get("background_policy", DEFAULT_IMAGE_BACKGROUND_POLICY),
+        "background_removal": media_contract.get("background_removal", "disabled"),
+        "text_integrity_policy": media_contract.get("text_integrity_policy", IMAGE_TEXT_INTEGRITY_POLICY),
         "requires_application_bot": wants_switcher,
         "static_first_frame_required": wants_gif,
         "asset_manifest_command": "python3 scripts/media_assets.py --input <asset> --output <bundle>/<name>.media-manifest.json",
@@ -1934,6 +1974,16 @@ def build_auto_spec(
             "information_carrier": True,
             "image_source": image_source,
             "image_roles": image_roles,
+            "aspect_ratio": image_aspect_ratio,
+            "aspect_ratio_tolerance": DEFAULT_IMAGE_ASPECT_RATIO_TOLERANCE,
+            "allow_crop": allow_crop,
+            "background_policy": background_policy,
+            "background_removal": (
+                "disabled"
+                if background_policy == DEFAULT_IMAGE_BACKGROUND_POLICY
+                else "explicit_opt_in_required"
+            ),
+            "text_integrity_policy": IMAGE_TEXT_INTEGRITY_POLICY,
         }
         if image_source == "ai_generated":
             spec["hero"]["generation_family"] = "seedream-class"

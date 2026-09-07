@@ -18,7 +18,7 @@ class RegisterImageGenerationTests(unittest.TestCase):
             image_path = bundle / "hero.png"
             prompt_path = bundle / "demo.image-prompt.md"
             manifest_path = bundle / "hero-generation.json"
-            write_test_png(image_path)
+            write_test_png(image_path, size=(300, 100))
             prompt_path.write_text("banner prompt\n", encoding="utf-8")
             manifest = register(
                 str(image_path),
@@ -39,7 +39,7 @@ class RegisterImageGenerationTests(unittest.TestCase):
             bundle = Path(temp_dir)
             image_path = bundle / "hero.png"
             prompt_path = bundle / "demo.image-prompt.md"
-            write_test_png(image_path)
+            write_test_png(image_path, size=(300, 100))
             prompt_path.write_text("banner prompt\n", encoding="utf-8")
             with self.assertRaises(ValueError):
                 register(
@@ -47,6 +47,21 @@ class RegisterImageGenerationTests(unittest.TestCase):
                     prompt=str(prompt_path),
                     generation_mode="seedream_5_pro_banner_plus_native_card",
                     text_policy="seedream_5_pro_direct_selected_text_and_layout",
+                )
+
+    def test_register_rejects_mismatched_banner_aspect_ratio(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "outputs") as temp_dir:
+            bundle = Path(temp_dir)
+            image_path = bundle / "hero.png"
+            prompt_path = bundle / "demo.image-prompt.md"
+            write_test_png(image_path)
+            prompt_path.write_text("banner prompt\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "aspect ratio"):
+                register(
+                    str(image_path),
+                    prompt=str(prompt_path),
+                    generation_mode="seedream_5_pro_banner_plus_native_card",
+                    text_policy="seedream_5_pro_banner_selected_text_and_layout",
                 )
 
 

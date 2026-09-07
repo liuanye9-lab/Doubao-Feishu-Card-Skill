@@ -51,7 +51,7 @@ def build_stability_contract() -> Dict[str, Any]:
         ],
         "render_contract": "Card 2.0 stable native subset; raw card and CardKit wrapper share one final DSL",
         "action_contract": "native_card_only; real URL or implemented application-bot callback/form required",
-        "image_contract": "Every card gets a direct model-generated visual by default: Seedream 5.0 Pro for static information or automatically selected Seedance 2.5 GIF for motion-worthy content; explicit no-image is the only no-visual fallback; no HTML conversion, local overlay, or post-processing",
+        "image_contract": "Every card gets a direct model-generated visual by default: Seedream 5.0 Pro for static information or automatically selected Seedance 2.5 GIF for motion-worthy content; static image ratio and glyph geometry are P0, preserve the complete source background by default, and never use non-uniform scaling, squeeze, stretch, fixed-height clipping or post-processing; explicit no-image is the only no-visual fallback; no HTML conversion or local overlay",
         "fallback_contract": "preserve source and report the exact degraded field; never invent facts, URLs, img_keys, or remote evidence",
         "remote_delivery_contract": "one preflight and one confirmation for requested remote writes; import CardKit and read back evidence; Bot preview only if explicitly requested",
     }

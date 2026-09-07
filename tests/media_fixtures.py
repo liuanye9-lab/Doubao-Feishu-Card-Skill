@@ -2,5 +2,5 @@
 from PIL import Image
 
 
-def write_test_png(path):
-    Image.new("RGB", (320, 180), "#D9E7FF").save(path, format="PNG")
+def write_test_png(path, size=(320, 480)):
+    Image.new("RGB", size, "#D9E7FF").save(path, format="PNG")

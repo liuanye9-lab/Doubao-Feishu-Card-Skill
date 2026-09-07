@@ -31,8 +31,9 @@ Apple 官网式现代主义层级纪律 + 高级信息设计基线：克制配�
 `apple-minimal`（Apple 高级信息设计）、`swiss-grid`（瑞士国际主义网格）、
 `modern-editorial`（现代杂志编辑风）、`data-narrative`（数据叙事信息图）、
 `product-showcase`（产品发布/案例展示）。历史 ID 会通过 aliases 映射到这五套模板。
-字体名是视觉参考，不能承诺模型真的使用或嵌入指定字体。透明底允许；结合实际 Card
-背景检查可读性。历史风格目录和示例坐标仅供研究，不能覆盖当前 art-direction。
+字体名是视觉参考，不能承诺模型真的使用或嵌入指定字体。图片默认保留完整不透明背景，
+不主动抠图或生成透明底；只有用户明确授权时才进入 `allow_transparent_background` 分支，
+并结合实际 Card 背景检查可读性。历史风格目录和示例坐标仅供研究，不能覆盖当前 art-direction。
 
 ## 图文按钮协同排版
 
@@ -69,6 +70,10 @@ Apple 官网式现代主义层级纪律 + 高级信息设计基线：克制配�
 
 - `seedream_5_pro_direct_full_card`：2:3 竖版信息图，适合复杂指标/阶段/关系。
 - `seedream_5_pro_banner_plus_native_card`：约 3:1 横幅首图 + 原生 Card；轻量通知/培训可自动选择，显式图片模式优先。
+
+静态图片的画布比例和图片内字形是 P0 门禁：竖版必须对应约 2:3，横幅必须对应约 3:1；
+全流程只能等比缩放，禁止横向/纵向拉伸、压扁字体、固定高度裁切或用 crop 偷换适配。
+如果白名单文字放不下，必须重新生成整张 Seedream 图片，不能用叠字、局部修补或第二个模型补救。
 
 Seedream 统一直接生成最终 PNG。无论文字是否密集，均不经过 HTML/CSS、Chrome 截图、叠字或本地转图；图片内容只取自 `information_allocation.image.include`，不把 URL、按钮或长段落画进图片。文字密度由原生 Card 的高亮块、层级标题和短句解决；图片直出后只需登记模型 provenance。
 
@@ -119,6 +124,8 @@ python3 scripts/stable_card.py \
 - `needs_visual_review`：媒体与 key 已就绪，继续检查最终媒体和原生卡片并记录验收。
 - `ready`：结构、provenance、真实 `img_key`、视觉验收和发送门禁均通过。
 - `blocked`：来源、结构、安全或兼容性门禁失败，先修复同源 spec 再重跑。
+
+`needs_image` 的静态 PNG 还必须通过 `asset_contract`：实际画布比例匹配当前模式、默认背景完整不透明、没有非等比缩放或字体压扁；任何一项失败都只能重新生成整张图片。
 
 `needs_image` 和 `needs_gif` 都是中间态，不能当成交付完成。
 
@@ -201,6 +208,7 @@ CLI 会话不可用时，使用已登录 CardKit 浏览器导入 `.cardkit.card`
 - GIF 至少两帧、真实 GIF 格式、循环可读；关键事实和按钮仍在原生 Card。
 - 可见文字符合预算，Emoji 不堆叠，图表仅来自同口径真实数值。
 - 每个按钮都有真实 URL 或已实现回调；没有链接时保持待补，不造链接。
+- 图片比例、背景策略和字形几何契约通过；移动端与桌面端均检查完整文字，异常时重新生成图片，不用拉伸或叠字补救。
 - CardKit wrapper 与 raw Card DSL 同源；二次编辑后无 `brand_*` 非法颜色引用。
 - 真实导入有 `template_id` + get/list 回读；仅 dry-run 时明确写 `preview_only`。
 

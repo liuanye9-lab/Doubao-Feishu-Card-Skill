@@ -253,7 +253,7 @@ def _direct_seedream_visual_status(
     return result
 
 
-from asset_validation import asset_error
+from asset_validation import asset_error, validate_image_contract
 
 
 def _ai_generation_gate(
@@ -262,6 +262,7 @@ def _ai_generation_gate(
     *,
     required: bool,
     generation_mode: str = DIRECT_SEEDREAM_MODE,
+    background_policy: str = "preserve_source_background",
 ) -> Dict[str, Any]:
     """Verify that the final image came through the selected Seedream 5.0 Pro step."""
     result: Dict[str, Any] = {
@@ -293,6 +294,55 @@ def _ai_generation_gate(
     media_error = asset_error(image_path, "PNG")
     if media_error:
         result.update(status="invalid_image", error=media_error)
+        return result
+    mode_config = _mode_config(generation_mode)
+    declared_contract = manifest.get("asset_contract")
+    if not isinstance(declared_contract, dict) or declared_contract.get("ok") is not True:
+        result.update(
+            status="image_asset_contract_missing",
+            error=(
+                "hero-generation.json must contain a passing asset_contract with "
+                "the selected canvas ratio, background policy and text geometry policy"
+            ),
+        )
+        return result
+    declared_ratio = declared_contract.get("expected_aspect_ratio")
+    expected_ratio = mode_config.get("aspect_ratio")
+    if declared_ratio not in {None, expected_ratio}:
+        result.update(
+            status="image_asset_contract_mismatch",
+            error="asset_contract.expected_aspect_ratio does not match the selected image generation mode",
+        )
+        return result
+    expected_background_policy = str(background_policy or "preserve_source_background").strip()
+    declared_background_policy = str(
+        declared_contract.get("background_policy") or "preserve_source_background"
+    ).strip()
+    if declared_background_policy != expected_background_policy:
+        result.update(
+            status="image_asset_contract_mismatch",
+            error="asset_contract.background_policy does not match the selected card policy",
+        )
+        return result
+    try:
+        asset_contract = validate_image_contract(
+            image_path,
+            expected_aspect_ratio=expected_ratio,
+            aspect_ratio_tolerance=float(declared_contract.get("aspect_ratio_tolerance", 0.025)),
+            allow_crop=bool(declared_contract.get("allow_crop", False)),
+            background_policy=expected_background_policy,
+            source_kind="ai_generated",
+            expected_format="PNG",
+        )
+    except (OSError, ValueError, TypeError) as exc:
+        result.update(status="image_asset_contract_failed", error=str(exc))
+        return result
+    result["asset_contract"] = asset_contract
+    if not asset_contract["ok"]:
+        result.update(
+            status="image_asset_contract_failed",
+            error="; ".join(asset_contract["errors"]),
+        )
         return result
     image_sha256 = hashlib.sha256(image_path.read_bytes()).hexdigest()
     tool = str(manifest.get("tool") or "").strip()
@@ -1061,6 +1111,12 @@ def run_pipeline(
         "cardkit_delivery": "python3 scripts/feishu_cli.py push-cardkit (Byte CLI Web-backed CardKit template)",
         "api_cardkit_delivery": "lark-cli api POST /open-apis/cardkit/v1/cards (explicit API Entity only)",
         "image_text_layout": image_generation_mode,
+        "image_aspect_ratio": _mode_config(image_generation_mode).get("aspect_ratio") if image_requested else None,
+        "image_aspect_ratio_tolerance": 0.025 if image_requested else None,
+        "image_allow_crop": False,
+        "image_background_policy": "preserve_source_background",
+        "image_background_removal": "disabled",
+        "image_text_integrity_policy": "preserve_glyph_aspect_ratio_no_non_uniform_scaling",
         "source_locked": image_requested,
         "source_copy_in_prompt": image_requested,
         "native_text_fallback": True,
@@ -1160,6 +1216,35 @@ def run_pipeline(
             "generation_model_label": generation_model_label,
             "generation_tool": generation_tool,
             "generation_family": generation_family,
+            "image_aspect_ratio": (
+                visual_contract.get("image_aspect_ratio")
+                or media_contract.get("aspect_ratio")
+                or _mode_config(image_generation_mode).get("aspect_ratio")
+            ),
+            "image_aspect_ratio_tolerance": (
+                visual_contract.get("image_aspect_ratio_tolerance")
+                or media_contract.get("aspect_ratio_tolerance")
+                or 0.025
+            ),
+            "image_allow_crop": bool(
+                visual_contract.get("image_allow_crop")
+                or media_contract.get("allow_crop", False)
+            ),
+            "image_background_policy": (
+                visual_contract.get("image_background_policy")
+                or media_contract.get("background_policy")
+                or "preserve_source_background"
+            ),
+            "image_background_removal": (
+                visual_contract.get("image_background_removal")
+                or media_contract.get("background_removal")
+                or "disabled"
+            ),
+            "image_text_integrity_policy": (
+                visual_contract.get("image_text_integrity_policy")
+                or media_contract.get("text_integrity_policy")
+                or "preserve_glyph_aspect_ratio_no_non_uniform_scaling"
+            ),
         })
     _write_text(image_prompt_path, _image_prompt(spec, brand_context=brand_context))
     _write_text(motion_prompt_path, build_motion_prompt(motion_spec))
@@ -1168,6 +1253,11 @@ def run_pipeline(
         image_generation_manifest_path,
         required=seedream_required,
         generation_mode=image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE,
+        background_policy=str(
+            visual_contract.get("image_background_policy")
+            or media_contract.get("background_policy")
+            or "preserve_source_background"
+        ),
     )
     seedream_output = _direct_seedream_visual_status(
         bundle / "hero.png",
@@ -1341,6 +1431,35 @@ def run_pipeline(
         "real_img_key_supplied": bool(hero_img_key and image_required),
         "ai_generation_required": ai_generation_required,
         "ai_generation_manifest": str(generation_manifest_path) if ai_generation_required else None,
+        "aspect_ratio": (
+            visual_contract.get("image_aspect_ratio")
+            or media_contract.get("aspect_ratio")
+            or _mode_config(image_generation_mode).get("aspect_ratio")
+        ),
+        "aspect_ratio_tolerance": (
+            visual_contract.get("image_aspect_ratio_tolerance")
+            or media_contract.get("aspect_ratio_tolerance")
+            or 0.025
+        ),
+        "allow_crop": bool(
+            visual_contract.get("image_allow_crop")
+            or media_contract.get("allow_crop", False)
+        ),
+        "background_policy": (
+            visual_contract.get("image_background_policy")
+            or media_contract.get("background_policy")
+            or "preserve_source_background"
+        ),
+        "background_removal": (
+            visual_contract.get("image_background_removal")
+            or media_contract.get("background_removal")
+            or "disabled"
+        ),
+        "text_integrity_policy": (
+            visual_contract.get("image_text_integrity_policy")
+            or media_contract.get("text_integrity_policy")
+            or "preserve_glyph_aspect_ratio_no_non_uniform_scaling"
+        ),
     }
 
     quality_gates = build_quality_gates(
@@ -1462,7 +1581,7 @@ def run_pipeline(
     register_media_step = (
         f"python3 scripts/register_motion_generation.py --asset {shlex.quote(str(bundle / 'hero.gif'))} --prompt {shlex.quote(str(motion_prompt_path))} --output {shlex.quote(str(motion_generation_manifest_path))} --generation-mode {shlex.quote(motion_generation_mode)}"
         if motion_selected
-        else f"python3 scripts/register_image_generation.py --image {shlex.quote(str(bundle / 'hero.png'))} --prompt {shlex.quote(str(image_prompt_path))} --output {shlex.quote(str(image_generation_manifest_path))} --generation-family {shlex.quote(generation_family)} --generation-mode {shlex.quote(image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE)} --text-policy {shlex.quote(str(_mode_config(image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE).get('text_policy') or DIRECT_SEEDREAM_TEXT_MODE))}"
+        else f"python3 scripts/register_image_generation.py --image {shlex.quote(str(bundle / 'hero.png'))} --prompt {shlex.quote(str(image_prompt_path))} --output {shlex.quote(str(image_generation_manifest_path))} --generation-family {shlex.quote(generation_family)} --generation-mode {shlex.quote(image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE)} --text-policy {shlex.quote(str(_mode_config(image_generation_mode if image_requested else DIRECT_SEEDREAM_MODE).get('text_policy') or DIRECT_SEEDREAM_TEXT_MODE))} --background-policy {shlex.quote(str(visual_contract.get('image_background_policy') or media_contract.get('background_policy') or 'preserve_source_background'))}"
     )
     report: Dict[str, Any] = {
         "status": status,

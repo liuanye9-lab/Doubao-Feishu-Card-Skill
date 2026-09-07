@@ -27,7 +27,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from asset_validation import asset_error
+from asset_validation import asset_error, validate_image_contract
 from validate_card import validate  # noqa: E402
 from cardkit_format import derive_card_name, extract_dsl, normalize_dsl  # noqa: E402
 from runtime_profile import image_mode_config, supported_image_modes  # noqa: E402
@@ -249,6 +249,51 @@ def _image_upload_gate(path: Path) -> Optional[Dict[str, Any]]:
                 and text_policy == image_mode_config(generation_mode).get("text_policy")
             )
             if mode_policy_ok:
+                declared_contract = provenance.get("asset_contract")
+                if not isinstance(declared_contract, dict) or declared_contract.get("ok") is not True:
+                    return {
+                        "ok": False,
+                        "status": "image_asset_contract_missing",
+                        "message": "hero.png 的资产契约缺失或未通过；必须登记匹配的画布比例、背景策略和字形几何策略后才能上传。",
+                        "image": str(path),
+                        "provenance": str(provenance_path),
+                    }
+                expected_ratio = image_mode_config(generation_mode).get("aspect_ratio")
+                declared_ratio = declared_contract.get("expected_aspect_ratio")
+                if declared_ratio not in {None, expected_ratio}:
+                    return {
+                        "ok": False,
+                        "status": "image_asset_contract_mismatch",
+                        "message": "hero.png 的资产契约比例与当前 Seedream 模式不一致，不能上传。",
+                        "image": str(path),
+                        "provenance": str(provenance_path),
+                    }
+                try:
+                    asset_contract = validate_image_contract(
+                        path,
+                        expected_aspect_ratio=expected_ratio,
+                        aspect_ratio_tolerance=float(declared_contract.get("aspect_ratio_tolerance", 0.025)),
+                        allow_crop=bool(declared_contract.get("allow_crop", False)),
+                        background_policy=str(declared_contract.get("background_policy") or "preserve_source_background"),
+                        source_kind="ai_generated",
+                        expected_format="PNG",
+                    )
+                except (OSError, ValueError, TypeError) as exc:
+                    return {
+                        "ok": False,
+                        "status": "image_asset_contract_failed",
+                        "message": f"hero.png 的资产契约校验失败: {exc}",
+                        "image": str(path),
+                        "provenance": str(provenance_path),
+                    }
+                if not asset_contract["ok"]:
+                    return {
+                        "ok": False,
+                        "status": "image_asset_contract_failed",
+                        "message": "; ".join(asset_contract["errors"]),
+                        "image": str(path),
+                        "provenance": str(provenance_path),
+                    }
                 image_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
                 family = str(provenance.get("generation_family") or "").strip().lower()
                 tool = str(provenance.get("tool") or "").strip()

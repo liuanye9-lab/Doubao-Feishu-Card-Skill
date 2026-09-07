@@ -15,7 +15,11 @@
     "default_mode": "seedream_5_pro_direct_full_card",
     "post_processing": "none",
     "source_locked": true,
-    "image_cta_policy": "native_only_no_image_button"
+    "image_cta_policy": "native_only_no_image_button",
+    "background_policy": "preserve_source_background",
+    "background_removal": "disabled_by_default",
+    "aspect_ratio_tolerance": 0.025,
+    "text_integrity_policy": "preserve_glyph_aspect_ratio_no_non_uniform_scaling"
   },
   "image_modes": {
     "seedream_5_pro_direct_full_card": {

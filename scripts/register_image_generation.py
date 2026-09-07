@@ -19,7 +19,7 @@ from typing import Any, Dict, Optional, Sequence
 from runtime_profile import image_mode_config, image_runtime, supported_image_modes
 
 
-from asset_validation import inspect_asset
+from asset_validation import inspect_asset, validate_image_contract
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -52,6 +52,9 @@ def register(
     model_id: str = "platform-managed",
     text_policy: str = "seedream_5_pro_direct_selected_text_and_layout",
     generation_mode: Optional[str] = None,
+    background_policy: str = "preserve_source_background",
+    allow_crop: bool = False,
+    aspect_ratio_tolerance: float = 0.025,
 ) -> Dict[str, Any]:
     runtime = image_runtime()
     resolved_mode = generation_mode
@@ -77,6 +80,17 @@ def register(
     if image_path.name != "hero.png":
         raise ValueError("the selected Seedream 5.0 Pro asset must be named hero.png")
     inspection = inspect_asset(image_path, "PNG")
+    asset_contract = validate_image_contract(
+        image_path,
+        expected_aspect_ratio=image_mode_config(resolved_mode).get("aspect_ratio"),
+        aspect_ratio_tolerance=aspect_ratio_tolerance,
+        allow_crop=allow_crop,
+        background_policy=background_policy,
+        source_kind="ai_generated",
+        expected_format="PNG",
+    )
+    if not asset_contract["ok"]:
+        raise ValueError("; ".join(asset_contract["errors"]))
     prompt_path = _inside_root(prompt) if prompt else image_path.with_name(f"{image_path.parent.name}.image-prompt.md")
     if not prompt_path.is_file():
         raise ValueError(f"prompt file not found: {prompt_path}")
@@ -99,6 +113,13 @@ def register(
         "asset_name": image_path.name,
         "image_sha256": _sha256(image_path),
         "inspection": inspection,
+        "asset_contract": asset_contract,
+        "background_policy": background_policy,
+        "background_removal": asset_contract["background_removal"],
+        "aspect_ratio": asset_contract["expected_aspect_ratio"],
+        "aspect_ratio_tolerance": aspect_ratio_tolerance,
+        "allow_crop": allow_crop,
+        "text_integrity_policy": asset_contract["text_integrity_policy"],
         "prompt_file": str(prompt_path),
         "prompt_sha256": _sha256(prompt_path),
         "registered_at": datetime.now(timezone.utc).isoformat(),
@@ -119,6 +140,9 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--model-id", default="platform-managed")
     parser.add_argument("--text-policy", default="seedream_5_pro_direct_selected_text_and_layout")
     parser.add_argument("--generation-mode", choices=supported_image_modes())
+    parser.add_argument("--background-policy", choices=["preserve_source_background", "allow_transparent_background"], default="preserve_source_background")
+    parser.add_argument("--allow-crop", action="store_true", help="explicitly allow a crop warning; never enables non-uniform scaling")
+    parser.add_argument("--aspect-ratio-tolerance", type=float, default=0.025)
     return parser.parse_args(argv)
 
 
@@ -134,6 +158,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             model_id=args.model_id,
             text_policy=args.text_policy,
             generation_mode=args.generation_mode,
+            background_policy=args.background_policy,
+            allow_crop=args.allow_crop,
+            aspect_ratio_tolerance=args.aspect_ratio_tolerance,
         )
         print(json.dumps({"ok": True, **manifest}, ensure_ascii=False, indent=2))
         return 0
