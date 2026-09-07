@@ -241,6 +241,27 @@ def body_text(value: Any) -> str:
     return as_text(value)
 
 
+def hierarchy_title(value: Any, prefix: str = "—") -> str:
+    """Add a restrained level marker without changing source wording."""
+    text = as_text(value).strip()
+    if not text:
+        return ""
+    if text.startswith(("—", "–", "-", "•", "·", "▪", "→")):
+        return text
+    return f"{prefix} {text}".strip()
+
+
+def hierarchy_body(value: Any, prefix: str = "•") -> str:
+    """Render short source-backed items as an ordered, readable list.
+
+    Existing line breaks remain boundaries.  A long single line containing
+    Chinese semicolons is split only at those presentation separators; no
+    words or facts are rewritten.
+    """
+    from text_quality import hierarchy
+    return hierarchy(value, prefix)
+
+
 def _summary_fragments(node: Any) -> Iterable[str]:
     """Yield rendered text that can safely seed a message-list summary."""
     if isinstance(node, dict):
@@ -382,15 +403,17 @@ def highlight_element(
     highlight_accent = non_empty(block.get("accent_color")) or HIGHLIGHT_ACCENTS[tone] or accent
     padding = non_empty(block.get("padding")) or "10px 12px"
     spacing = non_empty(block.get("vertical_spacing")) or "4px"
+    title_prefix = non_empty(block.get("title_prefix")) or "—"
+    item_prefix = non_empty(block.get("item_prefix")) or "•"
 
     counter[0] += 1
     inner: List[Dict[str, Any]] = []
     if label:
-        inner.append(div(label, text_size="notation", text_color=highlight_accent, eid=element_id("highlight_label", counter[0])))
+        inner.append(div(hierarchy_title(label, "·"), text_size="notation", text_color=highlight_accent, eid=element_id("highlight_label", counter[0])))
     if title:
         inner.append(
             markdown(
-                title if "**" in title else f"**{title}**",
+                title if "**" in title else f"**{hierarchy_title(title, title_prefix)}**",
                 text_size=non_empty(block.get("title_size")) or "heading-4",
                 eid=element_id("highlight_title", counter[0]),
             )
@@ -398,7 +421,7 @@ def highlight_element(
     if content_text:
         inner.append(
             markdown(
-                semantic_highlight(content_text, auto_emphasis),
+                semantic_highlight(hierarchy_body(content_text, item_prefix), auto_emphasis),
                 text_size=non_empty(block.get("text_size")) or "normal_v2",
                 eid=element_id("highlight_body", counter[0]),
             )
@@ -976,6 +999,8 @@ def block_elements(
     """Render the low-barrier explicit block DSL while keeping raw JSON available."""
     if not isinstance(blocks, list):
         raise ValueError("blocks must be an array")
+    from text_quality import prepare_blocks
+    blocks = prepare_blocks(blocks)
     elements: List[Dict[str, Any]] = []
     contracts: List[Dict[str, Any]] = []
     for block in blocks:
@@ -1007,6 +1032,13 @@ def block_elements(
                     auto_emphasis=auto_emphasis,
                 )
                 if highlight:
+                    action_nodes, action_contracts = button_elements({"buttons": block.get("actions", [])}, counter)
+                    if action_nodes:
+                        # Keep a real action in the same native surface as its
+                        # source-backed module.  A highlighted section must
+                        # not silently lose an explicitly bound URL.
+                        highlight["columns"][0]["elements"].extend(action_nodes)
+                        contracts.extend(action_contracts)
                     elements.append(highlight)
             else:
                 section_nodes = section_elements(
@@ -1333,7 +1365,7 @@ def quote_element(
     if not any((eyebrow, title, content)):
         return None
     quote_lines: List[str] = []
-    emphasis = quote.get("emphasis") == "heading"
+    emphasis = quote.get("emphasis") == "heading" and len(content or "") <= 36
     if title:
         quote_lines.append(title if not emphasis or "**" in title else f"**{title}**")
     if content:
@@ -1493,7 +1525,7 @@ def make_asset_plan(
     text_policy = non_empty(hero.get("text_in_image")) or (
         "html_selected_text_and_layout"
         if is_html_render
-        else str(mode_config.get("text_policy") or "seedream_5_pro_direct_selected_text_and_layout")
+        else str(mode_config.get("text_policy") or "image2_direct_selected_text_and_layout")
     )
     constraints = (
         [
@@ -1506,11 +1538,11 @@ def make_asset_plan(
         ]
         if is_html_render
         else [
-            f"AI 图片：默认先调用或读取 Guizang Social Card Skill 与 baoyu-skills 的内容/视觉方法，再用 豆包工作 内置 image_gen 的 Seedream 5.0 Pro-class（{generation_model_label or 'Seedream 5.0 Pro'}）步骤一次性生成 {mode_config.get('label', '最终图片')}；图片只渲染 information_allocation.image.include 中的短标题、关系节点、指标和必要 quote，严禁按钮、CTA 标签或伪交互；原生 Card 只保留精简摘要、关键点、图表和真实行动，完整原文保留在 source.txt；登记 hero-generation.json 后直接上传 hero.png，并把返回的 img_key 写入 spec.hero.img_key；禁止 Pillow、HTML/CSS/SVG、文字叠加、图片拼接或其他图片模型后处理。",
+            f"AI 图片：默认先调用或读取 Guizang Social Card Skill 与 baoyu-skills 的内容/视觉方法，再用 CodeX 内置 image_gen 的 Image2-class（{generation_model_label or 'Imagine 2'}）步骤一次性生成 {mode_config.get('label', '最终图片')}；图片只渲染 information_allocation.image.include 中的短标题、关系节点、指标和必要 quote，严禁按钮、CTA 标签或伪交互；原生 Card 只保留精简摘要、关键点、图表和真实行动，完整原文保留在 source.txt；登记 hero-generation.json 后直接上传 hero.png，并把返回的 img_key 写入 spec.hero.img_key；禁止 Pillow、HTML/CSS/SVG、文字叠加、图片拼接或其他图片模型后处理。",
             "真实图片：保留原始像素、尺寸、来源和 alt；先用 scripts/media_assets.py 生成媒体 manifest，再将真实图片与相邻原生事实/按钮配对，不把真实截图重绘成装饰图。",
             "图片必须表达主题关系、阶段或分组，不得只做装饰。",
-            "图片内必须由 Seedream 5.0 Pro 或 HTML fallback 准确呈现 information_allocation.image.include 对应的全部来源锁定文字、日期、阶段动作、指标和必要 quote；不得呈现按钮、CTA 标签、URL 或伪交互；未分配给图片的长文和完整事实保留在 source.txt，原生 Card 只做精简可编辑摘要；文字准确性和无伪按钮状态必须人工逐字复核。",
-            "不得使用未登记的文字后处理、图片拼接或第二个模型修正图片；发现问题按当前路径重新调用 Seedream 5.0 Pro 或重新导出受控 HTML。",
+            "图片内必须由 Image2 直接呈现 information_allocation.image.include 对应的全部来源锁定文字、日期、阶段动作、指标和必要 quote；不得呈现按钮、CTA 标签、URL 或伪交互；未分配给图片的长文和完整事实保留在 source.txt，原生 Card 只做精简可编辑摘要；文字准确性和无伪按钮状态必须人工逐字复核。",
+            "不得使用文字后处理、图片拼接或第二个模型修正图片；发现问题只能重新调用 Image2。",
             "优先静态图；GIF 只用于轻微流动或节点聚合，不使用高频闪烁。",
         ]
     )

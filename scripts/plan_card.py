@@ -196,7 +196,7 @@ def plan_card(
     explicit_step_count = int(allocation_signals.get("explicit_step_count", 0) or 0)
     # A single dated event may still deserve a native timeline row; the image
     # allocator remains stricter and only promotes a real sequence/relationship
-    # to Seedream 5.0 Pro.
+    # to Image2.
     timeline = len(dates) >= 2 or explicit_step_count >= 2 or bool(dated_event_lines)
     image_recommended = bool(isinstance(allocation, dict) and isinstance(allocation.get("image"), dict) and allocation["image"].get("use"))
     need_hero = (image_recommended or need_switcher or need_motion) and not need_gallery
@@ -308,6 +308,12 @@ def plan_card(
         "visual_archetype": archetype,
         "recommended_preset": ARCHETYPE_PRESETS[archetype],
         "information_density": density,
+        "text_surface_policy": "highlight-first",
+        "hierarchy_markers": {
+            "title_prefix": "—",
+            "item_prefix": "•",
+            "separator": "／",
+        },
         "hierarchy": {
             "primary": [title] + (["截止/风险状态"] if warning_hits else []) + (["关键指标"] if metrics else []),
             "secondary": [item for item, active in (("时间线", timeline), ("行动入口", button_ready), ("案例视觉", need_hero)) if active],
@@ -328,7 +334,7 @@ def plan_card(
             "application_bot_required": need_switcher,
             "reason": "图片切换需要 application-bot callback 更新卡片状态；无后端时退回首张静态图" if need_switcher else ("动图必须配静态首帧，且关键信息不能只存在动画中" if need_motion else ("多作品/多图片应使用 img_combination，不称为轮播" if need_gallery else (allocation_reason if need_hero and allocation_reason else "默认生成一张主题信息视觉；只有用户明确要求无图才跳过"))),
             "aspect_ratio": "5:3 reference banner" if need_hero else ("1:1 tiles" if need_gallery else None),
-            "prompt_brief": (f"为“{title}”按模型优先策略生成当前模式最终图片资产、无水印；默认由 Seedream 5.0 Pro 一次性生成，文字密集结构化内容可由受控自包含 HTML→PNG 确定性排版；图片只承载 information_allocation.image.include 中的短标题、关系节点、关键指标和必要 quote，严禁按钮、CTA 标签或伪交互；原生 Card 只保留精简摘要、关键点、图表和真实行动，长段落与完整事实保留在 source.txt；不要生成无字底图，不要使用未登记的后处理。" if need_hero or need_gallery else None),
+            "prompt_brief": (f"为“{title}”按模型优先策略生成当前模式最终图片资产、无水印；默认由 Image2 一次性生成，文字密集结构化内容可由受控自包含 HTML→PNG 确定性排版；图片只承载 information_allocation.image.include 中的短标题、关系节点、关键指标和必要 quote，严禁按钮、CTA 标签或伪交互；原生 Card 只保留精简摘要、关键点、图表和真实行动，长段落与完整事实保留在 source.txt；不要生成无字底图，不要使用未登记的后处理。" if need_hero or need_gallery else None),
             "information_carrier": content_analysis["media_plan"]["information_carrier"],
             "not_decorative": content_analysis["media_plan"].get("not_decorative", False),
             "visual_job": content_analysis["media_plan"].get("visual_job"),
@@ -337,7 +343,7 @@ def plan_card(
             "source_spans": content_analysis["media_plan"].get("source_spans", []),
             "native_text_pairing": content_analysis["media_plan"].get("native_text_pairing"),
             "facts_must_remain_in_text": True,
-            "text_in_image": content_analysis["media_plan"].get("text_in_image", "seedream_5_pro_direct_selected_text_and_layout") if need_hero else "none",
+            "text_in_image": content_analysis["media_plan"].get("text_in_image", "image2_direct_selected_text_and_layout") if need_hero else "none",
             "image_text_layout": content_analysis["media_plan"].get("image_text_layout", "reference_card_banner") if need_hero else None,
             "functional_text_source": content_analysis["media_plan"].get("functional_text_source") if need_hero else None,
             "media_role": content_analysis["media_plan"]["mode"],
@@ -371,7 +377,7 @@ def plan_card(
         "media_plan": content_analysis["media_plan"],
         "promotion_copy": content_analysis["promotion_copy"],
         "mobile_constraints": [
-            "正文优先单列", "指标最多两列自动换行", "默认使用 3–6 个节制的语义 Emoji，每个关键模块最多一个", "单个可见文字块不超过 220 字，卡片只保留摘要、3–5 个关键点和行动", "最多一个 primary + 一个 secondary CTA", "真实数据优先图表，流程/对比优先信息图；不编造数值",
+            "正文优先单列", "指标最多两列自动换行", "默认使用 3–6 个节制的语义 Emoji，每个关键模块最多一个", "可见文字模块优先落在原生高亮块，标题用横杠、内容项用项目符号", "单个可见文字块不超过 220 字，卡片只保留摘要、3–5 个关键点和行动", "最多一个 primary + 一个 secondary CTA", "真实数据优先图表，流程/对比优先信息图；不编造数值",
         ],
         "quality_contract": {
             "source_text_is_canonical": True,
@@ -379,7 +385,7 @@ def plan_card(
             "no_unapproved_rewrite": True,
             "dates_display": "几月几日",
             "emoji_aliases": "explicit aliases are preserved; semantic is the default and adds at most six structural markers",
-            "visible_text_policy": "summary + 3-5 key points + metrics/chart + CTA; full source stays in source.txt or a real source URL",
+            "visible_text_policy": "summary + 3-5 key points + metrics/chart + CTA; prose modules use native highlight surfaces with hierarchy markers; full source stays in source.txt or a real source URL",
             "no_redundant_prose": "exact/high-confidence duplicate only; uncertain similarity is surfaced for review",
         },
         "confidence": round(min(confidence, 0.95), 2),

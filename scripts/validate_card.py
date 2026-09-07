@@ -466,6 +466,11 @@ def validate(card: Any, *, surface: str = "raw", allow_placeholders: bool = Fals
                     errors.append(f"{path}.text_color invalid CardKit color: {value}")
             if key == "content" and isinstance(value, str) and is_placeholder(value):
                 stats["placeholders"] += 1
+            if key == "content" and isinstance(value, str) and tag == "markdown":
+                if re.search(r"(?:…|\.{3})\s*(?:\*\*)?\s*$", value):
+                    errors.append(f"{path}: unfinished excerpt; replace with a complete source-backed sentence")
+                if re.search(r"(?:^|\n)\s*(?:•\s*)?(?:按钮文案|制作备注|排版备注|生成备注)[：:]", value):
+                    errors.append(f"{path}: production notes must not appear in reader-facing content")
             visit(
                 value,
                 f"{path}.{key}",

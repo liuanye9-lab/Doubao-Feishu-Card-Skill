@@ -114,7 +114,7 @@ class DoubaoPipelineTests(unittest.TestCase):
         report = run_pipeline(text, Path(temp_dir), name=name, **kwargs)
         if report["readiness"]["image_ready"]:
             from finalize_card import record_review
-            report = record_review(report["editable_spec"], "Synthetic QA fixture; contract test only.")
+            report = record_review(report["editable_spec"], "Synthetic QA fixture; contract test only.", desktop=image_path, mobile=image_path)
         return report
 
     def test_default_run_is_seedream_direct(self) -> None:
@@ -296,9 +296,9 @@ class DoubaoPipelineTests(unittest.TestCase):
             if block.get("highlight") or block.get("type") == "highlight"
         ]
 
-        self.assertEqual(len(highlights), 3)
+        self.assertEqual(len(highlights), 4)
         next_step = next(block for block in spec["blocks"] if str(block.get("title") or "").endswith("下一步"))
-        self.assertFalse(next_step.get("highlight", False))
+        self.assertTrue(next_step.get("highlight", False))
 
     def test_generated_card_uses_cardkit_native_text_colors(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -456,7 +456,7 @@ class DoubaoPipelineTests(unittest.TestCase):
             },
         )
 
-        self.assertEqual([block["type"] for block in spec["blocks"]], ["text", "facts", "div", "section", "section", "section", "buttons"])
+        self.assertEqual([block["type"] for block in spec["blocks"]], ["highlight", "facts", "highlight", "section", "section", "section", "buttons"])
         self.assertEqual(
             [str(item["label"]).split(" ", 1)[-1] for item in spec["blocks"][1]["items"]],
             ["公司", "部门", "智能体方向", "当前状态"],
@@ -480,7 +480,7 @@ class DoubaoPipelineTests(unittest.TestCase):
         )
         self.assertEqual(
             [block["type"] for block in multi_method["blocks"]],
-            ["text", "facts", "div", "section", "section", "section", "buttons"],
+            ["highlight", "facts", "highlight", "section", "section", "section", "buttons"],
         )
         self.assertIn("2. 按识别结果去后面补充。", next(block for block in multi_method["blocks"] if str(block.get("title") or "").endswith("做法"))["body"])
 

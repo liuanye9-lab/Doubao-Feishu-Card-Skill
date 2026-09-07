@@ -144,6 +144,14 @@ MEDIA_EXTENSION_RE = re.compile(r"\.(?:gif|png|jpe?g|webp|avif)(?:[?#].*)?$", re
 HIGHLIGHT_SECTION_RE = re.compile(
     r"核心价值|一句话价值|为什么值得看|关键结论|结论|重点|亮点|结果|注意|提醒|风险|当前阶段|下一步|行动建议"
 )
+# Native text surfaces are intentionally more structured than the legacy
+# "one heading + one naked paragraph" output.  The image is still the visual
+# entrance; everything underneath it that carries prose should be an editable
+# native highlight surface with a small, deterministic hierarchy marker.
+TEXT_SURFACE_POLICY = "highlight-first"
+HIERARCHY_TITLE_PREFIX = "—"
+HIERARCHY_ITEM_PREFIX = "•"
+TEXT_LABEL_RE = re.compile(r"^\s*(?P<label>[^：:]{1,24})\s*[：:]\s*(?P<body>.+?)\s*$")
 FULL_DATE_ATOM = r"(?:20\d{2}[年./-])?(?:\d{1,2}月(?:\d{1,2}(?:日|号)?|初|上旬|中旬|下旬|底|中)|\d{1,2}[./-]\d{1,2})"
 FULL_DATE_RANGE_RE = re.compile(
     rf"(?P<start>{FULL_DATE_ATOM})\s*(?P<separator>[-—~～至到])\s*(?P<end>{FULL_DATE_ATOM})"
@@ -181,6 +189,37 @@ def normalize_emoji_aliases(value: Any) -> Any:
 
 def compact_text(value: Any) -> str:
     return re.sub(r"\s+", " ", str(value or "")).strip()
+
+
+def body_text(value: Any) -> str:
+    if isinstance(value, list):
+        return "\n".join(str(item) for item in value)
+    return str(value or "")
+
+
+def split_text_label(value: Any) -> Tuple[str, str]:
+    """Split a source-backed ``label：body`` line without rewriting facts."""
+    text = str(value or "").strip()
+    match = TEXT_LABEL_RE.match(text)
+    if not match:
+        return "", text
+    label = compact_text(match.group("label"))
+    body = str(match.group("body") or "").strip()
+    if not label or not body or URL_RE.match(body):
+        return "", text
+    return label, body
+
+
+def text_surface_tone(title: Any, *, role: str = "module") -> str:
+    """Choose a restrained native surface from source semantics."""
+    value = compact_text(title)
+    if re.search(r"风险|注意|提醒|截止|必须|警告|逾期", value):
+        return "warning"
+    if re.search(r"结果|价值|结论|完成|亮点|成果", value):
+        return "success"
+    if role == "lead":
+        return "info"
+    return "brand"
 
 
 def clean_url(url: str) -> str:
@@ -1090,6 +1129,90 @@ def _promote_case_showcase_fields(
     return retained, lead_pair
 
 
+def enforce_text_surface_policy(
+    blocks: List[Dict[str, Any]],
+    decisions: List[Dict[str, Any]],
+    *,
+    enabled: bool = True,
+) -> List[Dict[str, Any]]:
+    """Put visible prose into editable highlight surfaces.
+
+    The previous default only highlighted a few semantic headings.  That left
+    ordinary case sections and the lead paragraph as naked Markdown below the
+    hero image.  This pass keeps facts/timelines/charts/actions as their own
+    structured components, while converting prose-bearing text/sections into
+    the same native surface.  It changes presentation metadata only; the
+    original source text remains unchanged in ``source_text`` and
+    ``analysis.source_text``.
+    """
+    if not enabled:
+        return blocks
+
+    normalized: List[Dict[str, Any]] = []
+    converted = 0
+    for index, raw in enumerate(blocks):
+        if not isinstance(raw, dict):
+            normalized.append(raw)
+            continue
+        block = dict(raw)
+        kind = str(block.get("type", block.get("kind", ""))).lower()
+
+        if kind in {"text", "markdown", "div"}:
+            content = block.get("content", block.get("text", ""))
+            content_text = body_text(content).strip()
+            if not content_text:
+                continue
+            label, body = split_text_label(content_text)
+            promoted: Dict[str, Any] = {
+                "type": "highlight",
+                "content": body if label else content_text,
+                "source_text": block.get("source_text", content_text),
+                "tone": text_surface_tone(label, role="lead" if index == 0 else "module"),
+                "text_size": block.get("text_size", "normal_v2"),
+                "text_surface_role": "lead" if index == 0 else "module",
+                "title_prefix": HIERARCHY_TITLE_PREFIX,
+                "item_prefix": HIERARCHY_ITEM_PREFIX,
+            }
+            if label:
+                promoted["title"] = label
+            if block.get("element_id") or block.get("id"):
+                promoted["element_id"] = block.get("element_id", block.get("id"))
+            normalized.append(promoted)
+            converted += 1
+            continue
+
+        if kind == "section":
+            body = body_text(block.get("body", block.get("content", ""))).strip()
+            title = compact_text(block.get("title"))
+            if body:
+                block["highlight"] = True
+                block.setdefault("tone", text_surface_tone(title))
+                block.setdefault("text_surface_role", "module")
+                block.setdefault("title_prefix", HIERARCHY_TITLE_PREFIX)
+                block.setdefault("item_prefix", HIERARCHY_ITEM_PREFIX)
+                normalized.append(block)
+                converted += 1
+                continue
+
+        if kind == "highlight":
+            block.setdefault("title_prefix", HIERARCHY_TITLE_PREFIX)
+            block.setdefault("item_prefix", HIERARCHY_ITEM_PREFIX)
+            normalized.append(block)
+            continue
+
+        normalized.append(block)
+
+    if converted:
+        decisions.append({
+            "decision": "applied",
+            "component": "highlight_text_surfaces",
+            "reason": "摘要与文字模块统一使用原生高亮块；标题以横杠分层，正文项以项目符号分组",
+            "policy": TEXT_SURFACE_POLICY,
+            "converted_blocks": converted,
+        })
+    return normalized
+
+
 def apply_design_plan(
     blocks: List[Dict[str, Any]], lines: Sequence[str], design: Dict[str, Any], *, emoji_mode: str = "semantic"
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
@@ -1141,9 +1264,8 @@ def apply_design_plan(
         normalized.append(block)
     result = normalized
 
-    # Use a colored native surface for a small set of source-backed semantic
-    # sections. This improves scan hierarchy without turning every paragraph
-    # into a colored box. The original title/body remain unchanged.
+    # Seed tones for source-backed semantic sections before the global
+    # highlight-first pass.  The original title/body remain unchanged.
     highlight_count = sum(
         1
         for block in result
@@ -1172,6 +1294,15 @@ def apply_design_plan(
                 "component": "highlight",
                 "reason": f"高亮“{title}”区块以建立首屏层级；正文仍保持原文",
             })
+
+    # The current default is intentionally stronger than the historical
+    # selective-highlight rule: every visible prose module below the hero
+    # gets an editable surface, while metrics/timelines/charts/actions keep
+    # their specialized structured components.
+    # This is a global readability contract, not an optional decoration
+    # toggle: every visible prose module must land on an editable native
+    # surface.  Metrics, timelines, charts and actions remain specialized.
+    result = enforce_text_surface_policy(result, decisions, enabled=True)
 
     table_rows: List[List[str]] = []
     table_sources: set[str] = set()
@@ -1266,21 +1397,8 @@ def apply_design_plan(
 
 def _compact_display_text(value: Any, *, max_chars: int = 120, max_lines: int = 2) -> str:
     """Select source-backed clauses for the visible card without paraphrasing."""
-    raw_lines = [re.sub(r"\s+", " ", line).strip() for line in str(value or "").splitlines() if line.strip()]
-    selected: List[str] = []
-    for line in raw_lines:
-        clean = line
-        if len(clean) > max_chars:
-            sentence = next((part.strip() for part in re.split(r"(?<=[。！？；;])", clean) if part.strip() and len(part.strip()) <= max_chars), "")
-            if sentence:
-                clean = sentence
-            else:
-                cut = max(clean.rfind(mark, 0, max_chars + 1) for mark in ("，", "、", " "))
-                clean = (clean[:cut] if cut >= max_chars // 2 else clean[:max_chars]).rstrip() + "…"
-        selected.append(clean)
-        if len(selected) >= max_lines:
-            break
-    return "\n".join(selected)
+    from text_quality import concise
+    return concise(value, max_chars, max_lines)
 
 
 def _visible_block_text_chars(blocks: Sequence[Dict[str, Any]]) -> int:
@@ -1330,7 +1448,10 @@ def compact_visible_blocks(
         else:
             candidates.append(block)
 
-    quotas = {"text": 1, "div": 1, "highlight": 2, "section": 3, "quote": 1, "timeline": 1, "facts": 1, "metrics": 1, "chart": 1, "buttons": 1}
+    # Prose is promoted to native highlight surfaces before compaction.  Keep
+    # enough surfaces for a short case story (lead + background + method +
+    # result + value), while still applying the visible-text budget below.
+    quotas = {"text": 1, "div": 1, "highlight": 5, "section": 3, "quote": 1, "timeline": 1, "facts": 1, "metrics": 1, "chart": 1, "buttons": 1}
     used = {key: 0 for key in quotas}
     compacted: List[Dict[str, Any]] = []
     omitted: List[Dict[str, Any]] = []
@@ -1832,6 +1953,12 @@ def build_auto_spec(
         "summary_structure": summary_extraction,
         "suppress_generated_labels": True,
         "auto_emphasis": True,
+        "text_surface_policy": TEXT_SURFACE_POLICY,
+        "hierarchy_markers": {
+            "title_prefix": HIERARCHY_TITLE_PREFIX,
+            "item_prefix": HIERARCHY_ITEM_PREFIX,
+            "separator": "／",
+        },
         "timeline_focus": timeline_focus,
         "timeline_first": timeline_focus,
         "emoji_mode": emoji_mode,

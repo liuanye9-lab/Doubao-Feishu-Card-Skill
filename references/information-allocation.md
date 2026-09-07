@@ -6,10 +6,10 @@
 
 | 承载层 | 适合承载 | 不适合承载 | 自动验收 |
 | --- | --- | --- | --- |
-| Seedream 5.0 Pro 图片 | 顺序、阶段、路径、输入→结果、前后对比、2–4 个指标、少量主题标签、短 quote 和主题关系 | 问候语、长段落、规则/例外、完整说明、精确长名单、仅供参考的 URL、按钮/CTA 文字和伪交互 | 图片里的文字来自 `information_allocation.image.include`；一次 Seedream 5.0 Pro 直接生成关系、文字和排版；无底图、叠字和后处理；不绘制按钮 |
+| Image2 图片 | 顺序、阶段、路径、输入→结果、前后对比、2–4 个指标、少量主题标签、短 quote 和主题关系 | 问候语、长段落、规则/例外、完整说明、精确长名单、仅供参考的 URL、按钮/CTA 文字和伪交互 | 图片里的文字来自 `information_allocation.image.include`；一次 Image2 直接生成关系、文字和排版；无底图、叠字和后处理；不绘制按钮 |
 | HTML 信息图 → PNG | 文字密集的结构化关系、精确中文、真实图表和多模块信息 | 轻量主题视觉、纯场景图、需要动态/交互的内容、按钮/CTA 文字和伪交互 | 仅由 `render_strategy=html_infographic_to_png` 触发；HTML 自包含、固定视口、无脚本/外链；PNG、源文件和提示词哈希一致；不绘制按钮 |
 | 原生 Feishu Card | 一句摘要、3–5 个关键点、最多 4 个指标、来源图表、日期/姓名和真实行动 | 长说明、完整规则、重复图片全部文字 | `native_card.use=true`；可见文字不超过 900 字、单块不超过 220 字；完整原文锁定在 `source.txt`/`analysis.source_text` |
-| 原生高亮块 | 1–3 个来源明确的核心价值、结论、结果、风险、注意或下一步 | 每段正文、长文、没有来源的口号 | `highlight` 编译为 `column_set` + `column.background_style`；正文仍可编辑，不依赖 HTML/CSS |
+| 原生高亮块 | 摘要、背景/痛点、做法、结果/价值等可见文字模块；标题用 `—`、正文项用 `•` | 完整长文、没有来源的口号、把每句话拆成独立色块 | 默认 `highlight-first`，编译为 `column_set` + `column.background_style`；正文仍可编辑，不依赖 HTML/CSS，通常最多 5 个可见文字面 |
 | 原生按钮 | 真实 URL + 明确下一步，或 application Bot 已实现的 callback/表单 | 无目标的“报名/提交/查看”、被动参考链接、装饰性按钮、图片里的假按钮 | 最多 1 个 `primary` + 1 个 `secondary`；点击行为只能在 `body.elements` 的 `behaviors` 中，图片不承载按钮 |
 
 ## 默认视觉策略
@@ -25,9 +25,9 @@
 
 普通 `1. 2. 3.` 仍是清单，不伪造成时间轴；但可使用主题信息视觉建立快速认知。只有来源中存在日期、阶段或明确步骤关系时，才升级为流程/时间轴信息图。默认模型优先；达到文字密集结构化阈值时才选择 HTML→PNG。`needs_image` 是必须继续完成所选视觉路径的中间态，不是可交付成品。
 
-## Seedream 5.0 Pro 的文字预算
+## Image2 的文字预算
 
-`image.include` 是给 Seedream 5.0 Pro 的逐项白名单，不是完整源文案的替代品：
+`image.include` 是给 Image2 的逐项白名单，不是完整源文案的替代品：
 
 - 1 个短标题；
 - 最多 4 个阶段节点或指标；
@@ -35,13 +35,13 @@
 - 不生成 CTA 视觉索引、按钮标签或按钮形控件；
 - 每一项都必须有 `role`、`text`、`source_text`、`source_lines` 和 `why`。
 
-Seedream 5.0 Pro 或 HTML 路径收到完整源文案只是为了事实核对和理解上下文；所选路径必须明确“只渲染白名单”。原生 Card 只保留摘要、关键点、图表和真实行动，其他完整文字留在 `source.txt` 或真实来源链接。如果白名单文字放不下，减少装饰、缩短白名单或重新生成/导出整图，不能把长文压成微型字，也不能在生成后叠字。
+Image2 或 HTML 路径收到完整源文案只是为了事实核对和理解上下文；所选路径必须明确“只渲染白名单”。原生 Card 只保留摘要、关键点、图表和真实行动，其他完整文字留在 `source.txt` 或真实来源链接。如果白名单文字放不下，减少装饰、缩短白名单或重新生成/导出整图，不能把长文压成微型字，也不能在生成后叠字。
 
 ## 例：AI 大赛开营文案
 
 建议自动分工如下：
 
-| 内容 | Seedream 5.0 Pro | 原生 Card | 按钮 |
+| 内容 | Image2 | 原生 Card | 按钮 |
 | --- | --- | --- | --- |
 | “Hello 象上汇的朋友们大家好呀” | 不放 | 通常从可见卡中省略，原文仍在 source | 不生成 |
 | “AI 先锋大赛开营啦” | 短标题 | 保留为标题/摘要和显式喇叭别名 | 没有目标就不生成 |
@@ -74,11 +74,11 @@ Seedream 5.0 Pro 或 HTML 路径收到完整源文案只是为了事实核对和
     "use": true,
     "job": "让读者先看懂日期、阶段、动作和下一节点的顺序",
     "include": [{"role": "stage", "text": "9月15日 提交初赛参赛作品"}],
-    "text_policy": "seedream_5_pro_direct_selected_text_and_layout"
+    "text_policy": "image2_direct_selected_text_and_layout"
   },
   "native_card": {"use": true, "preserve": ["一句摘要、3–5 个关键点、来源图表和真实行动"]},
   "buttons": {"use": false, "pending": [], "budget": "最多 1 个 primary + 1 个 secondary"}
 }
 ```
 
-只有用户明确要求无图时，`decision=native_only` 才允许不生成 `hero`。其他情况 `image.use=true`，默认进入 Seedream 5.0 Pro 一次性整图生成；文字密集结构化内容进入 HTML→PNG；两条路径都必须通过 `hero-generation.json` 溯源门禁，同时输出 `.visual-spec.json` 作为可编辑视觉源。
+只有用户明确要求无图时，`decision=native_only` 才允许不生成 `hero`。其他情况 `image.use=true`，默认进入 Image2 一次性整图生成；文字密集结构化内容进入 HTML→PNG；两条路径都必须通过 `hero-generation.json` 溯源门禁，同时输出 `.visual-spec.json` 作为可编辑视觉源。

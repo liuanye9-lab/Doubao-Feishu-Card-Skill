@@ -568,6 +568,7 @@ def push_cardkit(
     card_value: str,
     *,
     name: Optional[str] = None,
+    template_id: Optional[str] = None,
     confirm: bool = False,
     dry_run: bool = False,
     record: Optional[str] = None,
@@ -623,9 +624,20 @@ def push_cardkit(
         "--file", _relative_for_cli(path),
         "--name", card_name,
     ]
+    updating = bool(template_id)
+    if updating:
+        before_code, before, before_detail = _run_byted_cli(
+            ["feishu", "cardkit", "template", "get", "--template-id", template_id])
+        if not _byted_ok(before_code, before):
+            return {"ok": False, "status": "update_target_unavailable", "template_id": template_id}
+        version = _value_from(before, ("data", "template", "draft_version_id"))
+        if not version:
+            return {"ok": False, "status": "update_version_missing", "template_id": template_id}
+        import_args = ["feishu", "cardkit", "template", "update", "--template-id", template_id,
+                       "--card-file", _relative_for_cli(path), "--saved-version-id", str(version), "--name", card_name]
     code, payload, detail = _run_byted_cli(import_args, dry_run=dry_run)
     import_ok = _byted_ok(code, payload)
-    template_id = _template_id_from(payload)
+    template_id = template_id if updating else _template_id_from(payload)
     result: Dict[str, Any] = {
         "ok": import_ok,
         "status": "preview_only" if dry_run and import_ok else "failed",
@@ -668,9 +680,17 @@ def push_cardkit(
     list_ok = _byted_ok(list_code, list_payload)
     list_match = list_ok and _template_list_matches(list_payload, template_id, card_name)
     verified = get_ok and list_match
+    remote_card = _value_from(get_payload, ("data", "card_json"))
+    content_match = isinstance(remote_card, dict) and remote_card.get("body") == card.get("body")
+    if updating:
+        verified = verified and content_match
     result.update({
         "ok": verified,
         "status": "cardkit_imported" if verified else "cardkit_import_unverified",
+        "operation": "update" if updating else "create",
+        "editor_open_verified": False,
+        "editor_edit_save_verified": False,
+        "content_readback_match": content_match,
         "evidence": {
             "template_get_ok": get_ok,
             "template_list_ok": list_ok,
@@ -967,6 +987,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     direct_cardkit = sub.add_parser("push-cardkit")
     direct_cardkit.add_argument("--card", required=True)
     direct_cardkit.add_argument("--name")
+    direct_cardkit.add_argument("--template-id", help="Update existing draft; omit to create")
     direct_cardkit.add_argument("--confirm", action="store_true")
     direct_cardkit.add_argument("--dry-run", action="store_true")
     direct_cardkit.add_argument("--record")
@@ -1010,7 +1031,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         elif args.command == "create-cardkit":
             result = create_cardkit(args.card, identity=args.identity, confirm=args.confirm, dry_run=args.dry_run, record=args.record)
         elif args.command == "push-cardkit":
-            result = push_cardkit(args.card, name=args.name, confirm=args.confirm, dry_run=args.dry_run, record=args.record)
+            result = push_cardkit(args.card, name=args.name, template_id=args.template_id, confirm=args.confirm, dry_run=args.dry_run, record=args.record)
         elif args.command == "send-card":
             result = send_card(
                 args.card,
