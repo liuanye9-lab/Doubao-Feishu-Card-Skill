@@ -33,11 +33,8 @@ def _bind_actions(spec):
     """Bind only an unambiguous source heading interval; never guess from similar labels."""
     blocks = spec.get("blocks") or []
     lines = str((spec.get("analysis") or {}).get("source_text") or "").splitlines()
-    # Highlighted sections are still real source modules.  They must remain
-    # eligible owners for their own verified URLs/actions; the old exclusion
-    # made the new highlight-first text policy detach buttons to the footer.
     sections = {index: block for index, block in enumerate(blocks)
-                if isinstance(block, dict) and block.get("type") == "section"}
+                if isinstance(block, dict) and block.get("type") == "section" and not block.get("highlight") and not block.get("highlighted")}
     heading_keys = {}
     for index, block in sections.items():
         key = _key(block.get("title"))

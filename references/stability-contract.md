@@ -12,7 +12,7 @@ source_text
   → 图片 / 原生 Card / 原生按钮 / 原生高亮块分工
   → raw .card + .cardkit.card 同源编译
   → 结构、源文案、动作、图片和 CardKit 门禁
-  → 需要时 Image2 整图 + 人工视觉复核
+  → 自动选择 Seedream 5.0 Pro 静态图或 Seedance 2.5 直出 GIF + 人工视觉复核
   → 上传真实 img_key 后重新编译
   → 用户明确要求时：直接 CardKit 导入 → template get/list 回读
   → 如明确要求 Bot：追加本人预览并回读 message_id
@@ -35,9 +35,9 @@ source_text
 - raw `.card` 和 `.cardkit.card` 的 `dsl` 来自同一份最终 spec；修改必须改 `.spec.json` 后重新编译。
 - 案例的 `quote` 是有来源时的增强位：文案提供“为什么值得看/可复用经验/核心价值”等内容就提升为原生 quote；没有来源时不编造，也不因此把完整案例错误降级成普通 custom 卡。
 - 按钮只能是原生 Card 2.0 `button` + `behaviors`，且必须有真实 URL 或已实现的 application Bot callback/form。
-- 图片永远是非交互信息层：Image2 提示词明确禁止按钮、CTA 胶囊、箭头动作控件、假链接和按钮形状。图片中出现类似按钮不算通过，必须重新生图。
-- 没有真实 `img_key` 时状态只能是 `needs_image`；显式 `--no-image` 才能走可发送的原生 Card fallback。
-- 高亮块是高层 `highlight` DSL。默认采用 `highlight-first`：摘要、背景/痛点、做法、结果/价值、注意和下一步等可见文字模块编译为原生 `column_set` + `column.background_style`，通常不超过 5 个可见文字面；指标、时间轴、图表和按钮仍使用专用原生组件，完整长文保留在 `source.txt`。
+- 图片和 GIF 永远是非交互信息层：Seedream/Seedance 提示词明确禁止按钮、CTA 胶囊、箭头动作控件、假链接和按钮形状。媒体中出现类似按钮不算通过，必须重新生成。
+- 静态模式没有真实 `img_key` 时状态为 `needs_image`；动态模式为 `needs_gif`。显式 `--no-image` 才能走可发送的原生 Card fallback。
+- 高亮块是高层 `highlight` DSL，最多挑 1–3 个来源明确的重点/结论/价值/风险区块，编译为原生 `column_set` + `column.background_style`；普通段落不全部套色。
 - 远程动作默认不执行。用户明确要求交付时，一次预检、一次确认，按直接 CardKit 导入 → template get/list 回读连续执行；Bot 预览只有在用户明确要求时追加。
 
 ## 状态含义
@@ -45,7 +45,8 @@ source_text
 | 状态 | 含义 | 下一步 |
 | --- | --- | --- |
 | `ready` | 本地结构、源锁定、动作和 wrapper 门禁通过 | 可本地预览；远程交付仍需明确授权 |
-| `needs_image` | 需要 Image2 图片或真实 `img_key`，其余结构已通过 | 生成/复核图片，上传后用真实 key 重新编译 |
+| `needs_image` | 需要 Seedream 5.0 Pro 图片或真实 `img_key`，其余结构已通过 | 生成/复核图片，上传后用真实 key 重新编译 |
+| `needs_gif` | 需要 Seedance 2.5 直出 GIF 或真实 `img_key`，其余结构已通过 | 生成/复核 GIF，登记 provenance，上传后用真实 key 重新编译 |
 | `blocked` | 结构、占位 URL、场景契约或 CardKit 同源门未通过 | 只修改 source/spec，重新运行固定入口 |
 | `cardkit_import_pending` | CardKit 尚未完成，或 CLI/网页会话被阻断 | 继续 Byte CLI 或网页导入并回读 |
 | `cardkit_imported_bot_preview_pending` | CardKit 已验证，但用户明确要求的 Bot 预览未完成 | 继续 Bot 预览并回读 `message_id` |

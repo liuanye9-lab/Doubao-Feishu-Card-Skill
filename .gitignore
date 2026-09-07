@@ -5,6 +5,5 @@ __pycache__/
 outputs/*
 !outputs/.gitkeep
 dist/
-qa-runs/
 __pycache__/
 tests/__pycache__/

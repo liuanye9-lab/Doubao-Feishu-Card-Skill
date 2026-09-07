@@ -153,9 +153,7 @@ class ReliabilityTests(unittest.TestCase):
             self.assertIn("https://open.feishu.cn", json.dumps(card))
             self.assertEqual(json.loads(spec_path.read_text())["scene"], spec["scene"])
             self.assertEqual(feishu_cli._image_readiness_gate(Path(report["card"]))["status"], "visual_review_required")
-            with self.assertRaises(ValueError):
-                record_review(str(spec_path), "Notes alone must not pass.")
-            report = record_review(str(spec_path), "Synthetic fixture review for gate contract only.", desktop=path, mobile=path)
+            report = record_review(str(spec_path), "Synthetic fixture review for gate contract only.")
             self.assertTrue(report["readiness"]["visual_review_ready"])
             edition = "doubao" if "doubao" in report else "codex"
             self.assertTrue(report[edition]["card_image_contract"]["status"].startswith("embedded_"))

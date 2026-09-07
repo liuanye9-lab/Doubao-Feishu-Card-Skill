@@ -74,9 +74,9 @@ class LayoutCoordinationTests(unittest.TestCase):
         for group in groups:
             column = group["columns"][0]
             self.assertEqual([node["tag"] for node in column["elements"]], ["markdown", "markdown", "button"])
-            self.assertEqual(column["padding"], "10px 12px")
+            self.assertEqual(column["padding"], "0px")
             self.assertEqual(column["vertical_spacing"], "4px")
-            self.assertIn("background_style", column)
+            self.assertNotIn("background_style", column)
 
     def test_full_image_fit_and_explicit_crop_are_preserved(self):
         for requested, expected in [(None, "fit_horizontal"), ("crop_top", "crop_top")]:

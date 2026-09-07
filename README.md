@@ -16,12 +16,6 @@
 
 ## 安装
 
-### 文字与交付可靠性更新 · 2026-09-07
-
-正文统一进入可编辑高亮块，保留步骤编号；完整句压缩替代省略号截断，长日期和说明不再挤入大字指标格，制作备注不进入正文。视觉验收须记录桌面/手机截图与文件哈希；本地预览、远程导入和编辑保存分别记录。已有 CardKit 草稿支持 `push-cardkit --template-id` 按版本更新，失败不自动新建。
-
-保留豆包内置 Seedream/Seedance 与 GIF 校验，不用 Codex 模型配置覆盖。详见 [文字与验收契约](references/text-and-review-contract.md)。
-
 将发布页中的 `doubao-feishu-card.zip` 导入豆包工作，或把仓库目录作为 Skill 安装。入口文件是 [`SKILL.md`](./SKILL.md)。
 
 运行要求：Python 3.9+；媒体检验使用 Pillow；可选 `tsx` 用于结构 Schema 校验。仓库不包含任何飞书凭据或模型密钥。

@@ -41,9 +41,7 @@ python3 scripts/stable_card.py --resume outputs/my-card/my-card.spec.json \
 
 ```bash
 python3 scripts/finalize_card.py --spec outputs/my-card/my-card.spec.json \
-  --record-review --desktop-screenshot outputs/my-card/desktop.png \
-  --mobile-screenshot outputs/my-card/mobile.png --review-surface local_preview \
-  --notes '填写实际检查结果，不写尚未做过的验收'
+  --record-review --notes '填写实际检查结果，不写尚未做过的验收'
 ```
 
 验收记录绑定当前 Card 和媒体文件哈希；文件改变后旧验收自动失效。

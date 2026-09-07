@@ -49,7 +49,7 @@
 - `collapsible_panel.header` 必须带统一箭头：`standard_icon` + `down_outlined` + `grey`、`icon_position: "right"`、`icon_expanded_angle: -180`。
 - 内容分栏默认 `weighted` + `weight: 1`；窄屏阅读顺序和文本长度不确定时使用 `flex_mode: "stretch"`。
 - `highlight` 只允许作为高层布局意图；编译结果必须是可编辑的 `column_set` → `column`，色面使用受限的 `grey-50`、`grey-100`、`blue-50`、`green-50`、`yellow-50` 或 `red-50`，不得注入 HTML/CSS。
-- 每张卡默认采用 `highlight-first`；`markdown`/`div`/`section` 的可见文字模块优先编译为高亮块，通常最多 5 个可见文字面，标题用 `—`、正文项用 `•`。长时间线和完整事实留在 `source.txt` 或真实来源链接，避免用色面或折叠区代替信息结构。
+- 每张卡默认最多 1–3 个高亮块；`markdown`/`div`/`section` 只保留摘要与关键点，长时间线和完整事实留在 `source.txt` 或真实来源链接，避免用色面或折叠区代替信息结构。
 - 自定义图标的 `img` 必须直接放在有边框、非默认背景色的图标底座内；大幅封面图不套图标底座。
 
 ## 行为路由

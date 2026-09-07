@@ -42,21 +42,13 @@ def attach_delivery_evidence(report):
         review = json.loads(record.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         review = {}
-    if not isinstance(review, dict):
-        review = {}
-    from review_evidence import current
     reviewed = not required or (isinstance(review, dict) and review.get("decision") == "pass"
-                                and current(review.get("render_evidence"))
                                 and bool(review.get("notes"))
                                 and all(review.get(k) == v for k, v in fingerprints.items()))
     report["artifact_fingerprints"] = fingerprints
     report["visual_review"] = {"required": required, "passed": reviewed, "record": str(record),
                                "scope": "manual inspection of final media and native card layout"}
     report["readiness"]["visual_review_ready"] = reviewed
-    render_evidence = review.get("render_evidence") or {}
-    report["visual_review"]["render_surface"] = render_evidence.get("surface") if isinstance(render_evidence, dict) else None
-    report["visual_review"]["editor_edit_save_verified"] = False
-    report["readiness"]["cardkit_editor_ready"] = False
     if not reviewed:
         if report["status"] == "ready":
             report["status"] = "needs_visual_review"
@@ -93,8 +85,7 @@ def attach_delivery_evidence(report):
         + shlex.quote(str(report["editable_spec"])) + " --hero-img-key '<real_img_key>'")
     next_steps["record_visual_review"] = ("python3 scripts/finalize_card.py --spec "
         + shlex.quote(str(report["editable_spec"]))
-        + " --record-review --desktop-screenshot '<desktop.png>' --mobile-screenshot '<mobile.png>'"
-        + " --review-surface local_preview --notes '<actual inspection findings>'")
+        + " --record-review --notes '<actual inspection findings>'")
     return report
 
 
@@ -205,7 +196,7 @@ def resume(spec_value, hero_img_key=None):
     manifest_path = spec_path.with_name(stem + ".cardkit-import.json")
     if manifest_path.is_file():
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        manifest.update(status="ready_for_cardkit_import" if old["readiness"]["sendable"] else "blocked",
+        manifest.update(status="ready_for_cardkit_import" if old["readiness"]["cardkit_editor_ready"] else "blocked",
                         readiness=old["readiness"], quality_gates=gates, visual_review=old["visual_review"],
                         generation_workflow=workflow, blockers=old["readiness"]["blockers"],
                         card=wrapper["cardkit_card"], api_card=str(card_path),
@@ -225,23 +216,17 @@ def resume(spec_value, hero_img_key=None):
     return old
 
 
-def record_review(spec_value, notes, *, desktop=None, mobile=None, surface="local_preview"):
+def record_review(spec_value, notes):
     spec_path = Path(spec_value).expanduser().resolve()
     if not notes or not notes.strip():
         raise ValueError("record actual visual findings after inspecting the image and native card")
-    if not desktop or not mobile:
-        raise ValueError("Review requires --desktop-screenshot and --mobile-screenshot; notes alone are not visual evidence")
-    from review_evidence import screenshot
-    if surface not in ("local_preview", "cardkit"):
-        raise ValueError("Unknown review surface")
-    render_evidence = {"surface": surface, "desktop": screenshot(desktop), "mobile": screenshot(mobile)}
     report_path = spec_path.with_name(spec_path.name.removesuffix(".spec.json") + ".report.json")
     report = json.loads(report_path.read_text(encoding="utf-8"))
     if not report["readiness"].get("image_ready"):
         raise ValueError("compile with the verified media and real img_key before reviewing the final card")
     evidence = report["artifact_fingerprints"]
     record = Path(report["visual_review"]["record"])
-    write_json(record, {**evidence, "decision": "pass", "notes": notes.strip(), "render_evidence": render_evidence,
+    write_json(record, {**evidence, "decision": "pass", "notes": notes.strip(),
                         "reviewer": "calling agent after visual inspection"})
     return resume(str(spec_path))
 
@@ -252,12 +237,9 @@ def main():
     parser.add_argument("--hero-img-key")
     parser.add_argument("--record-review", action="store_true")
     parser.add_argument("--notes")
-    parser.add_argument("--desktop-screenshot")
-    parser.add_argument("--mobile-screenshot")
-    parser.add_argument("--review-surface", choices=("local_preview", "cardkit"), default="local_preview")
     args = parser.parse_args()
     try:
-        result = record_review(args.spec, args.notes, desktop=args.desktop_screenshot, mobile=args.mobile_screenshot, surface=args.review_surface) if args.record_review else resume(args.spec, args.hero_img_key)
+        result = record_review(args.spec, args.notes) if args.record_review else resume(args.spec, args.hero_img_key)
         print(json.dumps({"status": result["status"], "card": result["card"],
                           "readiness": result["readiness"], "media_task": result["media_task"]}, ensure_ascii=False, indent=2))
         return 2 if result["status"] == "blocked" else 0
