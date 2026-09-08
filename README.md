@@ -14,6 +14,10 @@
 - CardKit 二次编辑兼容门会清理 `brand_*` 非法颜色引用。
 - Bot 预览可选，不是 CardKit 交付前置。
 
+### Badcase 复盘：信息承载型图片（2026-09-08）
+
+本次附图是渲染证据：长通知仍落成连续原生文本，首图没有承担活动定位、分组和阶段关系；此前的自由生图还可能出现抽象科技图或错误高校身份。现在视觉规格必须记录 `information_purpose`、`visual_job`、`source_spans`、`content_nodes`、`brand_asset_policy`、`mobile_readability` 和 `recommended_panels`。长文、多阶段或多分组内容默认偏向 `seedream_5_pro_direct_full_card`，横幅只在轻量内容或显式选择时使用；图片必须完成明确的信息任务，不能是装饰背景、全文截图或抽象概念图。质量门 `image_information_contract` 会阻断没有信息任务的图片。真实来源锁定的图片经 manifest 验证后，报告会清除旧的 AI provenance，并标记为 `source_locked_information_graphic`。完整复盘见 [`references/badcase-2026-09-08-information-carrier.md`](references/badcase-2026-09-08-information-carrier.md)。
+
 ## 安装
 
 将发布页中的 `doubao-feishu-card.zip` 导入豆包工作，或把仓库目录作为 Skill 安装。入口文件是 [`SKILL.md`](./SKILL.md)。

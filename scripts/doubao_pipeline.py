@@ -996,6 +996,7 @@ def run_pipeline(
         requested_scene=requested_scene,
         requested_preset=requested_preset,
         design_plan=effective_plan,
+        brand_context=brand_context,
         emoji_mode=emoji_mode,
         link_mode=link_mode,
     )
@@ -1951,6 +1952,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 requested_scene=args.scene,
                 requested_preset=args.preset,
                 design_plan=_deep_merge(DEFAULT_DESIGN_PLAN, design_plan),
+                brand_context=brand_context,
                 emoji_mode=args.emoji_mode,
                 link_mode=args.link_mode,
             )

@@ -24,6 +24,17 @@ NON_METRIC_LABEL_RE = re.compile(
 FLOW_LABEL_RE = re.compile(
     r"^\s*(?:#{1,4}\s*)?(?P<label>背景(?:/痛点)?|痛点|问题|做法|方法|方案|结果(?:/价值)?|成果|价值|前后对比|下一步|阶段|步骤)\s*[：:]\s*(?P<body>.+)$"
 )
+BRAND_ASSET_RE = re.compile(
+    r"校徽|徽标|logo|标志|品牌资产|品牌规范|校名|学校|大学|学院|附中|中学|官方",
+    re.I,
+)
+INFORMATION_IMAGE_REQUEST_RE = re.compile(
+    r"(?:文字.{0,10}(?:图片|图像|视觉)|信息.{0,10}(?:可视化|承载)|"
+    r"(?:图片|图像).{0,10}(?:承载|表达).{0,10}(?:文字|信息)|图文|信息图)",
+    re.I,
+)
+URL_RE = re.compile(r"(?:https?://|lark://|feishu://)\S+", re.I)
+DATE_LIKE_RE = re.compile(r"(?:20\d{2}[年./-]\d{1,2}|\d{1,2}月\d{1,2}|\d{1,2}[./-]\d{1,2})")
 
 
 def _number(value: str) -> Optional[float]:
@@ -200,12 +211,146 @@ def extract_relationship_nodes(source: str) -> List[Dict[str, Any]]:
     return nodes
 
 
-def build_visual_spec(source: str, *, title: str = "", no_image: bool = False) -> Dict[str, Any]:
+def _heading_like(line: str) -> str:
+    value = re.sub(r"^\s*#{1,6}\s*", "", str(line or "")).strip()
+    if not value or len(value) > 28:
+        return ""
+    if re.search(r"[。！？；;，,：:]", value):
+        return ""
+    if re.match(r"^(?:[-*•]|\d+[.)、])\s*", value):
+        return ""
+    if re.search(r"\d", value):
+        return ""
+    return value
+
+
+def _information_clause(value: str, limit: int = 72) -> str:
+    text = re.sub(r"^\s*(?:[-*•]|\d+[.)、])\s*", "", str(value or "")).strip()
+    return _compact_clause(text, limit=limit)
+
+
+def extract_information_spans(source: str, title: str = "") -> List[Dict[str, Any]]:
+    """Extract source-backed spans that give an image an actual information job.
+
+    This is deliberately conservative: the returned display text may be
+    compacted for a bitmap, but every span keeps its original source line(s).
+    It is the missing contract between a long native Card and a useful visual.
+    """
+    lines = [line.strip() for line in str(source or "").splitlines()]
+    spans: List[Dict[str, Any]] = []
+    seen: set[str] = set()
+
+    def add(role: str, text: str, source_text: str, source_line: int, source_lines: Optional[List[int]] = None) -> None:
+        display = re.sub(r"\s+", " ", str(text or "")).strip()
+        if not display or display in seen:
+            return
+        seen.add(display)
+        spans.append({
+            "role": role,
+            "text": display,
+            "source_text": str(source_text or "").strip(),
+            "source_line": source_line,
+            "source_lines": list(source_lines or [source_line]),
+        })
+
+    clean_title = re.sub(r"^\s*#{1,6}\s*", "", str(title or "")).strip()
+    if clean_title:
+        add("title", clean_title, clean_title, 1)
+
+    for index, raw_line in enumerate(lines, start=1):
+        heading = _heading_like(raw_line)
+        if heading == clean_title:
+            continue
+        if heading and heading != clean_title:
+            following_index = next(
+                (cursor for cursor in range(index, len(lines)) if lines[cursor].strip()),
+                None,
+            )
+            if following_index is not None:
+                following = lines[following_index].strip()
+                if not _heading_like(following) and not DATE_LIKE_RE.search(following):
+                    clause = _information_clause(following, 58)
+                    if clause:
+                        add("section", f"{heading}：{clause}", raw_line + "\n" + following, index, [index, following_index + 1])
+                        continue
+            add("section", heading, raw_line, index)
+            continue
+        if re.match(r"^\s*(?:[-*•]|\d+[.)、])\s+", raw_line):
+            clause = _information_clause(raw_line, 64)
+            if clause:
+                add("point", clause, raw_line, index)
+        elif not DATE_LIKE_RE.search(raw_line) and len(raw_line) >= 12 and len(spans) < 8:
+            clause = _information_clause(raw_line, 72)
+            if clause and not URL_RE.search(clause):
+                add("claim", clause, raw_line, index)
+        if len(spans) >= 8:
+            break
+
+    return spans[:8]
+
+
+def _brand_asset_policy(source: str, brand_context: str = "") -> Dict[str, Any]:
+    context = "\n".join(part for part in (str(source or ""), str(brand_context or "")) if part.strip())
+    exact_required = bool(BRAND_ASSET_RE.search(context))
+    provided_assets = []
+    for line in str(brand_context or "").splitlines():
+        if re.search(r"(?:asset|素材|logo|校徽|徽标|图片)\s*[:：]", line, re.I):
+            provided_assets.append(line.strip())
+    return {
+        "exact_asset_required": exact_required,
+        "provided_assets": provided_assets[:8],
+        "use_original_asset_when_available": True,
+        "do_not_redraw_logo": True,
+        "unverified_brand_fallback": "未提供原始品牌资产时不生成相似校徽、校名或官方标志；保留为来源文字并进入人工复核",
+    }
+
+
+def _information_purpose(value: str, chart: Optional[Dict[str, Any]], nodes: Sequence[Dict[str, Any]], spans: Sequence[Dict[str, Any]], no_image: bool) -> str:
+    if no_image:
+        return "不使用图片；原生 Card 保留可编辑事实和真实行动"
+    if chart:
+        return "把来源锁定的指标、单位和比较关系转成可读的数据视觉"
+    if nodes:
+        return "把来源锁定的日期、阶段、动作和先后关系转成可读顺序"
+    if sum(1 for item in spans if item.get("role") == "section") >= 2:
+        return "把来源锁定的主题、分组和核心主张转成首屏信息层级"
+    return "把来源锁定的标题与核心主张转成一个可验证的信息锚点"
+
+
+def _visual_job(value: str, chart: Optional[Dict[str, Any]], nodes: Sequence[Dict[str, Any]], spans: Sequence[Dict[str, Any]], no_image: bool) -> str:
+    if no_image:
+        return "不设置图片任务"
+    if chart:
+        return "按同口径标签、数值和单位组织比较，不添加装饰性数据"
+    if nodes:
+        return "沿单一阅读路径组织日期/阶段/动作，保留来源顺序和下一节点"
+    if sum(1 for item in spans if item.get("role") == "section") >= 2:
+        return "用标题、分组和短主张组织信息区，不把全文截图或做成抽象概念图"
+    return "用标题和一条来源主张建立主题锚点，不用空泛氛围替代信息"
+
+
+def build_visual_spec(source: str, *, title: str = "", no_image: bool = False, brand_context: str = "") -> Dict[str, Any]:
     """Return the editable source for Seedream 5.0 Pro and native chart generation."""
     metrics = extract_metrics(source)
     chart = build_chart_plan(source, metrics)
     nodes = extract_relationship_nodes(source)
     value = str(source or "")
+    spans = extract_information_spans(value, title)
+    purpose = _information_purpose(value, chart, nodes, spans, no_image)
+    visual_job = _visual_job(value, chart, nodes, spans, no_image)
+    dense_signal = (
+        len(value) >= 600
+        or len(nodes) >= 3
+        or sum(1 for item in spans if item.get("role") == "section") >= 3
+        or bool(INFORMATION_IMAGE_REQUEST_RE.search(value))
+    )
+    content_nodes: List[Dict[str, Any]] = []
+    for item in list(nodes) + list(spans):
+        key = (str(item.get("label") or item.get("role") or ""), str(item.get("text") or ""))
+        if any((str(existing.get("label") or existing.get("role") or ""), str(existing.get("text") or "")) == key for existing in content_nodes):
+            continue
+        content_nodes.append(dict(item))
+    must_show = [str(item.get("text") or "") for item in spans[:6] if str(item.get("text") or "").strip()]
     if chart:
         visual_type = f"data_{chart['type']}"
     elif len(nodes) >= 2 and re.search(r"前后|对比", value):
@@ -227,6 +372,44 @@ def build_visual_spec(source: str, *, title: str = "", no_image: bool = False) -
         "metrics": metrics,
         "chart": chart,
         "relationship_nodes": nodes,
+        "information_carrier": not no_image,
+        "not_decorative": not no_image,
+        "information_purpose": purpose,
+        "visual_job": visual_job,
+        "source_spans": spans,
+        "content_nodes": content_nodes[:10],
+        "must_show": must_show,
+        "must_not_show": [
+            "抽象科技装饰或没有信息作用的概念图",
+            "未提供的校徽、Logo、品牌字样或学校身份暗示",
+            "按钮、CTA 胶囊、二维码、URL 或伪交互",
+            "来源没有给出的数字、日期、排名、结果或承诺",
+        ],
+        "brand_asset_policy": _brand_asset_policy(value, brand_context),
+        "mobile_readability": {
+            "reference_display_width_px": 360,
+            "safe_margin": "至少 6% 画布边距",
+            "minimum_role": "标题、日期、单位、限定词和节点必须可读",
+            "overflow_policy": "信息过密时拆成首图/时间线/分组图，不能缩成微型字",
+        },
+        "recommended_panels": [
+            {
+                "id": "cover_identity",
+                "purpose": "主题、身份和一条来源核心主张",
+                "source_roles": ["title", "claim", "section"],
+            },
+            *([{
+                "id": "ordered_process",
+                "purpose": "日期、阶段、动作和先后关系",
+                "source_roles": ["stage", "relationship"],
+            }] if nodes else []),
+            *([{
+                "id": "grouped_information",
+                "purpose": "活动介绍、权益、赛道或安全边界等分组信息",
+                "source_roles": ["section", "point"],
+            }] if sum(1 for item in spans if item.get("role") in {"section", "point"}) >= 2 else []),
+        ],
+        "preferred_render": "information_infographic" if dense_signal and not no_image else "banner_or_infographic",
         "raster_output": "hero.png" if not no_image else None,
         "native_pairing": "title, concise summary, key points, chart, and buttons remain editable CardKit components",
         "no_invention": "missing values remain missing; do not infer numbers, labels, links, or outcomes",

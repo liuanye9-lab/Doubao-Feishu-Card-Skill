@@ -1527,6 +1527,7 @@ def build_auto_spec(
     link_mode: str = "button",
     planning: Optional[Mapping[str, Any]] = None,
     design_plan: Optional[Mapping[str, Any]] = None,
+    brand_context: str = "",
 ) -> Dict[str, Any]:
     if not isinstance(text, str) or not text.strip():
         raise ValueError("plain text input cannot be empty")
@@ -2000,8 +2001,31 @@ def build_auto_spec(
             preferred_source = next((item for item in media_sources if wants_gif and item.get("kind") == "gif"), media_sources[0])
             spec["hero"]["source_url"] = preferred_source.get("source")
 
-    visual_spec = build_visual_spec(source_text, title=title, no_image=not wants_media)
+    visual_spec = build_visual_spec(
+        source_text,
+        title=title,
+        no_image=not wants_media,
+        brand_context=brand_context,
+    )
     spec["visual_spec"] = visual_spec
+    visual_contract = spec.get("visual_contract")
+    if isinstance(visual_contract, dict):
+        visual_contract.update({
+            "information_carrier": visual_spec.get("information_carrier", False),
+            "not_decorative": visual_spec.get("not_decorative", False),
+            "information_purpose": visual_spec.get("information_purpose"),
+            "visual_job": visual_spec.get("visual_job"),
+            "content_nodes": visual_spec.get("content_nodes", []),
+            "recommended_panels": visual_spec.get("recommended_panels", []),
+            "brand_asset_policy": visual_spec.get("brand_asset_policy", {}),
+        })
+    if isinstance(media_policy, dict):
+        media_policy.update({
+            "information_purpose": visual_spec.get("information_purpose"),
+            "visual_job": visual_spec.get("visual_job"),
+            "recommended_panels": visual_spec.get("recommended_panels", []),
+            "brand_asset_policy": visual_spec.get("brand_asset_policy", {}),
+        })
     compacted_blocks, visible_content = compact_visible_blocks(spec["blocks"], source_text, transformations)
     spec["blocks"] = compacted_blocks
     analysis = spec["analysis"]

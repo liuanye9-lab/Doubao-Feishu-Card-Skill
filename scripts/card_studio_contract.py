@@ -188,6 +188,20 @@ def build_quality_gates(
     emoji_mode = str(spec.get("emoji_mode") or "semantic")
     visual_spec = spec.get("visual_spec") if isinstance(spec.get("visual_spec"), Mapping) else {}
     chart_plan = visual_spec.get("chart") if isinstance(visual_spec, Mapping) else None
+    information_purpose = _clean(visual_spec.get("information_purpose"))
+    visual_job = _clean(visual_spec.get("visual_job"))
+    source_spans = visual_spec.get("source_spans") if isinstance(visual_spec.get("source_spans"), list) else []
+    content_nodes = visual_spec.get("content_nodes") if isinstance(visual_spec.get("content_nodes"), list) else []
+    information_contract_ok = (
+        not image_required
+        or (
+            bool(visual_spec.get("information_carrier"))
+            and bool(visual_spec.get("not_decorative"))
+            and bool(information_purpose)
+            and bool(visual_job)
+            and bool(source_spans or content_nodes or chart_plan)
+        )
+    )
     gates: List[Dict[str, Any]] = [
         _gate(
             "summary_contract",
@@ -247,8 +261,24 @@ def build_quality_gates(
             "visual_strategy",
             status="pass" if bool(visual_spec) and bool(visual_spec.get("image_required")) == bool(image_required) else "blocked",
             severity="error",
-            description="每张卡片默认有一份可编辑 visual-spec 和图片任务；仅明确无图时跳过。",
+            description="每张图片都有可编辑 visual-spec 和明确的内容版式；图片不是空泛装饰，明确无图时跳过。",
             evidence={"visual_spec_present": bool(visual_spec), "visual_type": visual_spec.get("visual_type"), "image_required": image_required},
+        ),
+        _gate(
+            "image_information_contract",
+            status="pass" if information_contract_ok else "blocked",
+            severity="error",
+            description="图片必须声明信息目的、视觉任务和来源节点；信息过密时拆分或回到原生 Card，不把全文截图或抽象概念图当成成品。",
+            evidence={
+                "information_carrier": bool(visual_spec.get("information_carrier")),
+                "not_decorative": bool(visual_spec.get("not_decorative")),
+                "information_purpose": information_purpose,
+                "visual_job": visual_job,
+                "source_span_count": len(source_spans),
+                "content_node_count": len(content_nodes),
+                "chart_planned": bool(chart_plan),
+                "preferred_render": visual_spec.get("preferred_render"),
+            },
         ),
         _gate(
             "chart_grounding",
@@ -327,7 +357,7 @@ def build_quality_gates(
             "image_readiness",
             status="pass" if not image_required or (visual_output_ready and image_ready) else "blocked",
             severity="error",
-            description="视觉卡片具备 Seedream 5.0 Pro、Seedance 2.5 或真实图片溯源和真实 img_key；无图卡片不受此门影响。",
+            description="图片型卡片具备已声明的媒体溯源、人工视觉复核条件和真实 img_key；无图卡片不受此门影响。",
             evidence={"image_required": image_required, "visual_output_ready": visual_output_ready, "image_ready": image_ready, "render_strategy": spec.get("render_strategy")},
         ),
     ]

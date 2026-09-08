@@ -15,6 +15,18 @@ def choose_image_mode(spec, *, explicit_mode, banner_mode):
         return
     allocation = (spec.get("information_allocation") or {}).get("image") or {}
     items = allocation.get("include") or []
+    visual_spec = spec.get("visual_spec") if isinstance(spec.get("visual_spec"), dict) else {}
+    if visual_spec.get("preferred_render") == "information_infographic":
+        media = spec["analysis"]["design_plan"]["media_policy"]
+        direct_mode = str(banner_mode).replace("_banner_plus_native_card", "_direct_full_card")
+        media["image_generation_mode"] = direct_mode
+        spec["image_generation_mode"] = direct_mode
+        spec["hero"]["image_generation_mode"] = direct_mode
+        spec["analysis"].setdefault("decision_log", []).append({
+            "component": "image_layout", "decision": "applied",
+            "reason": "信息承载契约判定内容过密或用户明确要求信息可视化，改用竖版信息图；不把长文压缩成装饰横幅",
+        })
+        return
     rich = sum(item.get("role") in {"metric", "stage"} for item in items if isinstance(item, dict)) >= 3
     scene = spec.get("scene") or (spec.get("information_allocation") or {}).get("scene")
     if scene not in {"training-notice", "event-info", "prelaunch-promo"} or rich:

@@ -117,7 +117,10 @@ VISUAL_WORDS = ("案例", "作品", "展示", "画廊", "海报", "品牌", "视
 # or understand a concrete object.
 STRONG_VISUAL_WORDS = ("案例", "展示", "画廊", "海报", "品牌", "视觉", "产品", "设计", "摄影", "氛围", "配图", "图文", "动图", "gif", "showcase", "portfolio", "gallery", "brand", "visual", "product")
 TIMELINE_WORDS = ("时间线", "流程", "日程", "节点", "阶段", "timeline", "schedule", "第一步", "第二步", "步骤")
-IMAGE_REQUEST_WORDS = ("图片", "配图", "海报", "封面", "首图", "信息图", "图示", "看板", "banner", "hero image", "infographic")
+IMAGE_REQUEST_WORDS = (
+    "图片", "配图", "海报", "封面", "首图", "信息图", "图示", "看板", "banner", "hero image", "infographic",
+    "文字转图片", "文字信息转图片", "信息可视化", "图片承载信息", "图片承载文字", "图文卡片",
+)
 NO_IMAGE_RE = re.compile(r"(?:不要|不需要|无需|不用|去掉|取消)\s*(?:生成)?\s*(?:图片|配图|海报|封面|首图|信息图|动图|GIF)|\bno[- ]?image\b", re.I)
 
 
@@ -612,6 +615,24 @@ def build_image_text_items(blocks: Sequence[Dict[str, Any]], title: str) -> List
         if section_title and any(word in section_title for word in case_words) and not has_full_case_node:
             add("relationship", section_title, _block_source_lines(block), "案例的背景—做法—结果关系比完整说明段更适合先用图建立认知")
         if len([entry for entry in items if entry.get("role") == "relationship"]) >= 3:
+            break
+
+    # Information-heavy notices need more than a title and a timeline. Keep a
+    # few section anchors so the image can explain grouping (for example,
+    # 活动介绍 / 教师可以获得什么 / 六大赛道) without turning the full Card
+    # into a bitmap screenshot. The native section remains the accessible,
+    # editable source of truth.
+    for block in flat:
+        if block.get("type") != "section":
+            continue
+        section_title = _visual_label(block.get("title"))
+        if not section_title or any(word in section_title for word in case_words):
+            continue
+        body = str(block.get("body") or block.get("content") or "")
+        compact = compact_case_body(body)
+        label = f"{section_title}：{compact}" if compact else section_title
+        add("group", label, _block_source_lines(block) or body.splitlines(), "分组标题与一条来源主张帮助图片承载信息结构")
+        if len([entry for entry in items if entry.get("role") == "group"]) >= 3:
             break
 
     for block in flat:

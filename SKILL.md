@@ -77,6 +77,12 @@ Apple 官网式现代主义层级纪律 + 高级信息设计基线：克制配�
 
 Seedream 统一直接生成最终 PNG。无论文字是否密集，均不经过 HTML/CSS、Chrome 截图、叠字或本地转图；图片内容只取自 `information_allocation.image.include`，不把 URL、按钮或长段落画进图片。文字密度由原生 Card 的高亮块、层级标题和短句解决；图片直出后只需登记模型 provenance。
 
+### 信息承载契约（重要）
+
+当用户要求“文字信息转成图片”“信息可视化”或图片需要替长文承担内容时，先声明 `information_purpose`、`visual_job`、`source_spans` 和 `content_nodes`，再选择图片模式。首图至少承担主题身份与一条核心关系；多阶段内容可分配为 `cover_identity` + `ordered_process`，多分组内容可分配为 `cover_identity` + `grouped_information`。每个图片节点都必须能回指来源文字，并说明为什么放进图片；不能把全文截图、无意义科技氛围或抽象概念图当作信息视觉。密集内容优先 `seedream_5_pro_direct_full_card`，同时保留原生 Card 的摘要、关键点、alt 和真实按钮，不能把图片作为唯一事实载体。`image_information_contract` 是硬门禁，缺少图片目的、视觉工作、来源节点或“非装饰”声明时必须阻断。
+
+如果用户提供 Logo、截图或已完成的信息图，走 `source_locked_asset`：只读校验 manifest、尺寸、哈希和真实 `img_key`，不在 finalizer 中重新绘制、叠字或补图；续编译时清理旧的 AI provenance，标记 `source_locked_information_graphic`。这条路径不改变“AI 图片必须由 Seedream 一次性直出”的规则，也不授权本地 HTML/SVG/Pillow 合成。详细 badcase 与验收项见 [`references/badcase-2026-09-08-information-carrier.md`](./references/badcase-2026-09-08-information-carrier.md)。
+
 ### 动态视觉：Seedance 2.5 直出 GIF
 
 `scripts/motion_strategy.py` 自动判断动效是否显著提升理解。以下内容优先进入 `seedance_2_5_direct_gif`：

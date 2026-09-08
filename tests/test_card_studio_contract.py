@@ -53,7 +53,15 @@ class CardStudioContractTests(unittest.TestCase):
         spec = {
             "blocks": [{"type": "text", "content": "⚠️ 问题与做法"}],
             "emoji_mode": "semantic",
-            "visual_spec": {"image_required": True, "visual_type": "thematic"},
+            "visual_spec": {
+                "image_required": True,
+                "visual_type": "thematic",
+                "information_carrier": True,
+                "not_decorative": True,
+                "information_purpose": "把来源主张转成可读信息锚点",
+                "visual_job": "展示来源主张",
+                "source_spans": [{"role": "claim", "text": "问题：人工巡检"}],
+            },
             "analysis": {"source_text": "案例展示\n问题：人工巡检", "source_locked": True, "source_sha256": "sha"},
         }
 
@@ -84,6 +92,29 @@ class CardStudioContractTests(unittest.TestCase):
             cardkit_valid=True,
         )
         self.assertEqual(workflow["stages"][-1]["status"], "needs_media")
+
+    def test_image_information_contract_blocks_decorative_or_unplanned_visuals(self):
+        card = self._card()
+        wrapper = {"name": "案例展示", "dsl": card, "variables": []}
+        validation = {"ok": True, "stats": {"visible_text_chars": 7, "max_text_block_chars": 7, "emoji_count": 1, "buttons": 0, "callbacks": 0, "charts": 0}}
+        gates = build_quality_gates(
+            card,
+            {
+                "blocks": [{"type": "text", "content": "⚠️ 问题与做法"}],
+                "emoji_mode": "semantic",
+                "visual_spec": {"image_required": True, "visual_type": "thematic"},
+                "analysis": {"source_text": "案例展示\n问题：人工巡检", "source_locked": True, "source_sha256": "sha"},
+            },
+            validation,
+            wrapper=wrapper,
+            cardkit_valid=True,
+            image_required=True,
+            visual_output_ready=True,
+            image_ready=True,
+        )
+        by_id = {item["id"]: item for item in gates["gates"]}
+        self.assertEqual(by_id["image_information_contract"]["status"], "blocked")
+        self.assertIn("image_information_contract", gates["structural_failures"])
 
 
 if __name__ == "__main__":

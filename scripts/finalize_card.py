@@ -25,6 +25,62 @@ def write_json(path, value):
     tmp.replace(path)
 
 
+def _real_image_gate(image_path, manifest_path):
+    """Verify a source-locked information graphic through its media manifest."""
+    image_path = Path(image_path)
+    manifest_path = Path(manifest_path)
+    result = {
+        "required": True,
+        "manifest": str(manifest_path),
+        "image": str(image_path),
+        "ready": False,
+        "image_source": "real_image",
+        "manual_visual_review_required": True,
+    }
+    if not image_path.is_file():
+        result.update(status="real_image_missing", error=f"真实图片不存在: {image_path}")
+        return result
+    if not manifest_path.is_file():
+        result.update(status="real_image_manifest_missing", error="真实图片需要 media-manifest.json")
+        return result
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        result.update(status="real_image_manifest_invalid", error=str(exc))
+        return result
+    assets = manifest.get("assets") if isinstance(manifest, dict) else None
+    asset = next(
+        (
+            item for item in assets or []
+            if isinstance(item, dict)
+            and (item.get("path") == str(image_path) or item.get("name") == image_path.name)
+        ),
+        None,
+    )
+    quality = manifest.get("quality_gate") if isinstance(manifest, dict) else None
+    image_sha256 = hashlib.sha256(image_path.read_bytes()).hexdigest()
+    valid = (
+        isinstance(manifest, dict)
+        and manifest.get("schema") == "doubao-feishu-media/2"
+        and manifest.get("image_source") == "real_image"
+        and isinstance(asset, dict)
+        and asset.get("image_source") == "real_image"
+        and asset.get("sha256") == image_sha256
+        and bool(asset.get("supported_for_card_image"))
+        and isinstance(quality, dict)
+        and bool(quality.get("all_assets_readable"))
+        and bool(quality.get("all_formats_supported"))
+        and bool(quality.get("sendable"))
+    )
+    result["manifest_data"] = manifest
+    result["image_sha256"] = image_sha256
+    if not valid:
+        result.update(status="real_image_manifest_failed", error="真实图片 media manifest 与当前文件不匹配")
+        return result
+    result.update(status="real_image_ready_for_visual_review", ready=True)
+    return result
+
+
 def attach_delivery_evidence(report):
     """Bind readiness to actual files and an explicit human/model visual review."""
     edition = "doubao" if "doubao" in report else "codex"
@@ -36,6 +92,8 @@ def attach_delivery_evidence(report):
     render_strategy = str(provider.get("render_strategy") or contract.get("render_strategy") or "").strip()
     if render_strategy in {"html_infographic_to_png", "html_to_png", "html"}:
         render_strategy = "native_model"
+    if str(provider.get("image_source") or contract.get("image_source") or "").strip() == "real_image":
+        render_strategy = "source_locked_information_graphic"
     record = card.with_name(card.stem + ".visual-review.json")
     fingerprints = {"card_sha256": digest(card),
                     "asset_sha256": digest(asset) if required and asset.is_file() else None}
@@ -113,7 +171,16 @@ def resume(spec_value, hero_img_key=None):
     render_strategy = str(provider.get("render_strategy") or contract.get("render_strategy") or spec.get("render_strategy") or "").strip()
     if render_strategy in {"html_infographic_to_png", "html_to_png", "html"}:
         render_strategy = "native_model"
-    if motion:
+    image_source = str(
+        (spec.get("hero") or {}).get("image_source")
+        or (spec.get("media_contract") or {}).get("image_source")
+        or ""
+    ).strip()
+    real_image = image_source == "real_image"
+    if real_image:
+        media_manifest = spec_path.with_name(stem + ".media-manifest.json")
+        generation = _real_image_gate(card_path.with_name("hero.png"), media_manifest)
+    elif motion:
         generation = pipeline._motion_generation_gate(card_path.with_name("hero.gif"),
             card_path.with_name("hero-motion-generation.json"), required=required)
     else:
@@ -148,10 +215,11 @@ def resume(spec_value, hero_img_key=None):
                if required and not image_ready else "ready", card=str(card_path), editable_spec=str(spec_path),
                validation=validation, compile=compiled, quality_gates=gates, ai_generation=generation)
     old["readiness"] = {"valid": valid, "image_ready": image_ready,
+                       "real_image_ready": asset_ready if real_image else False,
                        "visual_output_ready": asset_ready,
-                       "image2_output_ready": asset_ready if edition == "codex" else True,
-                       "seedream_output_ready": asset_ready if edition == "doubao" and not motion else True,
-                       "seedance_output_ready": asset_ready if motion else True,
+                       "image2_output_ready": asset_ready if edition == "codex" and not real_image else False if real_image else True,
+                       "seedream_output_ready": asset_ready if edition == "doubao" and not motion and not real_image else False if real_image else True,
+                       "seedance_output_ready": asset_ready if motion and not real_image else False if real_image else True,
                        "sendable": valid and bool(compiled.get("sendable")) and (not required or image_ready),
                        "cardkit_editor_ready": valid and (not required or image_ready),
                        "cardkit_entity_ready": valid and (not required or image_ready),
@@ -160,20 +228,64 @@ def resume(spec_value, hero_img_key=None):
     provider["image_ready"] = image_ready
     provider["visual_output_ready" if edition == "doubao" else "image2_ready"] = asset_ready
     provider["render_strategy"] = render_strategy
+    provider["image_source"] = image_source or provider.get("image_source")
     contract = provider["card_image_contract"]
     asset_path = card_path.with_name("hero.gif" if motion else "hero.png")
+    if real_image:
+        render_strategy = "source_locked_information_graphic"
+        provider.update(
+            image_source="real_image",
+            render_strategy=render_strategy,
+            generation_tool=None,
+            generation_family=None,
+            generation_model=None,
+            generation_model_label=None,
+            model_id_source=None,
+            reference_image_tool=None,
+            ai_generation_required=False,
+            ai_generation_ready=False,
+            real_image_ready=asset_ready,
+            visual_output_ready=asset_ready,
+            seedream_output_ready=False,
+            seedance_output_ready=False,
+        )
+        contract.update(
+            image_source="real_image",
+            generation_tool=None,
+            generation_family=None,
+            generation_model=None,
+            generation_model_label=None,
+            model_id_source=None,
+            reference_image_tool=None,
+            final_asset_role="source_locked_information_graphic",
+            ai_generation_required=False,
+            ai_generation_manifest=None,
+            media_authoring="source_locked_asset",
+            render_strategy=render_strategy,
+        )
+        if isinstance(old.get("media"), dict):
+            old["media"].update(
+                image_source="real_image",
+                render_strategy=render_strategy,
+                generation_tool=None,
+                generation_family=None,
+                generation_model=None,
+                generation_model_label=None,
+                media_authoring="source_locked_asset",
+            )
     embedded_status = (
+        "embedded_real_image_card_image" if real_image else
         "embedded_image2_card_image" if edition == "codex" else
         "embedded_seedance_gif" if motion else "embedded_seedream_image"
     )
-    waiting_status = "visual_output_ready_waiting_real_img_key"
+    waiting_status = "real_image_ready_waiting_real_img_key" if real_image else "visual_output_ready_waiting_real_img_key"
     contract.update(status="not_required" if not required else embedded_status if image_ready else
                     waiting_status if asset_ready else generation.get("status"),
                     card_image_embedded=key_ready, real_img_key_supplied=key_ready,
                     final_asset=str(asset_path), final_asset_exists=asset_path.is_file(),
                     final_asset_contains_functional_text=required and asset_ready,
                     render_strategy=render_strategy)
-    provider["ai_generation_ready"] = asset_ready
+    provider["ai_generation_ready"] = False if real_image else asset_ready
     provider["hero_img_key_supplied"] = key_ready
     old["cardkit_import_file"] = wrapper["cardkit_card"]
     attach_delivery_evidence(old)
@@ -186,7 +298,11 @@ def resume(spec_value, hero_img_key=None):
                         card=wrapper["cardkit_card"], api_card=str(card_path),
                         card_name=wrapper["card_name"], wrapper_validation=wrapper["validation"],
                         file_size_bytes=wrapper["file_size_bytes"], size_ok=wrapper["size_ok"],
-                        ai_generation=generation, ai_generation_ready=asset_ready)
+                        ai_generation=(
+                            {"required": False, "status": "not_required", "ready": False}
+                            if real_image else generation
+                        ), ai_generation_ready=False if real_image else asset_ready,
+                        real_image=generation if real_image else manifest.get("real_image"))
         for field in ("image2_output_ready", "seedream_output_ready", "seedance_output_ready", "visual_output_ready"):
             if field in manifest:
                 manifest[field] = old["readiness"][field]
@@ -196,6 +312,8 @@ def resume(spec_value, hero_img_key=None):
                 manifest[field].update(ready=asset_ready, status=generation.get("status"),
                                        error=generation.get("error"))
         write_json(manifest_path, manifest)
+    if real_image:
+        old["real_image"] = generation
     write_json(report_path, old)
     return old
 
